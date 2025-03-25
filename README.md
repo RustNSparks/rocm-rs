@@ -19,7 +19,7 @@ The project currently focuses on providing raw FFI bindings for most libraries, 
 
 ## Prerequisites
 
-- AMD ROCm installed (version 5.0 or later recommended)
+- AMD ROCm installed (version 6.0 or later recommended)
 - Rust toolchain (1.65.0 or later recommended)
 - A compatible AMD GPU
 
@@ -77,7 +77,7 @@ fn main() {
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/rocm-rs.git
+git clone https://github.com/radudiaconu0/rocm-rs.git
 cd rocm-rs
 
 # Set the ROCm path if not in the default location
