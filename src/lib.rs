@@ -12,19 +12,15 @@ pub mod rocrand;
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::LowerHex;
-    use crate::rocfft;
-    use crate::rocfft::error::check_dimensions;
+    use crate::rocfft::get_version;
 
     #[test]
     fn test_fft() {
-        match check_dimensions(1) { 
-            Ok(..) => {
-                println!("fft");
+        match get_version() {
+            Ok(v) => {
+                println!("{}", v)
             }
-            Err(_) => {
-                panic!("fft failed");
-            }
+            Err(e) => panic!("{}", e),
         }
     }
 }

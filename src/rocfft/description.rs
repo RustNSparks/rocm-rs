@@ -54,7 +54,8 @@ impl PlanDescription {
     ///
     /// ```no_run
     ///
-    /// use rocm_rs::rocfft::PlanDescription;
+    /// use rocm_rs::rocfft::description::PlanDescription;
+    /// 
     /// let description = PlanDescription::new()?;
     /// ```
     pub fn new() -> Result<Self> {
@@ -84,7 +85,7 @@ impl PlanDescription {
     ///
     /// ```no_run
     ///
-    /// use rocm_rs::rocfft::PlanDescription;
+    /// use rocm_rs::rocfft::description::PlanDescription;
     /// let mut description = PlanDescription::new()?;
     ///
     /// // Scale by 1/N for an inverse transform
@@ -127,8 +128,9 @@ impl PlanDescription {
     /// # Example
     ///
     /// ```no_run
-    /// use rocm_rs::rocfft::{ArrayType, PlanDescription};
     ///
+    /// use rocm_rs::rocfft::description::PlanDescription;
+    /// use rocm_rs::rocfft::plan::ArrayType;
     /// let mut desc = PlanDescription::new()?;
     ///
     /// // Set custom strides for a 2D transform with non-contiguous memory layout
@@ -211,7 +213,8 @@ impl PlanDescription {
     ///
     /// ```no_run
     ///
-    /// use rocm_rs::rocfft::{CommType, PlanDescription};
+    ///
+    /// use rocm_rs::rocfft::description::{CommType, PlanDescription};
     ///
     /// let mut desc = PlanDescription::new()?;
     ///
@@ -251,8 +254,10 @@ impl PlanDescription {
     ///
     /// ```no_run
     ///
-    /// use rocm_rs::rocfft::{Field, PlanDescription};
-    /// 
+    ///
+    ///
+    /// use rocm_rs::rocfft::description::PlanDescription;
+    /// use rocm_rs::rocfft::field::Field;
     /// let mut desc = PlanDescription::new()?;
     /// let mut field = Field::new()?;
     ///
@@ -294,8 +299,9 @@ impl PlanDescription {
     ///
     /// ```no_run
     ///
-    /// use rocm_rs::rocfft::{Field, PlanDescription};
-    /// 
+    ///
+    /// use rocm_rs::rocfft::description::PlanDescription;
+    /// use rocm_rs::rocfft::field::Field;
     /// let mut desc = PlanDescription::new()?;
     /// let mut field = Field::new()?;
     ///
