@@ -3,28 +3,26 @@ pub mod rocrand;
 pub mod rocfft;
 
 pub mod hip;
-
+mod error;
 
 #[cfg(test)]
 mod tests {
+    use crate::hip::{get_device_count, host_mem_flags, Device, DeviceMemory, PinnedMemory};
+    use crate::hip::utils::print_devices_info;
     use crate::rocrand;
     use crate::rocrand::{rng_type, PseudoRng};
+    use crate::rocrand::utils::generate_uniform_f32;
 
     #[test]
     fn test_rocrand() {
-        let mut generator = PseudoRng::new(rng_type::XORWOW).unwrap();
+        let device_memory = match DeviceMemory::<f32>::new(1000) {
+            Ok(memory) => memory,
+            Err(e) => panic!("{:?}", e),
+        };
 
-        // Optional: Set a seed for reproducibility
-        generator.set_seed(12345).unwrap();
-
-        // Create an array to hold the random numbers
-        let mut random_numbers: Vec<f32> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-
-        // Generate uniform random numbers between 0.0 and 1.0
-        generator.generate_uniform(&mut random_numbers).unwrap();
-
-        // Use the random numbers
-        println!("First few random numbers: {:?}", &random_numbers[..5]);
+        // rocRAND operation (returns rocrand::Error on failure)
+        let random_data = generate_uniform_f32(1000, Some(42)).unwrap();
+        println!("random_data: {:?}", random_data);
         
     }
 }

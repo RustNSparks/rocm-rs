@@ -6,9 +6,10 @@
 pub mod bindings;
 
 // Import submodules
-mod error;
-mod generator;
-mod distribution;
+pub mod error;
+pub mod generator;
+pub mod distribution;
+pub mod utils;
 
 // Re-export public items
 pub use error::{Error, Result};

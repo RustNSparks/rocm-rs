@@ -1,14 +1,21 @@
 // src/hip/mod.rs
 
-mod error;
-mod device;
-mod memory;
-mod stream;
-mod event;
-mod utils;
+// Private modules
+pub mod error;
+pub mod device;
+pub mod memory;
+pub mod stream;
+pub mod event;
+pub mod utils;
+
+// We need to make this public for the rest of the crate
+// but don't necessarily want to expose it to users
+pub(crate) mod bindings;
+
+// Public re-export of FFI for internal use
 pub mod ffi;
 
-// Re-export the main components
+// Re-export the main components for the public API
 pub use error::{Error, Result};
 pub use device::{Device, DeviceProperties, get_device_count, get_device_properties};
 pub use memory::{DeviceMemory, PinnedMemory, MemoryInfo, memory_info};
@@ -18,6 +25,11 @@ pub use utils::{DeviceGuard, Version, Dim3,
                 print_devices_info, run_on_device,
                 calculate_grid_1d, calculate_grid_2d, calculate_grid_3d,
                 copy_kind, host_mem_flags, is_hip_available};
+
+/// Get the number of devices
+pub fn device_count() -> Result<i32> {
+    device::get_device_count()
+}
 
 /// Initialize the HIP runtime
 pub fn init() -> Result<()> {
@@ -29,16 +41,14 @@ pub fn init() -> Result<()> {
 pub fn driver_version() -> Result<i32> {
     let mut version = 0;
     let error = unsafe { ffi::hipDriverGetVersion(&mut version) };
-    Error::from_hip_error(error)?;
-    Ok(version)
+    error::Error::from_hip_error_with_value(error, version)
 }
 
 /// Get the HIP runtime version
 pub fn runtime_version() -> Result<i32> {
     let mut version = 0;
     let error = unsafe { ffi::hipRuntimeGetVersion(&mut version) };
-    Error::from_hip_error(error)?;
-    Ok(version)
+    error::Error::from_hip_error_with_value(error, version)
 }
 
 /// Get the last error that occurred

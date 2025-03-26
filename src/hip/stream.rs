@@ -1,13 +1,14 @@
 // src/hip/stream.rs
 
 use std::ptr;
+use crate::hip;
 use crate::hip::ffi;
 use crate::hip::error::{Error, Result};
 use crate::hip::event::Event;
 
 /// Safe wrapper for HIP streams
 pub struct Stream {
-    stream: ffi::hipStream_t,
+    stream: hip::ffi::hipStream_t
 }
 
 // Can't be automatically derived since we have a raw pointer

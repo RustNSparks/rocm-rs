@@ -21,160 +21,7 @@ pub fn memory_info() -> Result<MemoryInfo> {
     if error != ffi::hipError_t_hipSuccess {
         return Err(Error::new(error));
     }
-}
-
-impl<T> Drop for DeviceMemory<T> {
-    fn drop(&mut self) {
-        if !self.ptr.is_null() {
-            unsafe {
-                let _ = ffi::hipFree(self.ptr);
-                // We cannot handle errors in drop, so just ignore the result
-            };
-            self.ptr = ptr::null_mut();
-        }
-    }
-}
-
-/// Safe wrapper for pinned (page-locked) host memory
-pub struct PinnedMemory<T> {
-    ptr: *mut c_void,
-    size: usize,
-    count: usize,
-    phantom: PhantomData<T>,
-}
-
-// Can't be automatically derived since we have a raw pointer
-unsafe impl<T: Send> Send for PinnedMemory<T> {}
-unsafe impl<T: Sync> Sync for PinnedMemory<T> {}
-
-impl<T> PinnedMemory<T> {
-    /// Allocate pinned host memory for a number of elements
-    pub fn new(count: usize) -> Result<Self> {
-        if count == 0 {
-            return Ok(Self {
-                ptr: ptr::null_mut(),
-                size: 0,
-                count: 0,
-                phantom: PhantomData,
-            });
-        }
-
-        let size = count * std::mem::size_of::<T>();
-        let mut ptr = ptr::null_mut();
-        let error = unsafe { ffi::hipHostMalloc(&mut ptr, size, 0) };
-
-        if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
-        }
-
-        Ok(Self {
-            ptr,
-            size,
-            count,
-            phantom: PhantomData,
-        })
-    }
-
-    /// Allocate pinned host memory with specific flags
-    pub fn with_flags(count: usize, flags: u32) -> Result<Self> {
-        if count == 0 {
-            return Ok(Self {
-                ptr: ptr::null_mut(),
-                size: 0,
-                count: 0,
-                phantom: PhantomData,
-            });
-        }
-
-        let size = count * std::mem::size_of::<T>();
-        let mut ptr = ptr::null_mut();
-        let error = unsafe { ffi::hipHostMalloc(&mut ptr, size, flags) };
-
-        if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
-        }
-
-        Ok(Self {
-            ptr,
-            size,
-            count,
-            phantom: PhantomData,
-        })
-    }
-
-    /// Get the host pointer as a slice
-    pub fn as_slice(&self) -> &[T] {
-        if self.ptr.is_null() || self.count == 0 {
-            return &[];
-        }
-
-        unsafe {
-            std::slice::from_raw_parts(self.ptr as *const T, self.count)
-        }
-    }
-
-    /// Get the host pointer as a mutable slice
-    pub fn as_slice_mut(&mut self) -> &mut [T] {
-        if self.ptr.is_null() || self.count == 0 {
-            return &mut [];
-        }
-
-        unsafe {
-            std::slice::from_raw_parts_mut(self.ptr as *mut T, self.count)
-        }
-    }
-
-    /// Get the raw host pointer
-    pub fn as_ptr(&self) -> *const T {
-        self.ptr as *const T
-    }
-
-    /// Get the raw mutable host pointer
-    pub fn as_mut_ptr(&mut self) -> *mut T {
-        self.ptr as *mut T
-    }
-
-    /// Get the size in bytes
-    pub fn size(&self) -> usize {
-        self.size
-    }
-
-    /// Get the number of elements
-    pub fn count(&self) -> usize {
-        self.count
-    }
-
-    /// Get the device pointer for this pinned memory
-    pub fn get_device_pointer(&self) -> Result<*mut c_void> {
-        if self.ptr.is_null() {
-            return Ok(ptr::null_mut());
-        }
-
-        let mut device_ptr = ptr::null_mut();
-        let error = unsafe {
-            ffi::hipHostGetDevicePointer(&mut device_ptr, self.ptr, 0)
-        };
-
-        if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
-        }
-
-        Ok(device_ptr)
-    }
-}
-
-impl<T> Drop for PinnedMemory<T> {
-    fn drop(&mut self) {
-        if !self.ptr.is_null() {
-            unsafe {
-                let _ = ffi::hipHostFree(self.ptr);
-                // We cannot handle errors in drop, so just ignore the result
-            };
-            self.ptr = ptr::null_mut();
-        }
-    }
-}
-Ok(MemoryInfo { free, total })
+    Ok(MemoryInfo { free, total })
 }
 
 /// Safe wrapper for hip device memory
@@ -365,3 +212,156 @@ impl<T> DeviceMemory<T> {
 
         Ok(())
     }
+}
+
+impl<T> Drop for DeviceMemory<T> {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe {
+                let _ = ffi::hipFree(self.ptr);
+                // We cannot handle errors in drop, so just ignore the result
+            };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}
+
+/// Safe wrapper for pinned (page-locked) host memory
+pub struct PinnedMemory<T> {
+    ptr: *mut c_void,
+    size: usize,
+    count: usize,
+    phantom: PhantomData<T>,
+}
+
+// Can't be automatically derived since we have a raw pointer
+unsafe impl<T: Send> Send for PinnedMemory<T> {}
+unsafe impl<T: Sync> Sync for PinnedMemory<T> {}
+
+impl<T> PinnedMemory<T> {
+    /// Allocate pinned host memory for a number of elements
+    pub fn new(count: usize) -> Result<Self> {
+        if count == 0 {
+            return Ok(Self {
+                ptr: ptr::null_mut(),
+                size: 0,
+                count: 0,
+                phantom: PhantomData,
+            });
+        }
+
+        let size = count * std::mem::size_of::<T>();
+        let mut ptr = ptr::null_mut();
+        let error = unsafe { ffi::hipHostMalloc(&mut ptr, size, 0) };
+
+        if error != ffi::hipError_t_hipSuccess {
+            return Err(Error::new(error));
+        }
+
+        Ok(Self {
+            ptr,
+            size,
+            count,
+            phantom: PhantomData,
+        })
+    }
+
+    /// Allocate pinned host memory with specific flags
+    pub fn with_flags(count: usize, flags: u32) -> Result<Self> {
+        if count == 0 {
+            return Ok(Self {
+                ptr: ptr::null_mut(),
+                size: 0,
+                count: 0,
+                phantom: PhantomData,
+            });
+        }
+
+        let size = count * std::mem::size_of::<T>();
+        let mut ptr = ptr::null_mut();
+        let error = unsafe { ffi::hipHostMalloc(&mut ptr, size, flags) };
+
+        if error != ffi::hipError_t_hipSuccess {
+            return Err(Error::new(error));
+        }
+
+        Ok(Self {
+            ptr,
+            size,
+            count,
+            phantom: PhantomData,
+        })
+    }
+
+    /// Get the host pointer as a slice
+    pub fn as_slice(&self) -> &[T] {
+        if self.ptr.is_null() || self.count == 0 {
+            return &[];
+        }
+
+        unsafe {
+            std::slice::from_raw_parts(self.ptr as *const T, self.count)
+        }
+    }
+
+    /// Get the host pointer as a mutable slice
+    pub fn as_slice_mut(&mut self) -> &mut [T] {
+        if self.ptr.is_null() || self.count == 0 {
+            return &mut [];
+        }
+
+        unsafe {
+            std::slice::from_raw_parts_mut(self.ptr as *mut T, self.count)
+        }
+    }
+
+    /// Get the raw host pointer
+    pub fn as_ptr(&self) -> *const T {
+        self.ptr as *const T
+    }
+
+    /// Get the raw mutable host pointer
+    pub fn as_mut_ptr(&mut self) -> *mut T {
+        self.ptr as *mut T
+    }
+
+    /// Get the size in bytes
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    /// Get the number of elements
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    /// Get the device pointer for this pinned memory
+    pub fn get_device_pointer(&self) -> Result<*mut c_void> {
+        if self.ptr.is_null() {
+            return Ok(ptr::null_mut());
+        }
+
+        let mut device_ptr = ptr::null_mut();
+        let error = unsafe {
+            ffi::hipHostGetDevicePointer(&mut device_ptr, self.ptr, 0)
+        };
+
+        if error != ffi::hipError_t_hipSuccess {
+            return Err(Error::new(error));
+        }
+
+        Ok(device_ptr)
+    }
+}
+
+impl<T> Drop for PinnedMemory<T> {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            unsafe {
+                let _ = ffi::hipHostFree(self.ptr);
+                // We cannot handle errors in drop, so just ignore the result
+            };
+            self.ptr = ptr::null_mut();
+        }
+    }
+}

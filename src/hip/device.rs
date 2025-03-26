@@ -77,6 +77,7 @@ pub fn get_device_properties(device_id: i32) -> Result<DeviceProperties> {
 }
 
 /// A wrapper for HIP device operations
+#[derive(Debug)]
 pub struct Device {
     id: i32,
 }
