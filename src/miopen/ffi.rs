@@ -410,5 +410,7 @@ pub use bindings::miopenSetNdTensorDescriptorWithLayout;
 pub use bindings::miopenGetConvolutionSpatialDim;
 pub use bindings::miopenSetTransposeConvOutputPadding;
 pub use bindings::miopenSetTransposeConvNdOutputPadding;
+pub use bindings::miopenGetRNNPaddingMode;
+pub use bindings::miopenSetRNNPaddingMode;
 // Other needed functions and types
 // Add more as needed...

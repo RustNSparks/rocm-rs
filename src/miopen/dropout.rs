@@ -12,7 +12,7 @@ pub type RNGType = ffi::miopenRNGType_t;
 
 /// Safe wrapper for MIOpen dropout descriptor
 pub struct DropoutDescriptor {
-    desc: ffi::miopenDropoutDescriptor_t,
+    pub(crate) desc: ffi::miopenDropoutDescriptor_t,
 }
 
 // Can't be automatically derived since we have a raw pointer

@@ -36,8 +36,10 @@ pub use lrn::{LRNDescriptor, LRNMode};
 pub use batchnorm::BatchNormMode;
 pub use softmax::{SoftmaxAlgorithm, SoftmaxMode, softmax_forward, softmax_backward};
 pub use dropout::{DropoutDescriptor, RNGType};
-pub use rnn::{RNNDescriptor, RNNMode, RNNInputMode, RNNAlgo, RNNDirectionMode, RNNBiasMode};
-pub use reduce::{ReduceTensorDescriptor, ReduceTensorOp, NanPropagation, ReduceTensorIndices, IndicesType};
+pub use rnn::{RNNDescriptor, RNNMode, RNNInputMode, RNNAlgo, RNNDirectionMode, RNNBiasMode,
+              rnn_forward_inference, rnn_forward_training, rnn_backward_data, rnn_backward_weights};
+pub use reduce::{ReduceTensorDescriptor, ReduceTensorOp, NanPropagation, ReduceTensorIndices, IndicesType,
+                 get_reduction_indices_size, get_reduction_workspace_size, reduce_tensor};
 pub use fusion::{FusionPlanDescriptor, FusionOpDescriptor, OperatorArgs, FusionDirection};
 
 /// Get MIOpen version information
