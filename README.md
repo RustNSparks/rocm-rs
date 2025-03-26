@@ -11,7 +11,7 @@ Currently implemented:
 - ✅ HIP - Heterogeneous-Compute Interface for Portability (raw bindings only)
 - ✅ rocBLAS - Basic Linear Algebra Subprograms (raw bindings only)
 - ✅ MIOpen - Deep learning primitives (raw bindings only)
-- ✅ rocRAND - Random number generation (raw bindings only)
+- ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
 - ✅ rocSOLVER - Linear system solvers (raw bindings only)
 - ✅ rocSPARSE - Sparse linear algebra (raw bindings only)
 
