@@ -1,6 +1,7 @@
 extern crate core;
 pub mod rocrand;
 pub mod rocfft;
+pub mod miopen;
 
 pub mod hip;
 mod error;

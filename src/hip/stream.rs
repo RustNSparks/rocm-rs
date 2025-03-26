@@ -199,6 +199,9 @@ impl Stream {
 
         Ok(device)
     }
+    pub fn from_raw(stream: ffi::hipStream_t) -> Self {
+        Self { stream }
+    }
 }
 
 impl Drop for Stream {

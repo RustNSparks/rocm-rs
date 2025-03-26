@@ -187,6 +187,7 @@ fn generate_bindings(module: &ModuleConfig, rocm_path: &str, preserve_fp_constan
     if module.needs_cpp {
         clang_args.push("-x".to_string());
         clang_args.push("c++".to_string());
+        clang_args.push("-std=c++17".to_string());
     }
 
     // Only add stdint.h and stddef.h for modules that explicitly need them
@@ -215,12 +216,15 @@ fn generate_bindings(module: &ModuleConfig, rocm_path: &str, preserve_fp_constan
         .blocklist_file(".*stdio.h")
         .blocklist_file("stdint.h")
         .blocklist_file("stddef.h")
+        .blocklist_file("*.string.h")
+
         // Block GNU C++ template stuff
         .blocklist_item("__gnu_cxx::__max")
         .blocklist_item("__gnu_cxx::__min")
         .blocklist_item("__gnu_cxx::.*")
         .blocklist_item("_Value")
         .opaque_type("_Value");
+    
 
     // Add allowlist prefixes if specified
     if !module.allowlist_prefixes.is_empty() {
@@ -307,7 +311,7 @@ fn generate_mod_imports(modules: &[ModuleConfig]) {
         }
 
         // Write the mod.rs file
-        fs::write(out_dir.join("mod.rs"), mod_content)
-            .unwrap_or_else(|e| panic!("Couldn't write mod.rs for {}: {:?}", module.name, e));
+        // fs::write(out_dir.join("mod.rs"), mod_content)
+        //     .unwrap_or_else(|e| panic!("Couldn't write mod.rs for {}: {:?}", module.name, e));
     }
 }
