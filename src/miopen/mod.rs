@@ -14,6 +14,7 @@ pub mod dropout;
 pub mod rnn;
 pub mod reduce;
 pub mod fusion;
+pub mod mha;
 
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users
@@ -21,6 +22,7 @@ pub(crate) mod bindings;
 
 // Public re-export of FFI for internal use
 pub mod ffi;
+pub mod ctc_loss;
 
 // Re-export the main components for the public API
 pub use error::{Error, Result};
@@ -34,13 +36,16 @@ pub use pooling::{PoolingDescriptor, PoolingMode, PoolingWorkspaceIndexMode};
 pub use activation::{ActivationDescriptor, ActivationMode};
 pub use lrn::{LRNDescriptor, LRNMode};
 pub use batchnorm::BatchNormMode;
-pub use softmax::{SoftmaxAlgorithm, SoftmaxMode, softmax_forward, softmax_backward};
+pub use softmax::{SoftmaxDescriptor, SoftmaxAlgorithm, SoftmaxMode,
+                  softmax_forward, softmax_backward, softmax_forward_v2, softmax_backward_v2};
 pub use dropout::{DropoutDescriptor, RNGType};
-pub use rnn::{RNNDescriptor, RNNMode, RNNInputMode, RNNAlgo, RNNDirectionMode, RNNBiasMode,
-              rnn_forward_inference, rnn_forward_training, rnn_backward_data, rnn_backward_weights};
-pub use reduce::{ReduceTensorDescriptor, ReduceTensorOp, NanPropagation, ReduceTensorIndices, IndicesType,
-                 get_reduction_indices_size, get_reduction_workspace_size, reduce_tensor};
+pub use rnn::{RNNDescriptor, RNNMode, RNNInputMode, RNNAlgo, RNNDirectionMode, RNNBiasMode};
+pub use reduce::{ReduceTensorDescriptor, ReduceTensorOp, NanPropagation, ReduceTensorIndices, IndicesType};
 pub use fusion::{FusionPlanDescriptor, FusionOpDescriptor, OperatorArgs, FusionDirection};
+
+// New components
+pub use mha::{MhaDescriptor, MhaMask, mha_mask, TensorArgumentId, tensor_argument_id};
+
 
 /// Get MIOpen version information
 pub fn get_version() -> Result<(usize, usize, usize)> {

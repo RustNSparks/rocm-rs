@@ -19,6 +19,9 @@ pub type ConvBwdDataAlgorithm = ffi::miopenConvBwdDataAlgorithm_t;
 /// Convolution backward weights algorithm
 pub type ConvBwdWeightsAlgorithm = ffi::miopenConvBwdWeightsAlgorithm_t;
 
+/// General convolution algorithm
+pub type ConvAlgorithm = ffi::miopenConvAlgorithm_t;
+
 /// Padding mode
 pub type PaddingMode = ffi::miopenPaddingMode_t;
 
@@ -548,7 +551,7 @@ pub fn convolution_backward_data(
     Ok(())
 }
 
-/// Query the workspace size required for a backward weights convolution algorithm
+/// Get the GPU memory required for the backward weights convolution algorithm
 pub fn get_convolution_backward_weights_workspace_size(
     handle: &Handle,
     dy_desc: &TensorDescriptor,

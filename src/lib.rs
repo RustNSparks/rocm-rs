@@ -4,7 +4,7 @@ pub mod rocfft;
 pub mod miopen;
 
 pub mod hip;
-mod error;
+pub mod error;
 
 #[cfg(test)]
 mod tests {
