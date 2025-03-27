@@ -8,9 +8,9 @@ This project provides Rust bindings for AMD's ROCm (Radeon Open Compute) librari
 
 Currently implemented:
 - ✅ rocFFT - Fast Fourier Transform library (raw bindings + safe wrappers)
-- ✅ HIP - Heterogeneous-Compute Interface for Portability (raw bindings only)
+- ✅ HIP - Heterogeneous-Compute Interface for Portability (raw bindings + safe wrappers)
 - ✅ rocBLAS - Basic Linear Algebra Subprograms (raw bindings only)
-- ✅ MIOpen - Deep learning primitives (raw bindings only)
+- ✅ MIOpen - Deep learning primitives (raw bindings + safe wrappers)
 - ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
 - ✅ rocSOLVER - Linear system solvers (raw bindings only)
 - ✅ rocSPARSE - Sparse linear algebra (raw bindings only)
@@ -88,52 +88,6 @@ cargo build
 
 # Run tests
 cargo test
-```
-
-## Project Structure
-
-```
-rocm-rs/
-├── Cargo.toml
-├── build.rs              # Build script to generate bindings
-├── include/              # C/C++ headers
-│   ├── hip.h
-│   ├── miopen.h
-│   ├── rocblas.h  
-│   ├── rocfft.h
-│   ├── rocrand.h
-│   ├── rocsolver.h
-│   └── rocsparse.h
-├── src/
-│   ├── lib.rs            # Main library entry point
-│   ├── hip/              # HIP module
-│   │   ├── mod.rs
-│   │   └── bindings.rs   # Auto-generated bindings (do not edit)
-│   ├── miopen/           # MIOpen module
-│   │   ├── mod.rs
-│   │   └── bindings.rs
-│   ├── rocblas/          # rocBLAS module
-│   │   ├── mod.rs
-│   │   └── bindings.rs
-│   ├── rocfft/           # rocFFT module (with safe wrappers)
-│   │   ├── mod.rs
-│   │   ├── bindings.rs
-│   │   ├── cache.rs
-│   │   ├── description.rs
-│   │   ├── error.rs
-│   │   ├── execution.rs
-│   │   ├── fft.rs
-│   │   ├── field.rs
-│   │   └── plan.rs
-│   ├── rocrand/          # rocRAND module
-│   │   ├── mod.rs
-│   │   └── bindings.rs
-│   ├── rocsolver/        # rocSOLVER module
-│   │   ├── mod.rs
-│   │   └── bindings.rs
-│   └── rocsparse/        # rocSPARSE module
-│       ├── mod.rs
-│       └── bindings.rs
 ```
 
 ## Contributing
