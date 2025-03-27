@@ -1,4 +1,4 @@
-# rocm-rs: Rust Bindings for AMD ROCm Libraries
+# rocm-rs: Safe Rust wrappers for AMD ROCm Libraries
 
 This project provides Rust bindings for AMD's ROCm (Radeon Open Compute) libraries, allowing Rust developers to leverage AMD GPUs for high-performance computing.
 
