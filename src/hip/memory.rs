@@ -2,8 +2,8 @@
 
 use std::ffi::c_void;
 use std::marker::PhantomData;
-use std::ptr;
-use crate::hip::ffi;
+use std::{mem, ptr};
+use crate::hip::{ffi, Stream};
 use crate::hip::error::{Error, Result};
 
 /// Information about available and used memory on the device
@@ -48,7 +48,7 @@ impl<T> DeviceMemory<T> {
             });
         }
 
-        let size = count * std::mem::size_of::<T>();
+        let size = count * size_of::<T>();
         let mut ptr = ptr::null_mut();
         let error = unsafe { ffi::hipMalloc(&mut ptr, size) };
 
@@ -165,52 +165,100 @@ impl<T> DeviceMemory<T> {
         Ok(())
     }
 
-    /// Asynchronously copy data from host to device
-    pub fn copy_from_host_async(&mut self, data: &[T], stream: &crate::hip::Stream) -> Result<()> {
-        if self.ptr.is_null() || data.is_empty() {
+    pub fn copy_from_host_async(&self, source: &[T], stream: &Stream) -> Result<()> {
+        // Check for empty source or potentially uninitialized buffer early
+        if source.is_empty() {
+            return Ok(());
+        }
+        // Check if self.ptr is null if your struct allows for uninitialized state
+        // if self.ptr.is_null() { return Err(/* Appropriate error */); }
+
+
+        let required_bytes = source.len().saturating_mul(mem::size_of::<T>()); // Use saturating_mul just in case
+
+        // Check if the source data fits within the allocated buffer size
+        if required_bytes > self.size {
+            return Err(Error::new(ffi::hipError_t_hipErrorInvalidValue));
+        }
+
+        // Only proceed with copy if there are bytes to copy (handles ZSTs correctly)
+        if required_bytes == 0 {
             return Ok(());
         }
 
-        let copy_size = std::cmp::min(self.size, data.len() * std::mem::size_of::<T>());
         let error = unsafe {
             ffi::hipMemcpyAsync(
-                self.ptr,
-                data.as_ptr() as *const c_void,
-                copy_size,
+                self.ptr, // Assuming self.ptr is *mut c_void or compatible
+                source.as_ptr() as *const c_void,
+                required_bytes, // Copy the exact size needed for the source slice
                 ffi::hipMemcpyKind_hipMemcpyHostToDevice,
                 stream.as_raw(),
             )
         };
 
+        // Check hipMemcpyAsync result
         if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
+            Err(Error::new(error)) // Assumes Error::new handles hipError_t
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
-    /// Asynchronously copy data from device to host
-    pub fn copy_to_host_async(&self, data: &mut [T], stream: &crate::hip::Stream) -> Result<()> {
-        if self.ptr.is_null() || data.is_empty() {
+    /// Asynchronously copies data from this device buffer to a host slice `dest`.
+    ///
+    /// Copies `dest.len() * size_of::<T>()` bytes.
+    ///
+    /// # Arguments
+    /// * `dest` - The host slice to copy data into.
+    /// * `stream` - The HIP stream to perform the copy operation on.
+    ///
+    /// # Errors
+    /// - Returns `Error::CopySizeMismatch` if the destination slice (`dest.len() * size_of::<T>()`)
+    ///   requests more bytes than are available in this GPU buffer (`self.size`).
+    /// - Returns other `hip::Error` variants if the `hipMemcpyAsync` call fails.
+    ///
+    /// # Notes
+    /// - This operation is asynchronous. The caller must synchronize the `stream`
+    ///   (e.g., via `stream.synchronize()`) before accessing the data in the `dest`
+    ///   slice on the host.
+    /// - If `dest` is empty, the function returns `Ok(())` immediately.
+    pub fn copy_to_host_async(&self, dest: &mut [T], stream: &Stream) -> Result<()> {
+        // Check for empty destination or potentially uninitialized buffer early
+        if dest.is_empty() {
+            return Ok(());
+        }
+        // Check if self.ptr is null if your struct allows for uninitialized state
+        // if self.ptr.is_null() { return Err(/* Appropriate error */); }
+
+
+        let required_bytes = dest.len().saturating_mul(mem::size_of::<T>());
+
+        // Check if the GPU buffer has enough data to fill the destination slice
+        if required_bytes > self.size {
+            return Err(Error::new(ffi::hipError_t_hipErrorOutOfMemory));
+        }
+
+        // Only proceed with copy if there are bytes to copy (handles ZSTs correctly)
+        if required_bytes == 0 {
             return Ok(());
         }
 
-        let copy_size = std::cmp::min(self.size, data.len() * std::mem::size_of::<T>());
         let error = unsafe {
             ffi::hipMemcpyAsync(
-                data.as_mut_ptr() as *mut c_void,
-                self.ptr,
-                copy_size,
+                dest.as_mut_ptr() as *mut c_void,
+                self.ptr, // Assuming self.ptr is *const c_void or compatible
+                required_bytes, // Copy the exact size requested by the dest slice
                 ffi::hipMemcpyKind_hipMemcpyDeviceToHost,
                 stream.as_raw(),
             )
         };
 
+        // Check hipMemcpyAsync result
         if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
+            Err(Error::new(error)) // Assumes Error::new handles hipError_t
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 }
 
