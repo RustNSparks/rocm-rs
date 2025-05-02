@@ -11,6 +11,7 @@ keywords = ["gpu", "rocm", "amd", "hpc", "bindings"]
 categories = ["api-bindings", "external-ffi-bindings"]
 
 [dependencies]
+log = "0.4.27"
 # Your dependencies here
 
 [build-dependencies]

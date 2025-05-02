@@ -6,27 +6,15 @@ pub mod rocblas;
 
 pub mod hip;
 pub mod error;
+use crate::rocfft::examples;
 
 #[cfg(test)]
 mod tests {
-    use crate::hip::{get_device_count, host_mem_flags, Device, DeviceMemory, PinnedMemory};
-    use crate::hip::utils::print_devices_info;
-    use crate::rocblas::Handle;
-    use crate::rocrand;
-    use crate::rocrand::{rng_type, PseudoRng};
-    use crate::rocrand::utils::generate_uniform_f32;
+    use crate::rocfft::examples::run_1d_complex_example;
 
     #[test]
     fn test_rocrand() {
-        let handle = Handle::new();
-        match handle {
-            Ok(handle) => {
-                let device_count = get_device_count().unwrap();
-                println!("Number of devices: {}", device_count);;
-            }
-            Err(e) => {
-                eprintln!("Error creating handle: {}", e);
-            }
-        }
+        run_1d_complex_example().unwrap();
+        run_1d_complex_example().unwrap();
     }
 }

@@ -263,7 +263,7 @@ where
     let mut generator = PseudoRng::new(rng_type::XORWOW)?;
 
     // Set the stream
-    generator.set_stream(stream.as_raw() as crate::rocrand::bindings::hipStream_t)?;
+    generator.set_stream(crate::hip::kernel::stream_to_rocrand(&stream))?;
 
     // Initialize the generator
     generator.initialize()?;
@@ -370,3 +370,4 @@ where
         }
     }
 }
+

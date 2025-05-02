@@ -1,12 +1,14 @@
 // src/hip/mod.rs
 
 // Private modules
-pub mod error;
-pub mod device;
-pub mod memory;
-pub mod stream;
-pub mod event;
-pub mod utils;
+mod error;
+mod device;
+mod memory;
+mod stream;
+mod event;
+mod utils;
+pub mod kernel;
+pub mod module;
 
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users
@@ -25,6 +27,11 @@ pub use utils::{DeviceGuard, Version, Dim3,
                 print_devices_info, run_on_device,
                 calculate_grid_1d, calculate_grid_2d, calculate_grid_3d,
                 copy_kind, host_mem_flags, is_hip_available};
+pub use kernel::{Function, KernelArg, stream_to_rocrand, launch_kernel};
+pub use module::{Module, load_module, load_module_data, compile_and_load};
+
+// Re-export macros
+pub use crate::{launch_kernel, kernel_launcher};
 
 /// Get the number of devices
 pub fn device_count() -> Result<i32> {

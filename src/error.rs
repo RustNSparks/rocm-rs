@@ -17,6 +17,8 @@ pub enum Error {
     /// MIOpen-related error
     MIOpen(crate::miopen::Error),
 
+    RocFFT(crate::rocfft::error::Error),
+
     /// Custom error with a message
     Custom(String),
 }
@@ -42,6 +44,12 @@ impl From<crate::miopen::Error> for Error {
     }
 }
 
+impl From<crate::rocfft::error::Error> for Error {
+    fn from(error: crate::rocfft::error::Error) -> Self {
+        Error::RocFFT(error)
+    }
+}
+
 // Implement Display for better error messages
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -49,6 +57,7 @@ impl fmt::Display for Error {
             Error::Hip(e) => write!(f, "HIP error: {}", e),
             Error::RocRand(e) => write!(f, "rocRAND error: {}", e),
             Error::MIOpen(e) => write!(f, "MIOpen error: {}", e),
+            Error::RocFFT(e) => writeln!(f, "rocFFT error: {}", e),
             Error::Custom(msg) => write!(f, "Error: {}", msg),
         }
     }

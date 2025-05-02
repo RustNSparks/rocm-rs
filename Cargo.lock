@@ -190,6 +190,7 @@ name = "rocm-rs"
 version = "0.1.0"
 dependencies = [
  "bindgen",
+ "log",
 ]
 
 [[package]]

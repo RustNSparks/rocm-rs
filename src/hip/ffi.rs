@@ -103,5 +103,13 @@ pub use bindings::hipDestroyTextureObject;
 pub use bindings::hipCreateSurfaceObject;
 pub use bindings::hipDestroySurfaceObject;
 
+pub use bindings::hipModule_t;
+pub use bindings::hipModuleUnload;
+pub use bindings::hipModuleLoad;
+pub use bindings::hipModuleLoadData;
+pub use bindings::hipModuleLoadDataEx;
+pub use bindings::hipJitOption;
+pub use bindings::hipModuleGetGlobal;
+
 // Other useful constants and types as needed for your implementation
 // Add more imports as required by your wrapper implementation
