@@ -1,0 +1,11 @@
+[package]
+name = "vector_add_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocm-rs = { path = "../../../.." }  # Adjust this path to point to your rocm_rs crate
+
+[[bin]]
+name = "vector_add_example"
+path = "main.rs"
