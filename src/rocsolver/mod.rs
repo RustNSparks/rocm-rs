@@ -1,11 +1,61 @@
-//! Bindings for rocsolver
-//! Auto-generated - do not modify
+// src/rocsolver/mod.rs
 
-pub mod bindings;
+// Private modules
+pub mod error;
+pub mod handle;
+pub mod types;
 
-// Re-export all bindings
-pub use bindings::*;
+// Public re-export of FFI for internal use
+pub mod ffi;
 
-// Import dependencies
-pub use crate::hip::*;
-pub use crate::rocblas::*;
+// Re-export the main components for the public API
+pub use error::{Error, Result};
+pub use handle::Handle;
+pub use types::{
+    Direct, Evect, Eform, Eorder, Erange, Esort, Storev, Svect, Workmode,
+    RfinfoMode, RfInfo,
+};
+
+// Re-export from rocBLAS types that RocSOLVER uses
+pub use crate::rocblas::{
+    Operation, Fill, Diagonal, Side, PointerMode, 
+    rocblas_float_complex, rocblas_double_complex, rocblas_half,
+};
+
+// Utility functions
+pub use utils::{
+    get_version_string, log_begin, log_end, log_set_layer_mode,
+    log_set_max_levels, log_restore_defaults, log_write_profile,
+    log_flush_profile,
+};
+
+// Re-export implementation modules
+pub use lacgv::*;
+pub use laswp::*;
+pub use larfg::*;
+pub use larft::*;
+pub use larf::*;
+pub use larfb::*;
+pub use labrd::*;
+pub use latrd::*;
+pub use lasyf::*;
+pub use lauum::*;
+pub use org2r::*;
+
+// Helper modules for implementation
+mod utils;
+mod lacgv;
+mod laswp;
+mod larfg;
+mod larft;
+mod larf;
+mod larfb;
+mod labrd;
+mod latrd;
+mod lasyf;
+mod lauum;
+mod org2r;
+
+// Since RocSOLVER uses rocBLAS handles, we can just re-use the handle creation
+// functions from rocBLAS
+pub use crate::rocblas::create_handle;
