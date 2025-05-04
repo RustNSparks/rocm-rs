@@ -1,168 +1,137 @@
-use crate::rocblas::bindings;
-use std::error::Error as StdError;
-use std::ffi::NulError;
-use std::fmt;
+// src/rocblas/error.rs
 
-/// Custom error type for rocBLAS operations
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Error {
-    /// Invalid rocBLAS handle
-    InvalidHandle,
-    /// Function is not implemented
-    NotImplemented,
-    /// Invalid pointer was passed
-    InvalidPointer,
-    /// Invalid size parameter
-    InvalidSize,
-    /// Memory allocation, copy, or deallocation error
-    MemoryError,
-    /// Internal rocBLAS error
-    InternalError,
-    /// Performance degraded due to low device memory
-    PerfDegraded,
-    /// Size query mismatch
-    SizeQueryMismatch,
-    /// Size increased in query
-    SizeIncreased,
-    /// Size unchanged in query
-    SizeUnchanged,
-    /// Invalid value was passed
-    InvalidValue,
-    /// Check numerics failed
-    CheckNumericsFail,
-    /// Function excluded from build
-    ExcludedFromBuild,
-    /// Architecture mismatch
-    ArchMismatch,
-    /// A null pointer was encountered where a valid pointer was required
-    NullPointer,
-    /// A non-UTF8 string was encountered
-    InvalidString,
-    /// An operation was attempted on an object that has already been destroyed
-    ObjectDestroyed,
-    /// Memory allocation failed
-    OutOfMemory,
-    /// Error converting to or from a C string
-    NulError(String),
-    /// Invalid device or device context
-    InvalidDevice,
-    /// Unsupported combination of parameters
-    UnsupportedConfiguration,
-    /// Any other unexpected error
-    Unknown(u32),
+use std::fmt;
+use std::error::Error as StdError;
+use crate::rocblas::ffi;
+
+/// Error type for RocBLAS operations
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Error {
+    code: ffi::rocblas_status,
+}
+
+/// Result type for RocBLAS operations
+pub type Result<T> = std::result::Result<T, Error>;
+
+impl Error {
+    /// Create a new error from a RocBLAS error code
+    pub fn new(code: ffi::rocblas_status) -> Self {
+        Self { code }
+    }
+
+    /// Convert a RocBLAS error code to a Result
+    pub fn from_rocblas_error<T>(error: ffi::rocblas_status) -> Result<T>
+    where
+        T: Default,
+    {
+        if error == ffi::rocblas_status__rocblas_status_success {
+            Ok(T::default())
+        } else {
+            Err(Error::new(error))
+        }
+    }
+
+    /// Convert a RocBLAS error code to a Result with a specific value
+    pub fn from_rocblas_error_with_value<T>(error: ffi::rocblas_status, value: T) -> Result<T> {
+        if error == ffi::rocblas_status__rocblas_status_success {
+            Ok(value)
+        } else {
+            Err(Error::new(error))
+        }
+    }
+
+    /// Returns true if the error code represents success
+    pub fn is_success(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_success
+    }
+
+    /// Get the raw error code
+    pub fn code(&self) -> ffi::rocblas_status {
+        self.code
+    }
+
+    /// Get the name of the error code
+    pub fn name(&self) -> &'static str {
+        match self.code {
+            ffi::rocblas_status__rocblas_status_success => "rocblas_status_success",
+            ffi::rocblas_status__rocblas_status_invalid_handle => "rocblas_status_invalid_handle",
+            ffi::rocblas_status__rocblas_status_not_implemented => "rocblas_status_not_implemented",
+            ffi::rocblas_status__rocblas_status_invalid_pointer => "rocblas_status_invalid_pointer",
+            ffi::rocblas_status__rocblas_status_invalid_size => "rocblas_status_invalid_size",
+            ffi::rocblas_status__rocblas_status_memory_error => "rocblas_status_memory_error",
+            ffi::rocblas_status__rocblas_status_internal_error => "rocblas_status_internal_error",
+            ffi::rocblas_status__rocblas_status_perf_degraded => "rocblas_status_perf_degraded",
+            ffi::rocblas_status__rocblas_status_size_query_mismatch => "rocblas_status_size_query_mismatch",
+            ffi::rocblas_status__rocblas_status_size_increased => "rocblas_status_size_increased",
+            ffi::rocblas_status__rocblas_status_size_unchanged => "rocblas_status_size_unchanged",
+            ffi::rocblas_status__rocblas_status_invalid_value => "rocblas_status_invalid_value",
+            ffi::rocblas_status__rocblas_status_continue => "rocblas_status_continue",
+            ffi::rocblas_status__rocblas_status_check_numerics_fail => "rocblas_status_check_numerics_fail",
+            ffi::rocblas_status__rocblas_status_excluded_from_build => "rocblas_status_excluded_from_build",
+            ffi::rocblas_status__rocblas_status_arch_mismatch => "rocblas_status_arch_mismatch",
+            _ => "Unknown rocblas_status code",
+        }
+    }
+
+    /// Get the description of the error code
+    pub fn description(&self) -> &'static str {
+        match self.code {
+            ffi::rocblas_status__rocblas_status_success => "Success",
+            ffi::rocblas_status__rocblas_status_invalid_handle => "Handle not initialized, invalid, or null",
+            ffi::rocblas_status__rocblas_status_not_implemented => "Function is not implemented",
+            ffi::rocblas_status__rocblas_status_invalid_pointer => "Invalid pointer argument",
+            ffi::rocblas_status__rocblas_status_invalid_size => "Invalid size argument",
+            ffi::rocblas_status__rocblas_status_memory_error => "Failed internal memory allocation, copy, or dealloc",
+            ffi::rocblas_status__rocblas_status_internal_error => "Other internal library failure",
+            ffi::rocblas_status__rocblas_status_perf_degraded => "Performance degraded due to low device memory",
+            ffi::rocblas_status__rocblas_status_size_query_mismatch => "Unmatched start/stop size query",
+            ffi::rocblas_status__rocblas_status_size_increased => "Queried device memory size increased",
+            ffi::rocblas_status__rocblas_status_size_unchanged => "Queried device memory size unchanged",
+            ffi::rocblas_status__rocblas_status_invalid_value => "Passed argument not valid",
+            ffi::rocblas_status__rocblas_status_continue => "Nothing preventing function to proceed",
+            ffi::rocblas_status__rocblas_status_check_numerics_fail => "Check numerics failure",
+            ffi::rocblas_status__rocblas_status_excluded_from_build => "Feature excluded from build",
+            ffi::rocblas_status__rocblas_status_arch_mismatch => "Architecture mismatch",
+            _ => "Unknown error",
+        }
+    }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::InvalidHandle => write!(f, "Invalid rocBLAS handle"),
-            Error::NotImplemented => write!(f, "Function is not implemented"),
-            Error::InvalidPointer => write!(f, "Invalid pointer"),
-            Error::InvalidSize => write!(f, "Invalid size"),
-            Error::MemoryError => write!(f, "Memory error"),
-            Error::InternalError => write!(f, "Internal rocBLAS error"),
-            Error::PerfDegraded => write!(f, "Performance degraded due to low device memory"),
-            Error::SizeQueryMismatch => write!(f, "Size query mismatch"),
-            Error::SizeIncreased => write!(f, "Size increased"),
-            Error::SizeUnchanged => write!(f, "Size unchanged"),
-            Error::InvalidValue => write!(f, "Invalid value"),
-            Error::CheckNumericsFail => write!(f, "Check numerics failed"),
-            Error::ExcludedFromBuild => write!(f, "Function excluded from build"),
-            Error::ArchMismatch => write!(f, "Architecture mismatch"),
-            Error::NullPointer => write!(f, "Null pointer"),
-            Error::InvalidString => write!(f, "Invalid string"),
-            Error::ObjectDestroyed => write!(f, "Object has been destroyed"),
-            Error::OutOfMemory => write!(f, "Out of memory"),
-            Error::NulError(msg) => write!(f, "C string conversion error: {}", msg),
-            Error::InvalidDevice => write!(f, "Invalid device or device context"),
-            Error::UnsupportedConfiguration => write!(f, "Unsupported configuration of parameters"),
-            Error::Unknown(code) => write!(f, "Unknown rocBLAS error (code: {})", code),
-        }
+        write!(f, "RocBLAS error {}: {} - {}", self.code, self.name(), self.description())
     }
 }
 
 impl StdError for Error {}
 
-impl From<NulError> for Error {
-    fn from(err: NulError) -> Self {
-        Error::NulError(err.to_string())
+// Define error conversion functions for common RocBLAS error codes
+impl Error {
+    pub fn is_invalid_handle(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_invalid_handle
     }
-}
 
-impl From<u32> for Error {
-    fn from(status: u32) -> Self {
-        match status {
-            bindings::rocblas_status__rocblas_status_success => {
-                panic!("Tried to convert successful status to error")
-            }
-            bindings::rocblas_status__rocblas_status_invalid_handle => Error::InvalidHandle,
-            bindings::rocblas_status__rocblas_status_not_implemented => Error::NotImplemented,
-            bindings::rocblas_status__rocblas_status_invalid_pointer => Error::InvalidPointer,
-            bindings::rocblas_status__rocblas_status_invalid_size => Error::InvalidSize,
-            bindings::rocblas_status__rocblas_status_memory_error => Error::MemoryError,
-            bindings::rocblas_status__rocblas_status_internal_error => Error::InternalError,
-            bindings::rocblas_status__rocblas_status_perf_degraded => Error::PerfDegraded,
-            bindings::rocblas_status__rocblas_status_size_query_mismatch => {
-                Error::SizeQueryMismatch
-            }
-            bindings::rocblas_status__rocblas_status_size_increased => Error::SizeIncreased,
-            bindings::rocblas_status__rocblas_status_size_unchanged => Error::SizeUnchanged,
-            bindings::rocblas_status__rocblas_status_invalid_value => Error::InvalidValue,
-            bindings::rocblas_status__rocblas_status_check_numerics_fail => {
-                Error::CheckNumericsFail
-            }
-            bindings::rocblas_status__rocblas_status_excluded_from_build => {
-                Error::ExcludedFromBuild
-            }
-            bindings::rocblas_status__rocblas_status_arch_mismatch => Error::ArchMismatch,
-            code => Error::Unknown(code),
-        }
+    pub fn is_not_implemented(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_not_implemented
     }
-}
 
-// Convert a string literal to a specific error
-impl From<&'static str> for Error {
-    fn from(msg: &'static str) -> Self {
-        // This function allows convenient creation of errors in the library code
-        match msg {
-            "null_pointer" => Error::NullPointer,
-            "invalid_string" => Error::InvalidString,
-            "object_destroyed" => Error::ObjectDestroyed,
-            "out_of_memory" => Error::OutOfMemory,
-            "invalid_device" => Error::InvalidDevice,
-            "unsupported_configuration" => Error::UnsupportedConfiguration,
-            _ => Error::InternalError,
-        }
+    pub fn is_invalid_pointer(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_invalid_pointer
     }
-}
 
-/// Custom Result type for rocBLAS operations
-pub type Result<T> = std::result::Result<T, Error>;
-
-/// Check a rocBLAS status code and convert to a Rust Result
-pub(crate) fn check_error(status: u32) -> Result<()> {
-    match status {
-        bindings::rocblas_status__rocblas_status_success => Ok(()),
-        _ => Err(Error::from(status)),
+    pub fn is_invalid_size(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_invalid_size
     }
-}
 
-/// Validate required pointer arguments and return an error if null
-#[inline]
-pub(crate) fn check_ptr<T>(ptr: *const T) -> Result<()> {
-    if ptr.is_null() {
-        Err(Error::NullPointer)
-    } else {
-        Ok(())
+    pub fn is_memory_error(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_memory_error
     }
-}
 
-/// Validate mutable pointer arguments and return an error if null
-#[inline]
-pub(crate) fn check_mut_ptr<T>(ptr: *mut T) -> Result<()> {
-    if ptr.is_null() {
-        Err(Error::NullPointer)
-    } else {
-        Ok(())
+    pub fn is_internal_error(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_internal_error
+    }
+
+    pub fn is_invalid_value(&self) -> bool {
+        self.code == ffi::rocblas_status__rocblas_status_invalid_value
     }
 }
