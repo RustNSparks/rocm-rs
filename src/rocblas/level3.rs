@@ -2151,3 +2151,469 @@ where
         handle, uplo, transA, n, k, alpha, A, lda, stride_A, beta, C, ldc, stride_C, batch_count,
     )
 }
+
+
+/// Hermitian rank-k update with two matrices
+/// 
+/// Computes the matrix-matrix operation:
+/// 
+/// C := alpha * op(A) * op(B)^H + beta * C
+/// 
+/// This routine should only be used when the result of op(A)*op(B)^H will be Hermitian.
+/// 
+/// # Arguments
+/// * `handle` - RocBLAS handle
+/// * `uplo` - Specifies whether the upper or lower triangular part of C is used
+/// * `trans` - Operation op(A) that is non-or-conjugate transpose
+/// * `n` - Number of rows and columns of matrix C
+/// * `k` - Number of columns of op(A) and op(B)
+/// * `alpha` - Scalar alpha
+/// * `A` - Buffer storing matrix A
+/// * `lda` - Leading dimension of matrix A
+/// * `B` - Buffer storing matrix B
+/// * `ldb` - Leading dimension of matrix B
+/// * `beta` - Scalar beta
+/// * `C` - Buffer storing matrix C
+/// * `ldc` - Leading dimension of matrix C
+pub fn herkx<T, R>(
+    handle: &Handle,
+    uplo: Fill,
+    trans: Operation,
+    n: i32,
+    k: i32,
+    alpha: &T,
+    A: *const T,
+    lda: i32,
+    B: *const T,
+    ldb: i32,
+    beta: &R,
+    C: *mut T,
+    ldc: i32,
+) -> Result<()>
+where
+    T: HerkxType<ScalarType = R>,
+{
+    T::rocblas_herkx(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
+}
+
+/// Batched Hermitian rank-k update with two matrices
+pub fn herkx_batched<T, R>(
+    handle: &Handle,
+    uplo: Fill,
+    trans: Operation,
+    n: i32,
+    k: i32,
+    alpha: &T,
+    A: *const *const T,
+    lda: i32,
+    B: *const *const T,
+    ldb: i32,
+    beta: &R,
+    C: *const *mut T,
+    ldc: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: HerkxBatchedType<ScalarType = R>,
+{
+    T::rocblas_herkx_batched(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batch_count)
+}
+
+/// Strided batched Hermitian rank-k update with two matrices
+pub fn herkx_strided_batched<T, R>(
+    handle: &Handle,
+    uplo: Fill,
+    trans: Operation,
+    n: i32,
+    k: i32,
+    alpha: &T,
+    A: *const T,
+    lda: i32,
+    stride_A: i64,
+    B: *const T,
+    ldb: i32,
+    stride_B: i64,
+    beta: &R,
+    C: *mut T,
+    ldc: i32,
+    stride_C: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: HerkxStridedBatchedType<ScalarType = R>,
+{
+    T::rocblas_herkx_strided_batched(
+        handle, uplo, trans, n, k, alpha, A, lda, stride_A, 
+        B, ldb, stride_B, beta, C, ldc, stride_C, batch_count,
+    )
+}
+
+/// Trait for types that can be used with herkx
+pub trait HerkxType {
+    type ScalarType;
+    
+    fn rocblas_herkx(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        B: *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+    ) -> Result<()>;
+}
+
+impl HerkxType for ffi::rocblas_float_complex {
+    type ScalarType = f32;
+    
+    fn rocblas_herkx(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        B: *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cherkx(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                B,
+                ldb,
+                beta,
+                C,
+                ldc,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HerkxType for ffi::rocblas_double_complex {
+    type ScalarType = f64;
+    
+    fn rocblas_herkx(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        B: *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zherkx(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                B,
+                ldb,
+                beta,
+                C,
+                ldc,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+/// Trait for types that can be used with herkx_batched
+pub trait HerkxBatchedType {
+    type ScalarType;
+    
+    fn rocblas_herkx_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        B: *const *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *const *mut Self,
+        ldc: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl HerkxBatchedType for ffi::rocblas_float_complex {
+    type ScalarType = f32;
+    
+    fn rocblas_herkx_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        B: *const *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *const *mut Self,
+        ldc: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cherkx_batched(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                B,
+                ldb,
+                beta,
+                C,
+                ldc,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HerkxBatchedType for ffi::rocblas_double_complex {
+    type ScalarType = f64;
+    
+    fn rocblas_herkx_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        B: *const *const Self,
+        ldb: i32,
+        beta: &Self::ScalarType,
+        C: *const *mut Self,
+        ldc: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zherkx_batched(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                B,
+                ldb,
+                beta,
+                C,
+                ldc,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+/// Trait for types that can be used with herkx_strided_batched
+pub trait HerkxStridedBatchedType {
+    type ScalarType;
+    
+    fn rocblas_herkx_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        B: *const Self,
+        ldb: i32,
+        stride_B: i64,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+        stride_C: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl HerkxStridedBatchedType for ffi::rocblas_float_complex {
+    type ScalarType = f32;
+    
+    fn rocblas_herkx_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        B: *const Self,
+        ldb: i32,
+        stride_B: i64,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+        stride_C: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cherkx_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                B,
+                ldb,
+                stride_B,
+                beta,
+                C,
+                ldc,
+                stride_C,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HerkxStridedBatchedType for ffi::rocblas_double_complex {
+    type ScalarType = f64;
+    
+    fn rocblas_herkx_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        trans: Operation,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        B: *const Self,
+        ldb: i32,
+        stride_B: i64,
+        beta: &Self::ScalarType,
+        C: *mut Self,
+        ldc: i32,
+        stride_C: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zherkx_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                trans.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                B,
+                ldb,
+                stride_B,
+                beta,
+                C,
+                ldc,
+                stride_C,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Add to src/rocblas/types.rs if not already present
+
+/// Enum for diagonal type
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Diagonal {
+    /// Non-unit triangular
+    NonUnit,
+    /// Unit triangular
+    Unit,
+}
+
+impl From<Diagonal> for ffi::rocblas_diagonal {
+    fn from(diag: Diagonal) -> Self {
+        match diag {
+            Diagonal::NonUnit => ffi::rocblas_diagonal__rocblas_diagonal_non_unit,
+            Diagonal::Unit => ffi::rocblas_diagonal__rocblas_diagonal_unit,
+        }
+    }
+}
+
+impl From<ffi::rocblas_diagonal> for Diagonal {
+    fn from(diag: ffi::rocblas_diagonal) -> Self {
+        match diag {
+            ffi::rocblas_diagonal__rocblas_diagonal_non_unit => Diagonal::NonUnit,
+            ffi::rocblas_diagonal__rocblas_diagonal_unit => Diagonal::Unit,
+            _ => Diagonal::NonUnit, // Default to NonUnit for unknown values
+        }
+    }
+}
