@@ -5,6 +5,9 @@ use crate::rocblas::handle::Handle;
 use crate::rocblas::error::{Error, Result};
 use crate::rocblas::types::{Operation, Fill};
 
+use super::level3::{HemmType, HerkType, SprType, SyrBatchedType, SyrStridedBatchedType};
+use super::types::Side;
+
 //==============================================================================
 // GEMV functions - General Matrix-Vector Multiplication
 //==============================================================================
@@ -1954,6 +1957,2129 @@ impl HemvStridedBatchedType for ffi::rocblas_double_complex {
                 y,
                 incy,
                 stride_y,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Implementation for GER/GERU/GERC functions for level2.rs
+
+/// Perform general rank-1 update
+/// 
+/// A := alpha * x * y^T + A
+/// 
+/// # Arguments
+/// * `handle` - RocBLAS handle
+/// * `m` - Number of rows of matrix A
+/// * `n` - Number of columns of matrix A
+/// * `alpha` - Scalar alpha
+/// * `x` - Vector x
+/// * `incx` - Stride between consecutive elements of x
+/// * `y` - Vector y
+/// * `incy` - Stride between consecutive elements of y
+/// * `A` - Matrix A
+/// * `lda` - Leading dimension of matrix A
+pub fn ger<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    y: *const T,
+    incy: i32,
+    A: *mut T,
+    lda: i32,
+) -> Result<()>
+where
+    T: GerType,
+{
+    T::rocblas_ger(handle, m, n, alpha, x, incx, y, incy, A, lda)
+}
+
+/// Perform general rank-1 update for complex matrices (non-conjugated)
+/// 
+/// A := alpha * x * y^T + A
+/// 
+/// # Arguments
+/// * `handle` - RocBLAS handle
+/// * `m` - Number of rows of matrix A
+/// * `n` - Number of columns of matrix A
+/// * `alpha` - Scalar alpha
+/// * `x` - Vector x
+/// * `incx` - Stride between consecutive elements of x
+/// * `y` - Vector y
+/// * `incy` - Stride between consecutive elements of y
+/// * `A` - Matrix A
+/// * `lda` - Leading dimension of matrix A
+pub fn geru<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    y: *const T,
+    incy: i32,
+    A: *mut T,
+    lda: i32,
+) -> Result<()>
+where
+    T: GeruType,
+{
+    T::rocblas_geru(handle, m, n, alpha, x, incx, y, incy, A, lda)
+}
+
+/// Perform general rank-1 update for complex matrices (conjugated)
+/// 
+/// A := alpha * x * y^H + A
+/// 
+/// # Arguments
+/// * `handle` - RocBLAS handle
+/// * `m` - Number of rows of matrix A
+/// * `n` - Number of columns of matrix A
+/// * `alpha` - Scalar alpha
+/// * `x` - Vector x
+/// * `incx` - Stride between consecutive elements of x
+/// * `y` - Vector y
+/// * `incy` - Stride between consecutive elements of y
+/// * `A` - Matrix A
+/// * `lda` - Leading dimension of matrix A
+pub fn gerc<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    y: *const T,
+    incy: i32,
+    A: *mut T,
+    lda: i32,
+) -> Result<()>
+where
+    T: GercType,
+{
+    T::rocblas_gerc(handle, m, n, alpha, x, incx, y, incy, A, lda)
+}
+
+// Batched versions
+pub fn ger_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    y: *const *const T,
+    incy: i32,
+    A: *const *mut T,
+    lda: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GerBatchedType,
+{
+    T::rocblas_ger_batched(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count)
+}
+
+pub fn geru_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    y: *const *const T,
+    incy: i32,
+    A: *const *mut T,
+    lda: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GeruBatchedType,
+{
+    T::rocblas_geru_batched(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count)
+}
+
+pub fn gerc_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    y: *const *const T,
+    incy: i32,
+    A: *const *mut T,
+    lda: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GercBatchedType,
+{
+    T::rocblas_gerc_batched(handle, m, n, alpha, x, incx, y, incy, A, lda, batch_count)
+}
+
+// Strided batched versions
+pub fn ger_strided_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    y: *const T,
+    incy: i32,
+    stride_y: i64,
+    A: *mut T,
+    lda: i32,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GerStridedBatchedType,
+{
+    T::rocblas_ger_strided_batched(
+        handle, m, n, alpha, x, incx, stride_x, y, incy, stride_y, A, lda, stride_A, batch_count,
+    )
+}
+
+pub fn geru_strided_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    y: *const T,
+    incy: i32,
+    stride_y: i64,
+    A: *mut T,
+    lda: i32,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GeruStridedBatchedType,
+{
+    T::rocblas_geru_strided_batched(
+        handle, m, n, alpha, x, incx, stride_x, y, incy, stride_y, A, lda, stride_A, batch_count,
+    )
+}
+
+pub fn gerc_strided_batched<T>(
+    handle: &Handle,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    y: *const T,
+    incy: i32,
+    stride_y: i64,
+    A: *mut T,
+    lda: i32,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: GercStridedBatchedType,
+{
+    T::rocblas_gerc_strided_batched(
+        handle, m, n, alpha, x, incx, stride_x, y, incy, stride_y, A, lda, stride_A, batch_count,
+    )
+}
+
+// Trait definitions for GER operations
+pub trait GerType {
+    fn rocblas_ger(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()>;
+}
+
+impl GerType for f32 {
+    fn rocblas_ger(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sger(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GerType for f64 {
+    fn rocblas_ger(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dger(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GeruType {
+    fn rocblas_geru(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()>;
+}
+
+impl GeruType for ffi::rocblas_float_complex {
+    fn rocblas_geru(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgeru(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GeruType for ffi::rocblas_double_complex {
+    fn rocblas_geru(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgeru(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GercType {
+    fn rocblas_gerc(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()>;
+}
+
+impl GercType for ffi::rocblas_float_complex {
+    fn rocblas_gerc(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgerc(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GercType for ffi::rocblas_double_complex {
+    fn rocblas_gerc(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        y: *const Self,
+        incy: i32,
+        A: *mut Self,
+        lda: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgerc(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Batched trait implementations
+pub trait GerBatchedType {
+    fn rocblas_ger_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+// Similar implementations for GerBatchedType, GeruBatchedType, GercBatchedType,
+// GerStridedBatchedType, GeruStridedBatchedType, GercStridedBatchedType
+
+// Implementations for SPR/SPR2 functions (symmetric rank-1/rank-2 updates with packed storage)
+/// Perform symmetric rank-1 update with packed storage
+/// 
+/// A := alpha * x * x^T + A
+/// 
+/// # Arguments
+/// * `handle` - RocBLAS handle
+/// * `uplo` - Specifies whether the upper or lower triangular part is stored
+/// * `n` - Order of matrix A
+/// * `alpha` - Scalar alpha
+/// * `x` - Vector x
+/// * `incx` - Stride between consecutive elements of x
+/// * `AP` - Packed matrix A
+pub fn spr<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    AP: *mut T,
+) -> Result<()>
+where
+    T: SprType,
+{
+    T::rocblas_spr(handle, uplo, n, alpha, x, incx, AP)
+}
+
+// Similar functions and traits for spr, spr2, syr, syr2
+
+// For level3.rs additions
+/// Hermitian matrix-matrix multiplication
+/// 
+/// C := alpha * A * B + beta * C  if side == Side::Left
+/// C := alpha * B * A + beta * C  if side == Side::Right
+/// 
+/// where alpha and beta are scalars, A is a Hermitian matrix, and B and C are m by n matrices.
+pub fn hemm<T>(
+    handle: &Handle,
+    side: Side,
+    uplo: Fill,
+    m: i32,
+    n: i32,
+    alpha: &T,
+    A: *const T,
+    lda: i32,
+    B: *const T,
+    ldb: i32,
+    beta: &T,
+    C: *mut T,
+    ldc: i32,
+) -> Result<()>
+where
+    T: HemmType,
+{
+    T::rocblas_hemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc)
+}
+
+/// Hermitian rank-k update
+/// 
+/// C := alpha * A * A^H + beta * C  if transA == Operation::None
+/// C := alpha * A^H * A + beta * C  if transA == Operation::ConjugateTranspose
+/// 
+/// where alpha and beta are scalars, C is an n by n Hermitian matrix and A is an n by k matrix in the
+/// first case and a k by n
+/// 
+pub fn herk<T, R>(
+    handle: &Handle,
+    uplo: Fill,
+    transA: Operation,
+    n: i32,
+    k: i32,
+    alpha: &R,
+    A: *const T,
+    lda: i32,
+    beta: &R,
+    C: *mut T,
+    ldc: i32,
+) -> Result<()>
+where
+    T: HerkType<ScalarType = R>,
+{
+    T::rocblas_herk(handle, uplo, transA, n, k, alpha, A, lda, beta, C, ldc)
+}
+
+pub fn syr_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    A: *const *mut T,
+    lda: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: SyrBatchedType,
+{
+    T::rocblas_syr_batched(handle, uplo, n, alpha, x, incx, A, lda, batch_count)
+}
+
+/// Strided batched symmetric rank-1 update
+pub fn syr_strided_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    A: *mut T,
+    lda: i32,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: SyrStridedBatchedType,
+{
+    T::rocblas_syr_strided_batched(handle, uplo, n, alpha, x, incx, stride_x, A, lda, stride_A, batch_count)
+}
+
+/// Batched symmetric rank-2 update
+pub fn syr2_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    y: *const *const T,
+    incy: i32,
+    A: *const *mut T,
+    lda: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: Syr2BatchedType,
+{
+    T::rocblas_syr2_batched(handle, uplo, n, alpha, x, incx, y, incy, A, lda, batch_count)
+}
+
+/// Strided batched symmetric rank-2 update
+pub fn syr2_strided_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    y: *const T,
+    incy: i32,
+    stride_y: i64,
+    A: *mut T,
+    lda: i32,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: Syr2StridedBatchedType,
+{
+    T::rocblas_syr2_strided_batched(
+        handle, uplo, n, alpha, x, incx, stride_x, y, incy, stride_y, A, lda, stride_A, batch_count,
+    )
+}
+
+/// Batched packed symmetric rank-1 update
+pub fn spr_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    AP: *const *mut T,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: SprBatchedType,
+{
+    T::rocblas_spr_batched(handle, uplo, n, alpha, x, incx, AP, batch_count)
+}
+
+/// Strided batched packed symmetric rank-1 update
+pub fn spr_strided_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    AP: *mut T,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: SprStridedBatchedType,
+{
+    T::rocblas_spr_strided_batched(handle, uplo, n, alpha, x, incx, stride_x, AP, stride_A, batch_count)
+}
+
+/// Batched packed symmetric rank-2 update
+pub fn spr2_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const *const T,
+    incx: i32,
+    y: *const *const T,
+    incy: i32,
+    AP: *const *mut T,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: Spr2BatchedType,
+{
+    T::rocblas_spr2_batched(handle, uplo, n, alpha, x, incx, y, incy, AP, batch_count)
+}
+
+/// Strided batched packed symmetric rank-2 update
+pub fn spr2_strided_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    y: *const T,
+    incy: i32,
+    stride_y: i64,
+    AP: *mut T,
+    stride_A: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: Spr2StridedBatchedType,
+{
+    T::rocblas_spr2_strided_batched(
+        handle, uplo, n, alpha, x, incx, stride_x, y, incy, stride_y, AP, stride_A, batch_count,
+    )
+}
+
+
+// Missing trait definitions for GER batched and strided batched operations
+
+impl GerBatchedType for f32 {
+    fn rocblas_ger_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sger_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GerBatchedType for f64 {
+    fn rocblas_ger_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dger_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GeruBatchedType {
+    fn rocblas_geru_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl GeruBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_geru_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgeru_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GeruBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_geru_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgeru_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GercBatchedType {
+    fn rocblas_gerc_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl GercBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_gerc_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgerc_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GercBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_gerc_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgerc_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GerStridedBatchedType {
+    fn rocblas_ger_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl GerStridedBatchedType for f32 {
+    fn rocblas_ger_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sger_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GerStridedBatchedType for f64 {
+    fn rocblas_ger_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dger_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GeruStridedBatchedType {
+    fn rocblas_geru_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl GeruStridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_geru_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgeru_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GeruStridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_geru_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgeru_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait GercStridedBatchedType {
+    fn rocblas_gerc_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl GercStridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_gerc_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cgerc_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl GercStridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_gerc_strided_batched(
+        handle: &Handle,
+        m: i32,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zgerc_strided_batched(
+                handle.as_raw(),
+                m,
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Traits for SPR batched and strided batched operations
+pub trait SprBatchedType {
+    fn rocblas_spr_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl SprBatchedType for f32 {
+    fn rocblas_spr_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sspr_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprBatchedType for f64 {
+    fn rocblas_spr_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dspr_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_spr_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cspr_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_spr_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zspr_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait SprStridedBatchedType {
+    fn rocblas_spr_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl SprStridedBatchedType for f32 {
+    fn rocblas_spr_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sspr_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprStridedBatchedType for f64 {
+    fn rocblas_spr_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dspr_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprStridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_spr_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_cspr_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl SprStridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_spr_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zspr_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Traits for SPR2 batched and strided batched operations
+pub trait Spr2BatchedType {
+    fn rocblas_spr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl Spr2BatchedType for f32 {
+    fn rocblas_spr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sspr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Spr2BatchedType for f64 {
+    fn rocblas_spr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        AP: *const *mut Self,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dspr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                AP,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait Spr2StridedBatchedType {
+    fn rocblas_spr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl Spr2StridedBatchedType for f32 {
+    fn rocblas_spr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_sspr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Spr2StridedBatchedType for f64 {
+    fn rocblas_spr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        AP: *mut Self,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dspr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                AP,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+// Traits for SYR2 batched and strided batched operations
+pub trait Syr2BatchedType {
+    fn rocblas_syr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl Syr2BatchedType for f32 {
+    fn rocblas_syr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_ssyr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2BatchedType for f64 {
+    fn rocblas_syr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dsyr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2BatchedType for ffi::rocblas_float_complex {
+    fn rocblas_syr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_csyr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2BatchedType for ffi::rocblas_double_complex {
+    fn rocblas_syr2_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const *const Self,
+        incx: i32,
+        y: *const *const Self,
+        incy: i32,
+        A: *const *mut Self,
+        lda: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zsyr2_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                y,
+                incy,
+                A,
+                lda,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+pub trait Syr2StridedBatchedType {
+    fn rocblas_syr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl Syr2StridedBatchedType for f32 {
+    fn rocblas_syr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_ssyr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2StridedBatchedType for f64 {
+    fn rocblas_syr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_dsyr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2StridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_syr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_csyr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl Syr2StridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_syr2_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        y: *const Self,
+        incy: i32,
+        stride_y: i64,
+        A: *mut Self,
+        lda: i32,
+        stride_A: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zsyr2_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                x,
+                incx,
+                stride_x,
+                y,
+                incy,
+                stride_y,
+                A,
+                lda,
+                stride_A,
                 batch_count,
             )
         };
