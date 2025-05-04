@@ -1,9 +1,10 @@
-// src/rocsolver/mod.rs
+// Update to src/rocsolver/mod.rs
 
 // Private modules
 pub mod error;
 pub mod handle;
 pub mod types;
+pub mod bindings;
 
 // Public re-export of FFI for internal use
 pub mod ffi;
@@ -18,7 +19,7 @@ pub use types::{
 
 // Re-export from rocBLAS types that RocSOLVER uses
 pub use crate::rocblas::{
-    Operation, Fill, Diagonal, Side, PointerMode, 
+    PointerMode, 
     rocblas_float_complex, rocblas_double_complex, rocblas_half,
 };
 
@@ -32,15 +33,25 @@ pub use utils::{
 // Re-export implementation modules
 pub use lacgv::*;
 pub use laswp::*;
+// Continuing the updates to src/rocsolver/mod.rs
+
+// Re-export implementation modules
+pub use lacgv::*;
+pub use laswp::*;
 pub use larfg::*;
 pub use larft::*;
 pub use larf::*;
 pub use larfb::*;
-pub use labrd::*;
-pub use latrd::*;
-pub use lasyf::*;
+// pub use labrd::*;
+// pub use latrd::*;
+// pub use lasyf::*;
 pub use lauum::*;
 pub use org2r::*;
+pub use gebrd::*;
+pub use sytrd::*;
+pub use potrf::*;
+pub use gesvd::*;
+pub use syevd::*;
 
 // Helper modules for implementation
 mod utils;
@@ -50,11 +61,16 @@ mod larfg;
 mod larft;
 mod larf;
 mod larfb;
-mod labrd;
-mod latrd;
-mod lasyf;
+// mod labrd;
+// mod latrd;
+// mod lasyf;
 mod lauum;
 mod org2r;
+mod gebrd;
+mod sytrd;
+mod potrf;
+mod gesvd;
+mod syevd;
 
 // Since RocSOLVER uses rocBLAS handles, we can just re-use the handle creation
 // functions from rocBLAS

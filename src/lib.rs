@@ -3,6 +3,7 @@ pub mod rocrand;
 pub mod rocfft;
 pub mod miopen;
 pub mod rocblas;
+pub mod rocsolver;
 
 pub mod hip;
 pub mod error;

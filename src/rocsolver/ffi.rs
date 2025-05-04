@@ -2,7 +2,7 @@
 
 // Re-export bindings for both rocBLAS and ROCsolver
 pub use crate::rocblas::ffi::*;
-pub use crate::rocblas::bindings::{
+pub use bindings::{
     rocblas_direct__rocblas_forward_direction,
     rocblas_direct__rocblas_backward_direction,
     rocblas_direct,
@@ -106,3 +106,5 @@ pub use crate::rocblas::bindings::{
     rocsolver_sorg2r,
     rocsolver_dorg2r,
 };
+
+use super::bindings::*;
