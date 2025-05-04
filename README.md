@@ -9,7 +9,7 @@ This project provides Rust bindings for AMD's ROCm (Radeon Open Compute) librari
 Currently implemented:
 - ✅ rocFFT - Fast Fourier Transform library (raw bindings + safe wrappers)
 - ✅ HIP - Heterogeneous-Compute Interface for Portability (raw bindings + safe wrappers)
-- ✅ rocBLAS - Basic Linear Algebra Subprograms (raw bindings only)
+- ✅ rocBLAS - Basic Linear Algebra Subprograms (raw bindings + safe wrappers)
 - ✅ MIOpen - Deep learning primitives (raw bindings + safe wrappers)
 - ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
 - ✅ rocSOLVER - Linear system solvers (raw bindings only)
