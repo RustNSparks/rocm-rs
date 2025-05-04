@@ -1429,3 +1429,537 @@ pub trait HbmvStridedBatchedType {
         batch_count: i32,
     ) -> Result<()>;
 }
+
+impl HbmvBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_hbmv_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        x: *const *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *const *mut Self,
+        incy: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_chbmv_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HbmvBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_hbmv_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        x: *const *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *const *mut Self,
+        incy: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zhbmv_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HbmvStridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_hbmv_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+        stride_y: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_chbmv_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                x,
+                incx,
+                stride_x,
+                beta,
+                y,
+                incy,
+                stride_y,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HbmvStridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_hbmv_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        k: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+        stride_y: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zhbmv_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                k,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                x,
+                incx,
+                stride_x,
+                beta,
+                y,
+                incy,
+                stride_y,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+/// Implement the high-level wrapper functions for the Hermitian matrix operations
+
+/// Wrapper for hemv functions
+pub fn hemv<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    A: *const T,
+    lda: i32,
+    x: *const T,
+    incx: i32,
+    beta: &T,
+    y: *mut T,
+    incy: i32,
+) -> Result<()>
+where
+    T: HemvType,
+{
+    T::rocblas_hemv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy)
+}
+
+/// Wrapper for hemv_batched functions
+pub fn hemv_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    A: *const *const T,
+    lda: i32,
+    x: *const *const T,
+    incx: i32,
+    beta: &T,
+    y: *const *mut T,
+    incy: i32,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: HemvBatchedType,
+{
+    T::rocblas_hemv_batched(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy, batch_count)
+}
+
+/// Wrapper for hemv_strided_batched functions
+pub fn hemv_strided_batched<T>(
+    handle: &Handle,
+    uplo: Fill,
+    n: i32,
+    alpha: &T,
+    A: *const T,
+    lda: i32,
+    stride_A: i64,
+    x: *const T,
+    incx: i32,
+    stride_x: i64,
+    beta: &T,
+    y: *mut T,
+    incy: i32,
+    stride_y: i64,
+    batch_count: i32,
+) -> Result<()>
+where
+    T: HemvStridedBatchedType,
+{
+    T::rocblas_hemv_strided_batched(
+        handle, uplo, n, alpha, A, lda, stride_A, 
+        x, incx, stride_x, beta, y, incy, stride_y, batch_count,
+    )
+}
+
+/// Define the trait for the hemv operations
+pub trait HemvType {
+    fn rocblas_hemv(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        x: *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+    ) -> Result<()>;
+}
+
+impl HemvType for ffi::rocblas_float_complex {
+    fn rocblas_hemv(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        x: *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_chemv(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HemvType for ffi::rocblas_double_complex {
+    fn rocblas_hemv(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        x: *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zhemv(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+/// Define the trait for the hemv_batched operations
+pub trait HemvBatchedType {
+    fn rocblas_hemv_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        x: *const *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *const *mut Self,
+        incy: i32,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl HemvBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_hemv_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        x: *const *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *const *mut Self,
+        incy: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_chemv_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HemvBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_hemv_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const *const Self,
+        lda: i32,
+        x: *const *const Self,
+        incx: i32,
+        beta: &Self,
+        y: *const *mut Self,
+        incy: i32,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zhemv_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                x,
+                incx,
+                beta,
+                y,
+                incy,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+/// Define the trait for the hemv_strided_batched operations
+pub trait HemvStridedBatchedType {
+    fn rocblas_hemv_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+        stride_y: i64,
+        batch_count: i32,
+    ) -> Result<()>;
+}
+
+impl HemvStridedBatchedType for ffi::rocblas_float_complex {
+    fn rocblas_hemv_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+        stride_y: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_chemv_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                x,
+                incx,
+                stride_x,
+                beta,
+                y,
+                incy,
+                stride_y,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}
+
+impl HemvStridedBatchedType for ffi::rocblas_double_complex {
+    fn rocblas_hemv_strided_batched(
+        handle: &Handle,
+        uplo: Fill,
+        n: i32,
+        alpha: &Self,
+        A: *const Self,
+        lda: i32,
+        stride_A: i64,
+        x: *const Self,
+        incx: i32,
+        stride_x: i64,
+        beta: &Self,
+        y: *mut Self,
+        incy: i32,
+        stride_y: i64,
+        batch_count: i32,
+    ) -> Result<()> {
+        let status = unsafe {
+            ffi::rocblas_zhemv_strided_batched(
+                handle.as_raw(),
+                uplo.into(),
+                n,
+                alpha,
+                A,
+                lda,
+                stride_A,
+                x,
+                incx,
+                stride_x,
+                beta,
+                y,
+                incy,
+                stride_y,
+                batch_count,
+            )
+        };
+        if status != ffi::rocblas_status__rocblas_status_success {
+            return Err(Error::new(status));
+        }
+        Ok(())
+    }
+}

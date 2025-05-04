@@ -416,6 +416,16 @@ pub use bindings::rocblas_sgemm_strided_batched;
 pub use bindings::rocblas_dgemm_strided_batched;
 pub use bindings::rocblas_cgemm_strided_batched;
 pub use bindings::rocblas_zgemm_strided_batched;
+pub use bindings::rocblas_zhemv_strided_batched;
+pub use bindings::rocblas_chbmv_batched;
+pub use bindings::rocblas_zhbmv_batched;
+pub use bindings::rocblas_chbmv_strided_batched;
+pub use bindings::rocblas_zhbmv_strided_batched;
+pub use bindings::rocblas_chemv;
+pub use bindings::rocblas_zhemv;
+pub use bindings::rocblas_chemv_strided_batched;
+pub use bindings::rocblas_zhemv_batched;
+pub use bindings::rocblas_chemv_batched;
 
 pub use bindings::rocblas_gemm_ex;
 pub use bindings::hipStream_t;
