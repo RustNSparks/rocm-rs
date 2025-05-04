@@ -1,7 +1,7 @@
 // src/rocblas/handle.rs
 
 use std::ptr;
-use crate::hip::Stream;
+use crate::hip::{self, Stream};
 use crate::rocblas::ffi;
 use crate::rocblas::error::{Error, Result};
 
@@ -29,7 +29,12 @@ impl Handle {
 
     /// Set the stream for this handle
     pub fn set_stream(&self, stream: &Stream) -> Result<()> {
-        let error = unsafe { ffi::rocblas_set_stream(self.handle, stream.as_raw()) };
+        // Use a type cast to convert between the two hipStream_t types
+        let hip_stream_ptr = stream.as_raw();
+        // Cast to the expected type for rocblas
+        let rocblas_stream_ptr = hip_stream_ptr as ffi::hipStream_t;
+        
+        let error = unsafe { ffi::rocblas_set_stream(self.handle, rocblas_stream_ptr) };
 
         if error != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(error));
@@ -37,7 +42,6 @@ impl Handle {
 
         Ok(())
     }
-
     /// Get the stream associated with this handle
     pub fn get_stream(&self) -> Result<Stream> {
         let mut stream_ptr = ptr::null_mut();
@@ -47,9 +51,12 @@ impl Handle {
             return Err(Error::new(error));
         }
 
+        // Cast back to hip::ffi::hipStream_t
+        let hip_stream_ptr = stream_ptr as crate::hip::ffi::hipStream_t;
+        
         // Create a Stream from the raw pointer
         // This doesn't take ownership of the stream, just wraps the pointer
-        Ok(Stream::from_raw(stream_ptr))
+        Ok(Stream::from_raw(hip_stream_ptr))
     }
 
     /// Set the pointer mode for this handle

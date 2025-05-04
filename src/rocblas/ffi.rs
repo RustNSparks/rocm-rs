@@ -418,3 +418,4 @@ pub use bindings::rocblas_cgemm_strided_batched;
 pub use bindings::rocblas_zgemm_strided_batched;
 
 pub use bindings::rocblas_gemm_ex;
+pub use bindings::hipStream_t;
