@@ -19,7 +19,7 @@ The project currently focuses on providing raw FFI bindings for most libraries, 
 
 ## Prerequisites
 
-- AMD ROCm installed (version 6.0 or later recommended)
+- AMD ROCm installed (version 6.3 or later recommended.It may work on older versions, but I did not test that) 
 - Rust toolchain (1.65.0 or later recommended)
 - A compatible AMD GPU
 
