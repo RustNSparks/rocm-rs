@@ -85,9 +85,6 @@ export ROCM_PATH=/opt/rocm
 
 # Build the project (generates bindings)
 cargo build
-
-# Run tests
-cargo test
 ```
 
 ## Contributing
