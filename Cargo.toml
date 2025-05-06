@@ -12,7 +12,12 @@ categories = ["api-bindings", "external-ffi-bindings"]
 
 [dependencies]
 log = "0.4.27"
+rocm_smi_lib = { version = "0.3.1", optional = true }
 # Your dependencies here
 
 [build-dependencies]
 bindgen = "0.71.1"
+
+[features]
+default = []
+rocm_smi = ["dep:rocm_smi_lib"]
