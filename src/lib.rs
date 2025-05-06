@@ -9,6 +9,9 @@ pub mod hip;
 pub mod error;
 use crate::rocfft::examples;
 
+#[cfg(feature="rocm_smi")]
+pub mod rocmsmi;
+
 #[cfg(test)]
 mod tests {
     use crate::rocfft::examples::run_1d_complex_example;
