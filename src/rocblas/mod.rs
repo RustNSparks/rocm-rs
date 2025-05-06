@@ -15,6 +15,7 @@ pub(crate) mod bindings;
 
 // Public re-export of FFI for internal use
 pub mod ffi;
+mod async_ops;
 
 // Re-export the main components for the public API
 pub use error::{Error, Result};

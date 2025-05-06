@@ -516,3 +516,14 @@ pub use bindings::rocblas_is_managing_device_memory;
 pub use bindings::rocblas_is_user_managing_device_memory;
 pub use bindings::rocblas_device_malloc_set_default_memory_size;
 pub use bindings::rocblas_abort;
+
+
+pub use bindings::rocblas_set_vector_async;
+pub use bindings::rocblas_set_vector_async_64;
+pub use bindings::rocblas_get_vector_async;
+pub use bindings::rocblas_get_vector_async_64;
+pub use bindings::rocblas_set_matrix_async;
+pub use bindings::rocblas_set_matrix_async_64;
+pub use bindings::rocblas_get_matrix_async;
+pub use bindings::rocblas_get_matrix_async_64;
+pub use bindings::rocblas_set_start_stop_events;
