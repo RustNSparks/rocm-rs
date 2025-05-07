@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     let module = Module::load(kernel_path)?;
     
     // Get the function handle
-    let function = module.get_function("vector_add")?;
+    let function = unsafe { module.get_function("vector_add") }?;
     
     // Create a stream for async operations
     let stream = Stream::new()?;

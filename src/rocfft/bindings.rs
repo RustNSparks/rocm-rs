@@ -155,7 +155,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Get library version string\n\n @param[in, out] buf buffer that receives the version string\n @param[in] len length of buf, minimum 30 characters"]
     pub fn rocfft_get_version_string(buf: *mut ::std::os::raw::c_char, len: usize)
-    -> rocfft_status;
+        -> rocfft_status;
 }
 unsafe extern "C" {
     #[doc = " @brief Set the communication library for distributed transforms.\n\n  @details Set the multi-processing communication library for a plan.\n\n  Multi-processing communication libraries require library-specific\n  handle to also be specified.  For MPI libraries, this is a\n  pointer to an MPI communicator.\n\n  @param[in] description description handle\n  @param[in] comm_type communicator type\n  @param[in] comm_handle handle to communication-library-specific state\n"]

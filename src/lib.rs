@@ -11,6 +11,7 @@ use crate::rocfft::examples;
 
 #[cfg(feature = "rocm_smi")]
 pub mod rocmsmi;
+pub mod rocsparse;
 
 #[cfg(test)]
 mod tests {
