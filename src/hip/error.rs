@@ -1,8 +1,8 @@
 // src/hip/error.rs
 
-use std::fmt;
-use std::error::Error as StdError;
 use crate::hip::ffi;
+use std::error::Error as StdError;
+use std::fmt;
 
 /// Error type for HIP operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +58,9 @@ impl Error {
                 "Unknown error"
             } else {
                 // This is safe because hipGetErrorName returns a static string
-                std::ffi::CStr::from_ptr(name_ptr).to_str().unwrap_or("Invalid error string")
+                std::ffi::CStr::from_ptr(name_ptr)
+                    .to_str()
+                    .unwrap_or("Invalid error string")
             }
         }
     }
@@ -71,7 +73,9 @@ impl Error {
                 "Unknown error"
             } else {
                 // This is safe because hipGetErrorString returns a static string
-                std::ffi::CStr::from_ptr(desc_ptr).to_str().unwrap_or("Invalid error string")
+                std::ffi::CStr::from_ptr(desc_ptr)
+                    .to_str()
+                    .unwrap_or("Invalid error string")
             }
         }
     }
@@ -79,7 +83,13 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HIP error {}: {} - {}", self.code, self.name(), self.description())
+        write!(
+            f,
+            "HIP error {}: {} - {}",
+            self.code,
+            self.name(),
+            self.description()
+        )
     }
 }
 
@@ -92,8 +102,8 @@ impl Error {
     }
 
     pub fn is_out_of_memory(&self) -> bool {
-        self.code == ffi::hipError_t_hipErrorOutOfMemory ||
-            self.code == ffi::hipError_t_hipErrorMemoryAllocation
+        self.code == ffi::hipError_t_hipErrorOutOfMemory
+            || self.code == ffi::hipError_t_hipErrorMemoryAllocation
     }
 
     pub fn is_not_initialized(&self) -> bool {

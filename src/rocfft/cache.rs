@@ -6,10 +6,10 @@ compiled kernel cache, allowing kernel caches to be saved and loaded
 between application runs.
 */
 
+use crate::rocfft::bindings;
+use crate::rocfft::error::{Error, Result, check_error};
 use std::ptr;
 use std::slice;
-use crate::rocfft::error::{Error, Result, check_error};
-use crate::rocfft::bindings;
 
 /// A buffer containing serialized kernel cache data
 pub struct CacheBuffer {
@@ -23,9 +23,7 @@ impl CacheBuffer {
         if self.ptr.is_null() || self.len == 0 {
             &[]
         } else {
-            unsafe {
-                slice::from_raw_parts(self.ptr as *const u8, self.len)
-            }
+            unsafe { slice::from_raw_parts(self.ptr as *const u8, self.len) }
         }
     }
 

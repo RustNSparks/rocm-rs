@@ -1,8 +1,8 @@
 // src/miopen/error.rs
 
-use std::fmt;
-use std::error::Error as StdError;
 use crate::miopen::ffi;
+use std::error::Error as StdError;
+use std::fmt;
 
 /// Error type for MIOpen operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +58,9 @@ impl Error {
                 "Unknown error"
             } else {
                 // This is safe because miopenGetErrorString returns a static string
-                std::ffi::CStr::from_ptr(desc_ptr).to_str().unwrap_or("Invalid error string")
+                std::ffi::CStr::from_ptr(desc_ptr)
+                    .to_str()
+                    .unwrap_or("Invalid error string")
             }
         }
     }

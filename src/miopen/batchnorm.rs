@@ -1,10 +1,10 @@
 // src/miopen/batchnorm.rs
 
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
 
 /// Batch normalization mode type
 pub type BatchNormMode = ffi::miopenBatchNormMode_t;
@@ -16,11 +16,7 @@ pub fn derive_bn_tensor_descriptor(
     bn_mode: BatchNormMode,
 ) -> Result<()> {
     let status = unsafe {
-        ffi::miopenDeriveBNTensorDescriptor(
-            derived_desc.as_raw(),
-            x_desc.as_raw(),
-            bn_mode,
-        )
+        ffi::miopenDeriveBNTensorDescriptor(derived_desc.as_raw(), x_desc.as_raw(), bn_mode)
     };
 
     if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -31,7 +27,7 @@ pub fn derive_bn_tensor_descriptor(
 }
 
 /// Execute batch normalization forward training
-pub fn batch_normalization_forward_training(
+pub unsafe fn batch_normalization_forward_training(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha: &[u8],
@@ -80,7 +76,7 @@ pub fn batch_normalization_forward_training(
 }
 
 /// Execute batch normalization forward training with separate tensor descriptors for scale, bias, mean, and variance
-pub fn batch_normalization_forward_training_v2(
+pub unsafe fn batch_normalization_forward_training_v2(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha: &[u8],
@@ -135,7 +131,7 @@ pub fn batch_normalization_forward_training_v2(
 }
 
 /// Execute batch normalization forward inference
-pub fn batch_normalization_forward_inference(
+pub unsafe fn batch_normalization_forward_inference(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha: &[u8],
@@ -178,7 +174,7 @@ pub fn batch_normalization_forward_inference(
 }
 
 /// Execute batch normalization forward inference with separate tensor descriptors for scale, bias, mean, and variance
-pub fn batch_normalization_forward_inference_v2(
+pub unsafe fn batch_normalization_forward_inference_v2(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha: &[u8],
@@ -227,7 +223,7 @@ pub fn batch_normalization_forward_inference_v2(
 }
 
 /// Execute batch normalization backward
-pub fn batch_normalization_backward(
+pub unsafe fn batch_normalization_backward(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha_data_diff: &[u8],
@@ -280,7 +276,7 @@ pub fn batch_normalization_backward(
 }
 
 /// Execute batch normalization backward with separate tensor descriptors for scale, bias, mean, and variance
-pub fn batch_normalization_backward_v2(
+pub unsafe fn batch_normalization_backward_v2(
     handle: &Handle,
     bn_mode: BatchNormMode,
     alpha_data_diff: &[u8],

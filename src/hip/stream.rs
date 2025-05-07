@@ -1,14 +1,14 @@
 // src/hip/stream.rs
 
-use std::ptr;
 use crate::hip;
-use crate::hip::ffi;
 use crate::hip::error::{Error, Result};
 use crate::hip::event::Event;
+use crate::hip::ffi;
+use std::ptr;
 
 /// Safe wrapper for HIP streams
 pub struct Stream {
-    stream: hip::ffi::hipStream_t
+    stream: hip::ffi::hipStream_t,
 }
 
 // Can't be automatically derived since we have a raw pointer
@@ -79,9 +79,7 @@ impl Stream {
 
     /// Wait on an event
     pub fn wait_event(&self, event: &Event, flags: u32) -> Result<()> {
-        let error = unsafe {
-            ffi::hipStreamWaitEvent(self.stream, event.as_raw(), flags)
-        };
+        let error = unsafe { ffi::hipStreamWaitEvent(self.stream, event.as_raw(), flags) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -105,7 +103,7 @@ impl Stream {
         unsafe extern "C" fn helper_callback(
             _stream: ffi::hipStream_t,
             _status: ffi::hipError_t,
-            user_data: *mut std::ffi::c_void
+            user_data: *mut std::ffi::c_void,
         ) {
             // Convert the pointer back to a Box and then to our closure
             let callback_box = Box::from_raw(user_data as *mut Box<dyn FnOnce()>);
@@ -119,7 +117,7 @@ impl Stream {
                 self.stream,
                 Some(helper_callback),
                 callback_ptr as *mut std::ffi::c_void,
-                0
+                0,
             )
         };
 
@@ -159,9 +157,7 @@ impl Stream {
     pub fn get_priority(&self) -> Result<i32> {
         let mut priority = 0;
 
-        let error = unsafe {
-            ffi::hipStreamGetPriority(self.stream, &mut priority)
-        };
+        let error = unsafe { ffi::hipStreamGetPriority(self.stream, &mut priority) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -174,9 +170,7 @@ impl Stream {
     pub fn get_flags(&self) -> Result<u32> {
         let mut flags = 0;
 
-        let error = unsafe {
-            ffi::hipStreamGetFlags(self.stream, &mut flags)
-        };
+        let error = unsafe { ffi::hipStreamGetFlags(self.stream, &mut flags) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -189,9 +183,7 @@ impl Stream {
     pub fn get_device(&self) -> Result<i32> {
         let mut device = 0;
 
-        let error = unsafe {
-            ffi::hipStreamGetDevice(self.stream, &mut device)
-        };
+        let error = unsafe { ffi::hipStreamGetDevice(self.stream, &mut device) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));

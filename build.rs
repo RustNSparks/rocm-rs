@@ -1,7 +1,7 @@
-use std::env;
-use std::path::PathBuf;
-use std::fs;
 use bindgen::CargoCallbacks;
+use std::env;
+use std::fs;
+use std::path::PathBuf;
 
 // Define module configuration with enhanced options
 struct ModuleConfig {
@@ -9,10 +9,10 @@ struct ModuleConfig {
     lib_name: String,
     extra_includes: Vec<String>,
     extra_args: Vec<String>,
-    allowlist_prefixes: Vec<String>,  // Prefixes to allow (e.g., "rocblas_", "hip")
-    dependencies: Vec<String>,         // Other modules this one depends on
-    needs_stddef_stdint: bool,         // Whether this module needs stddef.h and stdint.h
-    needs_cpp: bool,                   // Whether this module needs C++ support
+    allowlist_prefixes: Vec<String>, // Prefixes to allow (e.g., "rocblas_", "hip")
+    dependencies: Vec<String>,       // Other modules this one depends on
+    needs_stddef_stdint: bool,       // Whether this module needs stddef.h and stdint.h
+    needs_cpp: bool,                 // Whether this module needs C++ support
 }
 
 fn main() {
@@ -33,11 +33,7 @@ fn main() {
             lib_name: "amdhip64".to_string(),
             extra_includes: vec![],
             extra_args: vec![],
-            allowlist_prefixes: vec![
-                "hip".to_string(),
-                "HIP".to_string(),
-                "cuda".to_string()
-            ],
+            allowlist_prefixes: vec!["hip".to_string(), "HIP".to_string(), "cuda".to_string()],
             dependencies: vec![],
             needs_stddef_stdint: false,
             needs_cpp: true,
@@ -164,7 +160,13 @@ fn sort_modules_by_dependencies(modules: &[ModuleConfig]) -> Vec<String> {
     // Process all modules
     let mut visiting = std::collections::HashSet::new();
     for module in modules {
-        visit(&module.name, modules, &mut result, &mut visited, &mut visiting);
+        visit(
+            &module.name,
+            modules,
+            &mut result,
+            &mut visited,
+            &mut visiting,
+        );
     }
 
     result
@@ -217,14 +219,12 @@ fn generate_bindings(module: &ModuleConfig, rocm_path: &str, preserve_fp_constan
         .blocklist_file("stdint.h")
         .blocklist_file("stddef.h")
         .blocklist_file("*.string.h")
-
         // Block GNU C++ template stuff
         .blocklist_item("__gnu_cxx::__max")
         .blocklist_item("__gnu_cxx::__min")
         .blocklist_item("__gnu_cxx::.*")
         .blocklist_item("_Value")
         .opaque_type("_Value");
-    
 
     // Add allowlist prefixes if specified
     if !module.allowlist_prefixes.is_empty() {

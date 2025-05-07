@@ -1,9 +1,9 @@
 // src/hip/utils.rs
 
-use crate::hip::error::Result;
 use crate::hip::Device;
+use crate::hip::error::Result;
 
-/// A simple RAII (Resource Acquisition Is Initialization) guard 
+/// A simple RAII (Resource Acquisition Is Initialization) guard
 /// to set a device as current and restore the previous device when dropped
 pub struct DeviceGuard {
     previous_device: i32,
@@ -46,28 +46,61 @@ pub fn print_devices_info() -> Result<String> {
         let props = device.properties()?;
 
         output.push_str(&format!("\nDevice {}: {}\n", i, props.name));
-        output.push_str(&format!("  Compute capability: {}.{}\n", props.major, props.minor));
-        output.push_str(&format!("  Total memory: {} MB\n", props.total_global_mem / (1024 * 1024)));
+        output.push_str(&format!(
+            "  Compute capability: {}.{}\n",
+            props.major, props.minor
+        ));
+        output.push_str(&format!(
+            "  Total memory: {} MB\n",
+            props.total_global_mem / (1024 * 1024)
+        ));
         output.push_str(&format!("  Clock rate: {} MHz\n", props.clock_rate / 1000));
-        output.push_str(&format!("  Multi-processor count: {}\n", props.multi_processor_count));
-        output.push_str(&format!("  Max threads per block: {}\n", props.max_threads_per_block));
-        output.push_str(&format!("  Max threads per multiprocessor: {}\n", props.max_threads_per_multiprocessor));
+        output.push_str(&format!(
+            "  Multi-processor count: {}\n",
+            props.multi_processor_count
+        ));
+        output.push_str(&format!(
+            "  Max threads per block: {}\n",
+            props.max_threads_per_block
+        ));
+        output.push_str(&format!(
+            "  Max threads per multiprocessor: {}\n",
+            props.max_threads_per_multiprocessor
+        ));
         output.push_str(&format!("  Warp size: {}\n", props.warp_size));
-        output.push_str(&format!("  Max dimensions of a grid: [{}, {}, {}]\n",
-                                 props.max_grid_size[0],
-                                 props.max_grid_size[1],
-                                 props.max_grid_size[2]));
-        output.push_str(&format!("  Max dimensions of a block: [{}, {}, {}]\n",
-                                 props.max_threads_dim[0],
-                                 props.max_threads_dim[1],
-                                 props.max_threads_dim[2]));
-        output.push_str(&format!("  Shared memory per block: {} KB\n", props.shared_mem_per_block / 1024));
-        output.push_str(&format!("  Registers per block: {}\n", props.regs_per_block));
-        output.push_str(&format!("  L2 cache size: {} KB\n", props.l2_cache_size / 1024));
-        output.push_str(&format!("  Memory clock rate: {} MHz\n", props.memory_clock_rate / 1000));
-        output.push_str(&format!("  Memory bus width: {} bits\n", props.memory_bus_width));
+        output.push_str(&format!(
+            "  Max dimensions of a grid: [{}, {}, {}]\n",
+            props.max_grid_size[0], props.max_grid_size[1], props.max_grid_size[2]
+        ));
+        output.push_str(&format!(
+            "  Max dimensions of a block: [{}, {}, {}]\n",
+            props.max_threads_dim[0], props.max_threads_dim[1], props.max_threads_dim[2]
+        ));
+        output.push_str(&format!(
+            "  Shared memory per block: {} KB\n",
+            props.shared_mem_per_block / 1024
+        ));
+        output.push_str(&format!(
+            "  Registers per block: {}\n",
+            props.regs_per_block
+        ));
+        output.push_str(&format!(
+            "  L2 cache size: {} KB\n",
+            props.l2_cache_size / 1024
+        ));
+        output.push_str(&format!(
+            "  Memory clock rate: {} MHz\n",
+            props.memory_clock_rate / 1000
+        ));
+        output.push_str(&format!(
+            "  Memory bus width: {} bits\n",
+            props.memory_bus_width
+        ));
         output.push_str(&format!("  Integrated: {}\n", props.integrated));
-        output.push_str(&format!("  Can map host memory: {}\n", props.can_map_host_memory));
+        output.push_str(&format!(
+            "  Can map host memory: {}\n",
+            props.can_map_host_memory
+        ));
     }
 
     Ok(output)
@@ -136,7 +169,11 @@ impl Version {
         let minor = (version % 10000) / 100;
         let patch = version % 100;
 
-        Ok(Self { major, minor, patch })
+        Ok(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 
     /// Get the HIP runtime version
@@ -148,11 +185,15 @@ impl Version {
         let minor = (version % 10000) / 100;
         let patch = version % 100;
 
-        Ok(Self { major, minor, patch })
+        Ok(Self {
+            major,
+            minor,
+            patch,
+        })
     }
 
     /// Convert to a string representation
-    pub fn to_string(&self) -> String {
+    pub unsafe fn to_string(&self) -> String {
         format!("{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
@@ -238,7 +279,14 @@ pub fn calculate_grid_2d(width: u32, height: u32, block_x: u32, block_y: u32) ->
 }
 
 /// Calculate optimal grid dimensions for a 3D problem
-pub fn calculate_grid_3d(width: u32, height: u32, depth: u32, block_x: u32, block_y: u32, block_z: u32) -> Dim3 {
+pub fn calculate_grid_3d(
+    width: u32,
+    height: u32,
+    depth: u32,
+    block_x: u32,
+    block_y: u32,
+    block_z: u32,
+) -> Dim3 {
     let grid_x = (width + block_x - 1) / block_x;
     let grid_y = (height + block_y - 1) / block_y;
     let grid_z = (depth + block_z - 1) / block_z;

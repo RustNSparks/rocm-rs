@@ -1,11 +1,11 @@
 // src/miopen/pooling.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// Pooling mode
 pub type PoolingMode = ffi::miopenPoolingMode_t;
@@ -40,9 +40,7 @@ impl PoolingDescriptor {
 
     /// Set the index data type for pooling layer
     pub fn set_index_type(&mut self, index_type: IndexType) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetPoolingIndexType(self.desc, index_type)
-        };
+        let status = unsafe { ffi::miopenSetPoolingIndexType(self.desc, index_type) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -55,9 +53,7 @@ impl PoolingDescriptor {
     pub fn get_index_type(&self) -> Result<IndexType> {
         let mut index_type = 0;
 
-        let status = unsafe {
-            ffi::miopenGetPoolingIndexType(self.desc, &mut index_type)
-        };
+        let status = unsafe { ffi::miopenGetPoolingIndexType(self.desc, &mut index_type) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -67,10 +63,11 @@ impl PoolingDescriptor {
     }
 
     /// Set the workspace index mode for pooling layer
-    pub fn set_workspace_index_mode(&mut self, workspace_index: PoolingWorkspaceIndexMode) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetPoolingWorkSpaceIndexMode(self.desc, workspace_index)
-        };
+    pub fn set_workspace_index_mode(
+        &mut self,
+        workspace_index: PoolingWorkspaceIndexMode,
+    ) -> Result<()> {
+        let status = unsafe { ffi::miopenSetPoolingWorkSpaceIndexMode(self.desc, workspace_index) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -83,9 +80,8 @@ impl PoolingDescriptor {
     pub fn get_workspace_index_mode(&self) -> Result<PoolingWorkspaceIndexMode> {
         let mut workspace_index = 0;
 
-        let status = unsafe {
-            ffi::miopenGetPoolingWorkSpaceIndexMode(self.desc, &mut workspace_index)
-        };
+        let status =
+            unsafe { ffi::miopenGetPoolingWorkSpaceIndexMode(self.desc, &mut workspace_index) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -95,11 +91,27 @@ impl PoolingDescriptor {
     }
 
     /// Set a 2D pooling descriptor
-    pub fn set_2d(&mut self, mode: PoolingMode, window_height: i32, window_width: i32,
-                  pad_h: i32, pad_w: i32, stride_h: i32, stride_w: i32) -> Result<()> {
+    pub fn set_2d(
+        &mut self,
+        mode: PoolingMode,
+        window_height: i32,
+        window_width: i32,
+        pad_h: i32,
+        pad_w: i32,
+        stride_h: i32,
+        stride_w: i32,
+    ) -> Result<()> {
         let status = unsafe {
-            ffi::miopenSet2dPoolingDescriptor(self.desc, mode, window_height, window_width,
-                                              pad_h, pad_w, stride_h, stride_w)
+            ffi::miopenSet2dPoolingDescriptor(
+                self.desc,
+                mode,
+                window_height,
+                window_width,
+                pad_h,
+                pad_w,
+                stride_h,
+                stride_w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -120,20 +132,41 @@ impl PoolingDescriptor {
         let mut stride_w = 0;
 
         let status = unsafe {
-            ffi::miopenGet2dPoolingDescriptor(self.desc, &mut mode, &mut window_height, &mut window_width,
-                                              &mut pad_h, &mut pad_w, &mut stride_h, &mut stride_w)
+            ffi::miopenGet2dPoolingDescriptor(
+                self.desc,
+                &mut mode,
+                &mut window_height,
+                &mut window_width,
+                &mut pad_h,
+                &mut pad_w,
+                &mut stride_h,
+                &mut stride_w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
         }
 
-        Ok((mode, window_height, window_width, pad_h, pad_w, stride_h, stride_w))
+        Ok((
+            mode,
+            window_height,
+            window_width,
+            pad_h,
+            pad_w,
+            stride_h,
+            stride_w,
+        ))
     }
 
     /// Set an N-dimensional pooling descriptor
-    pub fn set_nd(&mut self, mode: PoolingMode, window_dims: &[i32],
-                  pads: &[i32], strides: &[i32]) -> Result<()> {
+    pub fn set_nd(
+        &mut self,
+        mode: PoolingMode,
+        window_dims: &[i32],
+        pads: &[i32],
+        strides: &[i32],
+    ) -> Result<()> {
         let nb_dims = window_dims.len() as i32;
 
         if nb_dims as usize != pads.len() || nb_dims as usize != strides.len() {
@@ -141,8 +174,14 @@ impl PoolingDescriptor {
         }
 
         let status = unsafe {
-            ffi::miopenSetNdPoolingDescriptor(self.desc, mode, nb_dims,
-                                              window_dims.as_ptr(), pads.as_ptr(), strides.as_ptr())
+            ffi::miopenSetNdPoolingDescriptor(
+                self.desc,
+                mode,
+                nb_dims,
+                window_dims.as_ptr(),
+                pads.as_ptr(),
+                strides.as_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -153,7 +192,10 @@ impl PoolingDescriptor {
     }
 
     /// Get an N-dimensional pooling descriptor
-    pub fn get_nd(&self, nb_dims_requested: i32) -> Result<(PoolingMode, i32, Vec<i32>, Vec<i32>, Vec<i32>)> {
+    pub fn get_nd(
+        &self,
+        nb_dims_requested: i32,
+    ) -> Result<(PoolingMode, i32, Vec<i32>, Vec<i32>, Vec<i32>)> {
         let mut mode = 0;
         let mut nb_dims = 0;
         let mut window_dims = vec![0; nb_dims_requested as usize];
@@ -161,8 +203,15 @@ impl PoolingDescriptor {
         let mut strides = vec![0; nb_dims_requested as usize];
 
         let status = unsafe {
-            ffi::miopenGetNdPoolingDescriptor(self.desc, nb_dims_requested, &mut mode, &mut nb_dims,
-                                              window_dims.as_mut_ptr(), pads.as_mut_ptr(), strides.as_mut_ptr())
+            ffi::miopenGetNdPoolingDescriptor(
+                self.desc,
+                nb_dims_requested,
+                &mut mode,
+                &mut nb_dims,
+                window_dims.as_mut_ptr(),
+                pads.as_mut_ptr(),
+                strides.as_mut_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -173,15 +222,24 @@ impl PoolingDescriptor {
     }
 
     /// Get the output dimensions of a pooling layer
-    pub fn get_forward_output_dim(&self, tensor_desc: &TensorDescriptor) -> Result<(i32, i32, i32, i32)> {
+    pub fn get_forward_output_dim(
+        &self,
+        tensor_desc: &TensorDescriptor,
+    ) -> Result<(i32, i32, i32, i32)> {
         let mut n = 0;
         let mut c = 0;
         let mut h = 0;
         let mut w = 0;
 
         let status = unsafe {
-            ffi::miopenGetPoolingForwardOutputDim(self.desc, tensor_desc.as_raw(),
-                                                  &mut n, &mut c, &mut h, &mut w)
+            ffi::miopenGetPoolingForwardOutputDim(
+                self.desc,
+                tensor_desc.as_raw(),
+                &mut n,
+                &mut c,
+                &mut h,
+                &mut w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -192,13 +250,20 @@ impl PoolingDescriptor {
     }
 
     /// Get the output dimensions of an N-dimensional pooling layer
-    pub fn get_nd_forward_output_dim(&self, tensor_desc: &TensorDescriptor,
-                                     dims_capacity: i32) -> Result<(i32, Vec<i32>)> {
+    pub fn get_nd_forward_output_dim(
+        &self,
+        tensor_desc: &TensorDescriptor,
+        dims_capacity: i32,
+    ) -> Result<(i32, Vec<i32>)> {
         let mut tensor_dim_arr = vec![0; dims_capacity as usize];
 
         let status = unsafe {
-            ffi::miopenGetPoolingNdForwardOutputDim(self.desc, tensor_desc.as_raw(),
-                                                    dims_capacity, tensor_dim_arr.as_mut_ptr())
+            ffi::miopenGetPoolingNdForwardOutputDim(
+                self.desc,
+                tensor_desc.as_raw(),
+                dims_capacity,
+                tensor_dim_arr.as_mut_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -206,7 +271,10 @@ impl PoolingDescriptor {
         }
 
         // Return actual dimensions used
-        let actual_dims = tensor_dim_arr.iter().position(|&x| x == 0).unwrap_or(tensor_dim_arr.len());
+        let actual_dims = tensor_dim_arr
+            .iter()
+            .position(|&x| x == 0)
+            .unwrap_or(tensor_dim_arr.len());
         tensor_dim_arr.truncate(actual_dims);
 
         Ok((actual_dims as i32, tensor_dim_arr))
@@ -228,7 +296,7 @@ impl PoolingDescriptor {
     }
 
     /// Execute a forward pooling operation
-    pub fn forward(
+    pub unsafe fn forward(
         &self,
         handle: &Handle,
         alpha: &[u8],
@@ -265,7 +333,7 @@ impl PoolingDescriptor {
     }
 
     /// Execute a backward pooling operation
-    pub fn backward(
+    pub unsafe fn backward(
         &self,
         handle: &Handle,
         alpha: &[u8],

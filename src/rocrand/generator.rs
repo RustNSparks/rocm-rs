@@ -15,24 +15,18 @@ pub trait Generator {
     fn as_ptr(&self) -> bindings::rocrand_generator;
 
     /// Set the stream for kernel launches
-    fn set_stream(&mut self, stream: bindings::hipStream_t) -> Result<()> {
-        unsafe {
-            Error::from_status(bindings::rocrand_set_stream(self.as_ptr(), stream))
-        }
+    unsafe fn set_stream(&mut self, stream: bindings::hipStream_t) -> Result<()> {
+        unsafe { Error::from_status(bindings::rocrand_set_stream(self.as_ptr(), stream)) }
     }
 
     /// Set the ordering of the generator
     fn set_ordering(&mut self, ordering: u32) -> Result<()> {
-        unsafe {
-            Error::from_status(bindings::rocrand_set_ordering(self.as_ptr(), ordering))
-        }
+        unsafe { Error::from_status(bindings::rocrand_set_ordering(self.as_ptr(), ordering)) }
     }
 
     /// Initialize the generator
     fn initialize(&mut self) -> Result<()> {
-        unsafe {
-            Error::from_status(bindings::rocrand_initialize_generator(self.as_ptr()))
-        }
+        unsafe { Error::from_status(bindings::rocrand_initialize_generator(self.as_ptr())) }
     }
 
     /// Get the version of the rocrand library
@@ -66,10 +60,7 @@ impl PseudoRng {
     pub fn new(rng_type: u32) -> Result<Self> {
         let mut generator = ptr::null_mut();
         unsafe {
-            Error::from_status(bindings::rocrand_create_generator(
-                &mut generator,
-                rng_type,
-            ))?;
+            Error::from_status(bindings::rocrand_create_generator(&mut generator, rng_type))?;
             Ok(Self {
                 generator: NonNull::new(generator).unwrap(),
             })
@@ -95,9 +86,7 @@ impl PseudoRng {
     /// This operation resets the generator's internal state.
     /// This operation does not change the generator's offset.
     pub fn set_seed(&mut self, seed: u64) -> Result<()> {
-        unsafe {
-            Error::from_status(bindings::rocrand_set_seed(self.generator.as_ptr(), seed))
-        }
+        unsafe { Error::from_status(bindings::rocrand_set_seed(self.generator.as_ptr(), seed)) }
     }
 
     /// Set the seeds array for the generator (only for LFSR113).
@@ -106,7 +95,10 @@ impl PseudoRng {
     /// This operation does not change the generator's offset.
     pub fn set_seed_array(&mut self, seed: u128) -> Result<()> {
         unsafe {
-            Error::from_status(bindings::rocrand_set_seed_uint4(self.generator.as_ptr(), seed))
+            Error::from_status(bindings::rocrand_set_seed_uint4(
+                self.generator.as_ptr(),
+                seed,
+            ))
         }
     }
 
@@ -116,7 +108,10 @@ impl PseudoRng {
     /// This operation does not change the generator's seed.
     pub fn set_offset(&mut self, offset: u64) -> Result<()> {
         unsafe {
-            Error::from_status(bindings::rocrand_set_offset(self.generator.as_ptr(), offset))
+            Error::from_status(bindings::rocrand_set_offset(
+                self.generator.as_ptr(),
+                offset,
+            ))
         }
     }
 
@@ -218,7 +213,12 @@ impl PseudoRng {
     ///
     /// Generated numbers follow a normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate_normal_double(&mut self, output: &mut [f64], mean: f64, stddev: f64) -> Result<()> {
+    pub fn generate_normal_double(
+        &mut self,
+        output: &mut [f64],
+        mean: f64,
+        stddev: f64,
+    ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_normal_double(
                 self.generator.as_ptr(),
@@ -234,7 +234,12 @@ impl PseudoRng {
     ///
     /// Generated numbers follow a log-normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate_log_normal(&mut self, output: &mut [f32], mean: f32, stddev: f32) -> Result<()> {
+    pub fn generate_log_normal(
+        &mut self,
+        output: &mut [f32],
+        mean: f32,
+        stddev: f32,
+    ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_log_normal(
                 self.generator.as_ptr(),
@@ -250,7 +255,12 @@ impl PseudoRng {
     ///
     /// Generated numbers follow a log-normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate_log_normal_double(&mut self, output: &mut [f64], mean: f64, stddev: f64) -> Result<()> {
+    pub fn generate_log_normal_double(
+        &mut self,
+        output: &mut [f64],
+        mean: f64,
+        stddev: f64,
+    ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_log_normal_double(
                 self.generator.as_ptr(),
@@ -304,10 +314,7 @@ impl QuasiRng {
     pub fn new(rng_type: u32) -> Result<Self> {
         let mut generator = ptr::null_mut();
         unsafe {
-            Error::from_status(bindings::rocrand_create_generator(
-                &mut generator,
-                rng_type,
-            ))?;
+            Error::from_status(bindings::rocrand_create_generator(&mut generator, rng_type))?;
             Ok(Self {
                 generator: NonNull::new(generator).unwrap(),
             })
@@ -331,7 +338,10 @@ impl QuasiRng {
     /// This operation resets the generator's internal state.
     pub fn set_offset(&mut self, offset: u64) -> Result<()> {
         unsafe {
-            Error::from_status(bindings::rocrand_set_offset(self.generator.as_ptr(), offset))
+            Error::from_status(bindings::rocrand_set_offset(
+                self.generator.as_ptr(),
+                offset,
+            ))
         }
     }
 

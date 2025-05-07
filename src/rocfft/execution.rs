@@ -1,7 +1,7 @@
-use std::ptr;
-use std::marker::PhantomData;
 use crate::rocfft::error::{Error, Result, check_error};
 use crate::rocfft::ffi;
+use std::marker::PhantomData;
+use std::ptr;
 
 /// Additional execution parameters for a transform
 ///
@@ -46,9 +46,9 @@ impl ExecutionInfo {
     ///
     /// # Note
     ///
-    /// If you need to know how large the work buffer should be, call 
+    /// If you need to know how large the work buffer should be, call
     /// `Plan::get_work_buffer_size()`.
-    pub fn set_work_buffer(
+    pub unsafe fn set_work_buffer(
         &mut self,
         buffer: *mut std::ffi::c_void,
         size_in_bytes: usize,
@@ -79,17 +79,12 @@ impl ExecutionInfo {
     /// # Returns
     ///
     /// A result indicating success or an error
-    pub fn set_stream(&mut self, stream: *mut std::ffi::c_void) -> Result<()> {
+    pub unsafe fn set_stream(&mut self, stream: *mut std::ffi::c_void) -> Result<()> {
         if self.handle.is_null() {
             return Err(Error::ObjectDestroyed);
         }
 
-        unsafe {
-            check_error(ffi::rocfft_execution_info_set_stream(
-                self.handle,
-                stream,
-            ))
-        }
+        unsafe { check_error(ffi::rocfft_execution_info_set_stream(self.handle, stream)) }
     }
 
     /// Set a load callback for the transform (experimental)

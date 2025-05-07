@@ -1,10 +1,10 @@
 // src/hip/memory.rs
 
+use crate::hip::error::{Error, Result};
+use crate::hip::{Stream, ffi};
 use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::{mem, ptr};
-use crate::hip::{ffi, Stream};
-use crate::hip::error::{Error, Result};
 
 /// Information about available and used memory on the device
 #[derive(Debug, Clone, Copy)]
@@ -154,9 +154,7 @@ impl<T> DeviceMemory<T> {
             return Ok(());
         }
 
-        let error = unsafe {
-            ffi::hipMemset(self.ptr, value, self.size)
-        };
+        let error = unsafe { ffi::hipMemset(self.ptr, value, self.size) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -172,7 +170,6 @@ impl<T> DeviceMemory<T> {
         }
         // Check if self.ptr is null if your struct allows for uninitialized state
         // if self.ptr.is_null() { return Err(/* Appropriate error */); }
-
 
         let required_bytes = source.len().saturating_mul(mem::size_of::<T>()); // Use saturating_mul just in case
 
@@ -230,7 +227,6 @@ impl<T> DeviceMemory<T> {
         // Check if self.ptr is null if your struct allows for uninitialized state
         // if self.ptr.is_null() { return Err(/* Appropriate error */); }
 
-
         let required_bytes = dest.len().saturating_mul(mem::size_of::<T>());
 
         // Check if the GPU buffer has enough data to fill the destination slice
@@ -246,7 +242,7 @@ impl<T> DeviceMemory<T> {
         let error = unsafe {
             ffi::hipMemcpyAsync(
                 dest.as_mut_ptr() as *mut c_void,
-                self.ptr, // Assuming self.ptr is *const c_void or compatible
+                self.ptr,       // Assuming self.ptr is *const c_void or compatible
                 required_bytes, // Copy the exact size requested by the dest slice
                 ffi::hipMemcpyKind_hipMemcpyDeviceToHost,
                 stream.as_raw(),
@@ -347,9 +343,7 @@ impl<T> PinnedMemory<T> {
             return &[];
         }
 
-        unsafe {
-            std::slice::from_raw_parts(self.ptr as *const T, self.count)
-        }
+        unsafe { std::slice::from_raw_parts(self.ptr as *const T, self.count) }
     }
 
     /// Get the host pointer as a mutable slice
@@ -358,9 +352,7 @@ impl<T> PinnedMemory<T> {
             return &mut [];
         }
 
-        unsafe {
-            std::slice::from_raw_parts_mut(self.ptr as *mut T, self.count)
-        }
+        unsafe { std::slice::from_raw_parts_mut(self.ptr as *mut T, self.count) }
     }
 
     /// Get the raw host pointer
@@ -390,9 +382,7 @@ impl<T> PinnedMemory<T> {
         }
 
         let mut device_ptr = ptr::null_mut();
-        let error = unsafe {
-            ffi::hipHostGetDevicePointer(&mut device_ptr, self.ptr, 0)
-        };
+        let error = unsafe { ffi::hipHostGetDevicePointer(&mut device_ptr, self.ptr, 0) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));

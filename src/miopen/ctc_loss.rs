@@ -1,11 +1,11 @@
 // src/miopen/ctc_loss.rs
 
-use std::ptr;
-use std::os::raw::{c_void, c_int};
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::{c_int, c_void};
+use std::ptr;
 
 /// CTC Loss algorithm
 pub type CTCLossAlgo = ffi::miopenCTCLossAlgo_t;
@@ -33,7 +33,12 @@ impl CTCLossDescriptor {
     }
 
     /// Set the CTC Loss descriptor
-    pub fn set(&mut self, data_type: ffi::miopenDataType_t, blank_label_id: i32, apply_softmax_layer: bool) -> Result<()> {
+    pub fn set(
+        &mut self,
+        data_type: ffi::miopenDataType_t,
+        blank_label_id: i32,
+        apply_softmax_layer: bool,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetCTCLossDescriptor(
                 self.desc,
@@ -125,7 +130,7 @@ pub fn get_ctc_loss_workspace_size(
 }
 
 /// Execute CTC Loss forward and gradient computation
-pub fn ctc_loss(
+pub unsafe fn ctc_loss(
     handle: &Handle,
     probs_desc: &TensorDescriptor,
     probs: *const c_void,

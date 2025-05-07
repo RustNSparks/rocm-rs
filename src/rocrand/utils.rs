@@ -2,9 +2,11 @@
 //
 // Utility functions for easier use of the rocrand library
 
+use crate::error::{Error, Result};
 use crate::hip::{DeviceMemory, Stream};
-use crate::rocrand::{PseudoRng, QuasiRng, rng_type, Uniform, Normal, LogNormal, Poisson, Generator};
-use crate::error::{Result, Error}; // Using our unified error type
+use crate::rocrand::{
+    Generator, LogNormal, Normal, Poisson, PseudoRng, QuasiRng, Uniform, rng_type,
+}; // Using our unified error type
 
 /// Generate uniformly distributed random f32 values on device and return them on host
 pub fn generate_uniform_f32(count: usize, seed: Option<u64>) -> Result<Vec<f32>> {
@@ -109,7 +111,12 @@ pub fn generate_u32(count: usize, seed: Option<u64>) -> Result<Vec<u32>> {
 }
 
 /// Generate normally distributed random f32 values with specified mean and standard deviation
-pub fn generate_normal_f32(count: usize, mean: f32, stddev: f32, seed: Option<u64>) -> Result<Vec<f32>> {
+pub fn generate_normal_f32(
+    count: usize,
+    mean: f32,
+    stddev: f32,
+    seed: Option<u64>,
+) -> Result<Vec<f32>> {
     // Create a generator
     let mut generator = PseudoRng::new(rng_type::PHILOX4_32_10)?;
 
@@ -146,7 +153,12 @@ pub fn generate_normal_f32(count: usize, mean: f32, stddev: f32, seed: Option<u6
 }
 
 /// Generate log-normally distributed random f32 values with specified mean and standard deviation
-pub fn generate_log_normal_f32(count: usize, mean: f32, stddev: f32, seed: Option<u64>) -> Result<Vec<f32>> {
+pub fn generate_log_normal_f32(
+    count: usize,
+    mean: f32,
+    stddev: f32,
+    seed: Option<u64>,
+) -> Result<Vec<f32>> {
     // Create a generator
     let mut generator = PseudoRng::new(rng_type::PHILOX4_32_10)?;
 
@@ -254,7 +266,7 @@ pub fn generate_quasi_f32(count: usize, dimensions: u32) -> Result<Vec<f32>> {
 /// Generate random values using a stream for asynchronous operation
 pub fn generate_async<F>(count: usize, generator_fn: F) -> Result<Vec<f32>>
 where
-    F: FnOnce(&mut PseudoRng, &mut [f32]) -> std::result::Result<(), crate::rocrand::Error>
+    F: FnOnce(&mut PseudoRng, &mut [f32]) -> std::result::Result<(), crate::rocrand::Error>,
 {
     // Create a stream
     let stream = Stream::new()?;
@@ -263,7 +275,9 @@ where
     let mut generator = PseudoRng::new(rng_type::XORWOW)?;
 
     // Set the stream
-    generator.set_stream(crate::hip::kernel::stream_to_rocrand(&stream))?;
+    unsafe {
+        generator.set_stream(crate::hip::kernel::stream_to_rocrand(&stream))?;
+    }
 
     // Initialize the generator
     generator.initialize()?;
@@ -296,7 +310,7 @@ where
 /// Note: This doesn't copy back to host, so the caller is responsible for that
 pub fn fill_device_memory<T, F>(device_memory: &mut DeviceMemory<T>, generator_fn: F) -> Result<()>
 where
-    F: FnOnce(*mut T, usize) -> std::result::Result<(), crate::rocrand::Error>
+    F: FnOnce(*mut T, usize) -> std::result::Result<(), crate::rocrand::Error>,
 {
     // Skip if empty
     if device_memory.count() == 0 {
@@ -321,48 +335,42 @@ pub enum RandomType {
     Integer,
 }
 
-pub fn create_random_buffer<T>(count: usize, random_type: RandomType, seed: Option<u64>) -> Result<Vec<T>>
+pub fn create_random_buffer<T>(
+    count: usize,
+    random_type: RandomType,
+    seed: Option<u64>,
+) -> Result<Vec<T>>
 where
-    T: Copy + Default
+    T: Copy + Default,
 {
     match (random_type, std::mem::size_of::<T>()) {
         // Handle f32 types
         (RandomType::Uniform, 4) => {
             let data = generate_uniform_f32(count, seed)?;
             let ptr = data.as_ptr() as *const T;
-            unsafe {
-                Ok(std::slice::from_raw_parts(ptr, count).to_vec())
-            }
-        },
+            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
+        }
         (RandomType::Normal { mean, stddev }, 4) => {
             let data = generate_normal_f32(count, mean, stddev, seed)?;
             let ptr = data.as_ptr() as *const T;
-            unsafe {
-                Ok(std::slice::from_raw_parts(ptr, count).to_vec())
-            }
-        },
+            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
+        }
         (RandomType::LogNormal { mean, stddev }, 4) => {
             let data = generate_log_normal_f32(count, mean, stddev, seed)?;
             let ptr = data.as_ptr() as *const T;
-            unsafe {
-                Ok(std::slice::from_raw_parts(ptr, count).to_vec())
-            }
-        },
+            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
+        }
         // Handle u32 types
         (RandomType::Integer, 4) => {
             let data = generate_u32(count, seed)?;
             let ptr = data.as_ptr() as *const T;
-            unsafe {
-                Ok(std::slice::from_raw_parts(ptr, count).to_vec())
-            }
-        },
+            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
+        }
         (RandomType::Poisson { lambda }, 4) => {
             let data = generate_poisson(count, lambda, seed)?;
             let ptr = data.as_ptr() as *const T;
-            unsafe {
-                Ok(std::slice::from_raw_parts(ptr, count).to_vec())
-            }
-        },
+            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
+        }
         // Handle other cases
         _ => {
             // Return a default buffer for unsupported types
@@ -370,4 +378,3 @@ where
         }
     }
 }
-

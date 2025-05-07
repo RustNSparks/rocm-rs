@@ -1,10 +1,10 @@
 // src/miopen/handle.rs
 
-use std::ptr;
-use crate::miopen::ffi;
-use crate::miopen::error::{Error, Result};
 use crate::hip;
 use crate::hip::Stream;
+use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
+use std::ptr;
 
 /// Safe wrapper for MIOpen handle
 pub struct Handle {
@@ -32,7 +32,10 @@ impl Handle {
     pub fn with_stream(stream: &hip::Stream) -> Result<Self> {
         let mut handle = ptr::null_mut();
         let status = unsafe {
-            ffi::miopenCreateWithStream(&mut handle, stream.as_raw() as crate::miopen::bindings::miopenAcceleratorQueue_t)
+            ffi::miopenCreateWithStream(
+                &mut handle,
+                stream.as_raw() as crate::miopen::bindings::miopenAcceleratorQueue_t,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -45,7 +48,10 @@ impl Handle {
     /// Set the stream for this handle
     pub fn set_stream(&self, stream: &hip::Stream) -> Result<()> {
         let status = unsafe {
-            ffi::miopenSetStream(self.handle, stream.as_raw() as crate::miopen::bindings::miopenAcceleratorQueue_t)
+            ffi::miopenSetStream(
+                self.handle,
+                stream.as_raw() as crate::miopen::bindings::miopenAcceleratorQueue_t,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -58,9 +64,7 @@ impl Handle {
     /// Get the current stream for this handle
     pub fn get_stream(&self) -> Result<hip::Stream> {
         let mut stream_id = ptr::null_mut();
-        let status = unsafe {
-            ffi::miopenGetStream(self.handle, &mut stream_id)
-        };
+        let status = unsafe { ffi::miopenGetStream(self.handle, &mut stream_id) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -74,9 +78,7 @@ impl Handle {
 
     /// Enable or disable profiling
     pub fn enable_profiling(&self, enable: bool) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenEnableProfiling(self.handle, enable)
-        };
+        let status = unsafe { ffi::miopenEnableProfiling(self.handle, enable) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -88,9 +90,7 @@ impl Handle {
     /// Get the timing of the last kernel executed
     pub fn get_kernel_time(&self) -> Result<f32> {
         let mut time = 0.0;
-        let status = unsafe {
-            ffi::miopenGetKernelTime(self.handle, &mut time)
-        };
+        let status = unsafe { ffi::miopenGetKernelTime(self.handle, &mut time) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -100,15 +100,14 @@ impl Handle {
     }
 
     /// Set a custom allocator for MIOpen
-    pub fn set_allocator(
+    pub unsafe fn set_allocator(
         &self,
         allocator: ffi::miopenAllocatorFunction,
         deallocator: ffi::miopenDeallocatorFunction,
         context: *mut ::std::os::raw::c_void,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetAllocator(self.handle, allocator, deallocator, context)
-        };
+        let status =
+            unsafe { ffi::miopenSetAllocator(self.handle, allocator, deallocator, context) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));

@@ -1,15 +1,15 @@
 extern crate core;
-pub mod rocrand;
-pub mod rocfft;
 pub mod miopen;
 pub mod rocblas;
+pub mod rocfft;
+pub mod rocrand;
 pub mod rocsolver;
 
-pub mod hip;
 pub mod error;
+pub mod hip;
 use crate::rocfft::examples;
 
-#[cfg(feature="rocm_smi")]
+#[cfg(feature = "rocm_smi")]
 pub mod rocmsmi;
 
 #[cfg(test)]

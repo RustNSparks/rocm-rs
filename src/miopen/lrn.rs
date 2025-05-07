@@ -1,11 +1,11 @@
 // src/miopen/lrn.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// LRN mode type
 pub type LRNMode = ffi::miopenLRNMode_t;
@@ -33,7 +33,14 @@ impl LRNDescriptor {
     }
 
     /// Set the LRN descriptor details
-    pub fn set(&mut self, mode: LRNMode, lrn_n: u32, lrn_alpha: f64, lrn_beta: f64, lrn_k: f64) -> Result<()> {
+    pub fn set(
+        &mut self,
+        mode: LRNMode,
+        lrn_n: u32,
+        lrn_alpha: f64,
+        lrn_beta: f64,
+        lrn_k: f64,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetLRNDescriptor(self.desc, mode, lrn_n, lrn_alpha, lrn_beta, lrn_k)
         };
@@ -54,7 +61,14 @@ impl LRNDescriptor {
         let mut lrn_k = 0.0;
 
         let status = unsafe {
-            ffi::miopenGetLRNDescriptor(self.desc, &mut mode, &mut lrn_n, &mut lrn_alpha, &mut lrn_beta, &mut lrn_k)
+            ffi::miopenGetLRNDescriptor(
+                self.desc,
+                &mut mode,
+                &mut lrn_n,
+                &mut lrn_alpha,
+                &mut lrn_beta,
+                &mut lrn_k,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -68,9 +82,8 @@ impl LRNDescriptor {
     pub fn get_workspace_size(y_desc: &TensorDescriptor) -> Result<usize> {
         let mut workspace_size = 0;
 
-        let status = unsafe {
-            ffi::miopenLRNGetWorkSpaceSize(y_desc.as_raw(), &mut workspace_size)
-        };
+        let status =
+            unsafe { ffi::miopenLRNGetWorkSpaceSize(y_desc.as_raw(), &mut workspace_size) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -80,7 +93,7 @@ impl LRNDescriptor {
     }
 
     /// Execute a forward LRN operation
-    pub fn forward(
+    pub unsafe fn forward(
         &self,
         handle: &Handle,
         alpha: &[u8],
@@ -115,7 +128,7 @@ impl LRNDescriptor {
     }
 
     /// Execute a backward LRN operation
-    pub fn backward(
+    pub unsafe fn backward(
         &self,
         handle: &Handle,
         alpha: &[u8],

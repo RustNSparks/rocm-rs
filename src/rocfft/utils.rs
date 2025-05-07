@@ -1,15 +1,20 @@
 // src/rocfft/utils.rs
 
-use std::mem;
-use log::error;
-use crate::hip::{Device, DeviceMemory, Stream};
-use crate::rocfft::{plan::{ArrayType, Plan, PlacementType, Precision, TransformType}, execution::ExecutionInfo, description::PlanDescription, error};
-use crate::error::{Error, Result};
 use crate::error::Error::RocFFT;
+use crate::error::{Error, Result};
+use crate::hip::{Device, DeviceMemory, Stream};
+use crate::rocfft::{
+    description::PlanDescription,
+    error,
+    execution::ExecutionInfo,
+    plan::{ArrayType, PlacementType, Plan, Precision, TransformType},
+};
+use log::error;
+use std::mem;
 
 /// Determines the size of the output for a real-to-complex transform
 ///
-/// For a real FFT, the output size in the first dimension is `(input_size / 2) + 1` 
+/// For a real FFT, the output size in the first dimension is `(input_size / 2) + 1`
 /// due to conjugate symmetry, but unchanged in other dimensions.
 ///
 /// # Arguments
@@ -39,7 +44,7 @@ pub fn get_real_forward_output_length(input_lengths: &[usize]) -> Vec<usize> {
 ///
 /// # Returns
 /// * Result indicating success or error
-pub fn complex_forward_transform<T>(
+pub unsafe fn complex_forward_transform<T>(
     input: &DeviceMemory<T>,
     output: Option<&DeviceMemory<T>>,
     lengths: &[usize],
@@ -150,11 +155,11 @@ pub fn complex_inverse_transform<T>(
 
     // Set up execution info if we have a stream
     let mut exec_info = match stream {
-        Some(s) => {
+        Some(s) => unsafe {
             let mut info = ExecutionInfo::new()?;
             info.set_stream(s.as_raw() as *mut std::ffi::c_void)?;
             Some(info)
-        }
+        },
         None => None,
     };
 
@@ -183,8 +188,8 @@ pub fn complex_inverse_transform<T>(
 /// # Returns
 /// * Result indicating success or error
 pub fn real_forward_transform<T, U>(
-    input: &DeviceMemory<T>,   // Real input
-    output: &DeviceMemory<U>,  // Complex output (interleaved)
+    input: &DeviceMemory<T>,  // Real input
+    output: &DeviceMemory<U>, // Complex output (interleaved)
     lengths: &[usize],
     precision: Precision,
     stream: Option<&Stream>,
@@ -207,11 +212,11 @@ pub fn real_forward_transform<T, U>(
 
     // Set up execution info if we have a stream
     let mut exec_info = match stream {
-        Some(s) => {
+        Some(s) => unsafe {
             let mut info = ExecutionInfo::new()?;
             info.set_stream(s.as_raw() as *mut std::ffi::c_void)?;
             Some(info)
-        }
+        },
         None => None,
     };
 
@@ -238,8 +243,8 @@ pub fn real_forward_transform<T, U>(
 /// # Returns
 /// * Result indicating success or error
 pub fn complex_to_real_transform<T, U>(
-    input: &DeviceMemory<T>,   // Complex input (interleaved)
-    output: &DeviceMemory<U>,  // Real output
+    input: &DeviceMemory<T>,  // Complex input (interleaved)
+    output: &DeviceMemory<U>, // Real output
     lengths: &[usize],
     precision: Precision,
     scale: bool,
@@ -283,11 +288,11 @@ pub fn complex_to_real_transform<T, U>(
 
     // Set up execution info if we have a stream
     let mut exec_info = match stream {
-        Some(s) => {
+        Some(s) => unsafe {
             let mut info = ExecutionInfo::new()?;
             info.set_stream(s.as_raw() as *mut std::ffi::c_void)?;
             Some(info)
-        }
+        },
         None => None,
     };
 
@@ -411,7 +416,7 @@ where
     // Allocate device memory for padded input and kernel
     let mut padded_signal = DeviceMemory::<T>::new(padded_size * 2)?; // *2 for complex
     let mut padded_kernel = DeviceMemory::<T>::new(padded_size * 2)?; // *2 for complex
-    let mut fft_result = DeviceMemory::<T>::new(padded_size * 2)?;    // *2 for complex
+    let mut fft_result = DeviceMemory::<T>::new(padded_size * 2)?; // *2 for complex
 
     // Create plans
     let mut forward_plan = Plan::new(
@@ -440,11 +445,11 @@ where
 
     // Create execution info if we have a stream
     let mut exec_info = match stream {
-        Some(s) => {
+        Some(s) => unsafe {
             let mut info = ExecutionInfo::new()?;
             info.set_stream(s.as_raw() as *mut std::ffi::c_void)?;
             Some(info)
-        }
+        },
         None => None,
     };
 
@@ -509,8 +514,8 @@ where
         // Complex multiplication (s_real + i*s_imag) * (k_real + i*k_imag)
         // This assumes T can be multiplied and added, which may not be true for all types
         // In a real implementation, you'd need proper complex number handling
-        host_mult_result[idx] = multiply_add(s_real, k_real, multiply_neg(s_imag, k_imag));     // Real part
-        host_mult_result[idx + 1] = multiply_add(s_real, k_imag, multiply(s_imag, k_real));  // Imaginary part
+        host_mult_result[idx] = multiply_add(s_real, k_real, multiply_neg(s_imag, k_imag)); // Real part
+        host_mult_result[idx + 1] = multiply_add(s_real, k_imag, multiply(s_imag, k_real)); // Imaginary part
     }
 
     // Copy multiplication result back to device

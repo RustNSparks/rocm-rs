@@ -4,12 +4,12 @@
 This module provides the core Plan type for defining FFT transforms.
 */
 
-use std::ptr;
-use std::marker::PhantomData;
-use crate::rocfft::error::{Error, Result, check_error, check_dimensions};
 use crate::rocfft::bindings;
 use crate::rocfft::description::PlanDescription;
+use crate::rocfft::error::{Error, Result, check_dimensions, check_error};
 use crate::rocfft::execution::ExecutionInfo;
+use std::marker::PhantomData;
+use std::ptr;
 
 /// The type of transform to be performed
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -27,10 +27,18 @@ pub enum TransformType {
 impl From<TransformType> for u32 {
     fn from(transform_type: TransformType) -> Self {
         match transform_type {
-            TransformType::ComplexForward => bindings::rocfft_transform_type_e_rocfft_transform_type_complex_forward,
-            TransformType::ComplexInverse => bindings::rocfft_transform_type_e_rocfft_transform_type_complex_inverse,
-            TransformType::RealForward => bindings::rocfft_transform_type_e_rocfft_transform_type_real_forward,
-            TransformType::RealInverse => bindings::rocfft_transform_type_e_rocfft_transform_type_real_inverse,
+            TransformType::ComplexForward => {
+                bindings::rocfft_transform_type_e_rocfft_transform_type_complex_forward
+            }
+            TransformType::ComplexInverse => {
+                bindings::rocfft_transform_type_e_rocfft_transform_type_complex_inverse
+            }
+            TransformType::RealForward => {
+                bindings::rocfft_transform_type_e_rocfft_transform_type_real_forward
+            }
+            TransformType::RealInverse => {
+                bindings::rocfft_transform_type_e_rocfft_transform_type_real_inverse
+            }
         }
     }
 }
@@ -69,7 +77,9 @@ impl From<PlacementType> for u32 {
     fn from(placement: PlacementType) -> Self {
         match placement {
             PlacementType::InPlace => bindings::rocfft_result_placement_e_rocfft_placement_inplace,
-            PlacementType::NotInPlace => bindings::rocfft_result_placement_e_rocfft_placement_notinplace,
+            PlacementType::NotInPlace => {
+                bindings::rocfft_result_placement_e_rocfft_placement_notinplace
+            }
         }
     }
 }
@@ -94,11 +104,19 @@ pub enum ArrayType {
 impl From<ArrayType> for u32 {
     fn from(array_type: ArrayType) -> Self {
         match array_type {
-            ArrayType::ComplexInterleaved => bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved,
-            ArrayType::ComplexPlanar => bindings::rocfft_array_type_e_rocfft_array_type_complex_planar,
+            ArrayType::ComplexInterleaved => {
+                bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved
+            }
+            ArrayType::ComplexPlanar => {
+                bindings::rocfft_array_type_e_rocfft_array_type_complex_planar
+            }
             ArrayType::Real => bindings::rocfft_array_type_e_rocfft_array_type_real,
-            ArrayType::HermitianInterleaved => bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved,
-            ArrayType::HermitianPlanar => bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar,
+            ArrayType::HermitianInterleaved => {
+                bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved
+            }
+            ArrayType::HermitianPlanar => {
+                bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar
+            }
             ArrayType::Unset => bindings::rocfft_array_type_e_rocfft_array_type_unset,
         }
     }
@@ -261,9 +279,7 @@ impl Plan {
     ///
     /// A result indicating success or an error
     pub fn print_info(&self) -> Result<()> {
-        unsafe {
-            check_error(bindings::rocfft_plan_get_print(self.handle))
-        }
+        unsafe { check_error(bindings::rocfft_plan_get_print(self.handle)) }
     }
 }
 

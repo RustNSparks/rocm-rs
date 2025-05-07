@@ -2,9 +2,9 @@
 
 use std::ffi::CStr;
 
+use crate::rocblas::error::Result;
 use crate::rocblas::ffi;
 use crate::rocblas::handle::Handle;
-use crate::rocblas::error::Result;
 
 use super::Error;
 
@@ -78,9 +78,15 @@ pub enum PerformanceMetric {
 impl From<PerformanceMetric> for ffi::rocblas_performance_metric {
     fn from(metric: PerformanceMetric) -> Self {
         match metric {
-            PerformanceMetric::Default => ffi::rocblas_performance_metric__rocblas_default_performance_metric,
-            PerformanceMetric::DeviceEfficiency => ffi::rocblas_performance_metric__rocblas_device_efficiency_performance_metric,
-            PerformanceMetric::CUEfficiency => ffi::rocblas_performance_metric__rocblas_cu_efficiency_performance_metric,
+            PerformanceMetric::Default => {
+                ffi::rocblas_performance_metric__rocblas_default_performance_metric
+            }
+            PerformanceMetric::DeviceEfficiency => {
+                ffi::rocblas_performance_metric__rocblas_device_efficiency_performance_metric
+            }
+            PerformanceMetric::CUEfficiency => {
+                ffi::rocblas_performance_metric__rocblas_cu_efficiency_performance_metric
+            }
         }
     }
 }
@@ -88,9 +94,15 @@ impl From<PerformanceMetric> for ffi::rocblas_performance_metric {
 impl From<ffi::rocblas_performance_metric> for PerformanceMetric {
     fn from(metric: ffi::rocblas_performance_metric) -> Self {
         match metric {
-            ffi::rocblas_performance_metric__rocblas_default_performance_metric => PerformanceMetric::Default,
-            ffi::rocblas_performance_metric__rocblas_device_efficiency_performance_metric => PerformanceMetric::DeviceEfficiency,
-            ffi::rocblas_performance_metric__rocblas_cu_efficiency_performance_metric => PerformanceMetric::CUEfficiency,
+            ffi::rocblas_performance_metric__rocblas_default_performance_metric => {
+                PerformanceMetric::Default
+            }
+            ffi::rocblas_performance_metric__rocblas_device_efficiency_performance_metric => {
+                PerformanceMetric::DeviceEfficiency
+            }
+            ffi::rocblas_performance_metric__rocblas_cu_efficiency_performance_metric => {
+                PerformanceMetric::CUEfficiency
+            }
             _ => PerformanceMetric::Default, // Default for unknown values
         }
     }
@@ -169,11 +181,19 @@ impl From<GemmFlags> for ffi::rocblas_gemm_flags {
     fn from(flags: GemmFlags) -> Self {
         match flags {
             GemmFlags::None => ffi::rocblas_gemm_flags__rocblas_gemm_flags_none,
-            GemmFlags::UseCUEfficiency => ffi::rocblas_gemm_flags__rocblas_gemm_flags_use_cu_efficiency,
+            GemmFlags::UseCUEfficiency => {
+                ffi::rocblas_gemm_flags__rocblas_gemm_flags_use_cu_efficiency
+            }
             GemmFlags::FP16AltImpl => ffi::rocblas_gemm_flags__rocblas_gemm_flags_fp16_alt_impl,
-            GemmFlags::CheckSolutionIndex => ffi::rocblas_gemm_flags__rocblas_gemm_flags_check_solution_index,
-            GemmFlags::FP16AltImplRNZ => ffi::rocblas_gemm_flags__rocblas_gemm_flags_fp16_alt_impl_rnz,
-            GemmFlags::StochasticRounding => ffi::rocblas_gemm_flags__rocblas_gemm_flags_stochastic_rounding,
+            GemmFlags::CheckSolutionIndex => {
+                ffi::rocblas_gemm_flags__rocblas_gemm_flags_check_solution_index
+            }
+            GemmFlags::FP16AltImplRNZ => {
+                ffi::rocblas_gemm_flags__rocblas_gemm_flags_fp16_alt_impl_rnz
+            }
+            GemmFlags::StochasticRounding => {
+                ffi::rocblas_gemm_flags__rocblas_gemm_flags_stochastic_rounding
+            }
         }
     }
 }
@@ -252,7 +272,6 @@ pub fn get_math_mode(handle: &Handle) -> Result<MathMode> {
 
 // src/rocblas/utils.rs or appropriate file
 
-
 /// Convert a rocBLAS status code to a string representation
 pub fn status_to_string(status: ffi::rocblas_status) -> String {
     unsafe {
@@ -266,7 +285,7 @@ pub fn status_to_string(status: ffi::rocblas_status) -> String {
 
 /// Initialize rocBLAS on the current HIP device
 ///
-/// This function can be called to initialize rocBLAS upfront, 
+/// This function can be called to initialize rocBLAS upfront,
 /// avoiding costly startup time at the first function call.
 /// Otherwise, initialization happens automatically on the first call.
 pub fn initialize() {
@@ -279,35 +298,32 @@ pub fn initialize() {
 pub fn get_version_string() -> Result<String> {
     // First, get the required buffer size
     let mut size: usize = 0;
-    let status = unsafe {
-        ffi::rocblas_get_version_string_size(&mut size)
-    };
+    let status = unsafe { ffi::rocblas_get_version_string_size(&mut size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
 
     // Allocate buffer and get the version string
     let mut buffer = vec![0u8; size];
-    let status = unsafe {
-        ffi::rocblas_get_version_string(buffer.as_mut_ptr() as *mut i8, size)
-    };
+    let status = unsafe { ffi::rocblas_get_version_string(buffer.as_mut_ptr() as *mut i8, size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
 
     // Convert to Rust string
-    Ok(String::from_utf8_lossy(&buffer[..buffer.iter().position(|&b| b == 0).unwrap_or(buffer.len())]).into_owned())
+    Ok(String::from_utf8_lossy(
+        &buffer[..buffer.iter().position(|&b| b == 0).unwrap_or(buffer.len())],
+    )
+    .into_owned())
 }
 
 /// Start collecting optimal device memory size information
 ///
-/// Indicates that subsequent rocBLAS kernel calls should collect 
+/// Indicates that subsequent rocBLAS kernel calls should collect
 /// the optimal device memory size in bytes for their given kernel arguments
 /// and keep track of the maximum.
 pub fn start_device_memory_size_query(handle: &Handle) -> Result<()> {
-    let status = unsafe {
-        ffi::rocblas_start_device_memory_size_query(handle.as_raw())
-    };
+    let status = unsafe { ffi::rocblas_start_device_memory_size_query(handle.as_raw()) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
@@ -317,9 +333,7 @@ pub fn start_device_memory_size_query(handle: &Handle) -> Result<()> {
 /// Stop collecting optimal device memory size information
 pub fn stop_device_memory_size_query(handle: &Handle) -> Result<usize> {
     let mut size: usize = 0;
-    let status = unsafe {
-        ffi::rocblas_stop_device_memory_size_query(handle.as_raw(), &mut size)
-    };
+    let status = unsafe { ffi::rocblas_stop_device_memory_size_query(handle.as_raw(), &mut size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
@@ -328,17 +342,13 @@ pub fn stop_device_memory_size_query(handle: &Handle) -> Result<usize> {
 
 /// Check if device memory size query is in progress
 pub fn is_device_memory_size_query(handle: &Handle) -> bool {
-    unsafe {
-        ffi::rocblas_is_device_memory_size_query(handle.as_raw())
-    }
+    unsafe { ffi::rocblas_is_device_memory_size_query(handle.as_raw()) }
 }
 
 /// Get the current device memory size for the handle
 pub fn get_device_memory_size(handle: &Handle) -> Result<usize> {
     let mut size: usize = 0;
-    let status = unsafe {
-        ffi::rocblas_get_device_memory_size(handle.as_raw(), &mut size)
-    };
+    let status = unsafe { ffi::rocblas_get_device_memory_size(handle.as_raw(), &mut size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
@@ -352,12 +362,10 @@ pub fn get_device_memory_size(handle: &Handle) -> Result<usize> {
 /// Any previously allocated device memory managed by the handle is freed.
 ///
 /// If size > 0, sets the device memory size to the specified size (in bytes).
-/// If size == 0, frees the memory allocated so far, and lets rocBLAS manage 
+/// If size == 0, frees the memory allocated so far, and lets rocBLAS manage
 /// device memory in the future, expanding it when necessary.
 pub fn set_device_memory_size(handle: &Handle, size: usize) -> Result<()> {
-    let status = unsafe {
-        ffi::rocblas_set_device_memory_size(handle.as_raw(), size)
-    };
+    let status = unsafe { ffi::rocblas_set_device_memory_size(handle.as_raw(), size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
@@ -367,10 +375,12 @@ pub fn set_device_memory_size(handle: &Handle, size: usize) -> Result<()> {
 /// Set the device workspace for the handle to use
 ///
 /// Any previously allocated device memory managed by the handle is freed.
-pub fn set_workspace(handle: &Handle, addr: *mut std::ffi::c_void, size: usize) -> Result<()> {
-    let status = unsafe {
-        ffi::rocblas_set_workspace(handle.as_raw(), addr, size)
-    };
+pub unsafe fn set_workspace(
+    handle: &Handle,
+    addr: *mut std::ffi::c_void,
+    size: usize,
+) -> Result<()> {
+    let status = unsafe { ffi::rocblas_set_workspace(handle.as_raw(), addr, size) };
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
@@ -379,16 +389,12 @@ pub fn set_workspace(handle: &Handle, addr: *mut std::ffi::c_void, size: usize) 
 
 /// Check if device memory in handle is managed by rocBLAS
 pub fn is_managing_device_memory(handle: &Handle) -> bool {
-    unsafe {
-        ffi::rocblas_is_managing_device_memory(handle.as_raw())
-    }
+    unsafe { ffi::rocblas_is_managing_device_memory(handle.as_raw()) }
 }
 
 /// Check if device memory in handle is managed by the user
 pub fn is_user_managing_device_memory(handle: &Handle) -> bool {
-    unsafe {
-        ffi::rocblas_is_user_managing_device_memory(handle.as_raw())
-    }
+    unsafe { ffi::rocblas_is_user_managing_device_memory(handle.as_raw()) }
 }
 
 /// Set the default memory size for device malloc

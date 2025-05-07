@@ -1,11 +1,11 @@
 // src/miopen/rnn.rs
 
-use std::ptr;
-use crate::miopen::ffi;
+use crate::miopen::dropout::DropoutDescriptor;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
-use crate::miopen::dropout::DropoutDescriptor;
+use std::ptr;
 
 /// RNN mode
 pub type RNNMode = ffi::miopenRNNMode_t;
@@ -45,15 +45,17 @@ impl RNNDescriptor {
     }
 
     /// Set the RNN descriptor
-    pub fn set(&mut self,
-               hidden_size: i32,
-               num_layers: i32,
-               input_mode: RNNInputMode,
-               direction: RNNDirectionMode,
-               mode: RNNMode,
-               bias_mode: RNNBiasMode,
-               algo: RNNAlgo,
-               data_type: ffi::miopenDataType_t) -> Result<()> {
+    pub fn set(
+        &mut self,
+        hidden_size: i32,
+        num_layers: i32,
+        input_mode: RNNInputMode,
+        direction: RNNDirectionMode,
+        mode: RNNMode,
+        bias_mode: RNNBiasMode,
+        algo: RNNAlgo,
+        data_type: ffi::miopenDataType_t,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetRNNDescriptor(
                 self.desc,
@@ -76,16 +78,18 @@ impl RNNDescriptor {
     }
 
     /// Set the RNN descriptor with dropout
-    pub fn set_with_dropout(&mut self,
-                            hidden_size: i32,
-                            num_layers: i32,
-                            dropout_desc: &DropoutDescriptor,
-                            input_mode: RNNInputMode,
-                            direction: RNNDirectionMode,
-                            mode: RNNMode,
-                            bias_mode: RNNBiasMode,
-                            algo: RNNAlgo,
-                            data_type: ffi::miopenDataType_t) -> Result<()> {
+    pub fn set_with_dropout(
+        &mut self,
+        hidden_size: i32,
+        num_layers: i32,
+        dropout_desc: &DropoutDescriptor,
+        input_mode: RNNInputMode,
+        direction: RNNDirectionMode,
+        mode: RNNMode,
+        bias_mode: RNNBiasMode,
+        algo: RNNAlgo,
+        data_type: ffi::miopenDataType_t,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetRNNDescriptor_V2(
                 self.desc,
@@ -109,7 +113,17 @@ impl RNNDescriptor {
     }
 
     /// Get the RNN descriptor details
-    pub fn get(&self) -> Result<(RNNMode, RNNAlgo, RNNInputMode, RNNDirectionMode, RNNBiasMode, i32, i32)> {
+    pub fn get(
+        &self,
+    ) -> Result<(
+        RNNMode,
+        RNNAlgo,
+        RNNInputMode,
+        RNNDirectionMode,
+        RNNBiasMode,
+        i32,
+        i32,
+    )> {
         let mut mode = 0;
         let mut algo = 0;
         let mut input_mode = 0;
@@ -135,11 +149,31 @@ impl RNNDescriptor {
             return Err(Error::new(status));
         }
 
-        Ok((mode, algo, input_mode, direction, bias_mode, hidden_size, num_layers))
+        Ok((
+            mode,
+            algo,
+            input_mode,
+            direction,
+            bias_mode,
+            hidden_size,
+            num_layers,
+        ))
     }
 
     /// Get the RNN descriptor details (version 2)
-    pub fn get_v2(&self) -> Result<(i32, i32, Option<DropoutDescriptor>, RNNInputMode, RNNDirectionMode, RNNMode, RNNBiasMode, RNNAlgo, ffi::miopenDataType_t)> {
+    pub fn get_v2(
+        &self,
+    ) -> Result<(
+        i32,
+        i32,
+        Option<DropoutDescriptor>,
+        RNNInputMode,
+        RNNDirectionMode,
+        RNNMode,
+        RNNBiasMode,
+        RNNAlgo,
+        ffi::miopenDataType_t,
+    )> {
         let mut hidden_size = 0;
         let mut num_layers = 0;
         let mut dropout_desc = ptr::null_mut();
@@ -178,17 +212,22 @@ impl RNNDescriptor {
             Some(DropoutDescriptor::from_raw(dropout_desc))
         };
 
-        Ok((hidden_size, num_layers, dropout_descriptor, input_mode, direction, mode, bias_mode, algo, data_type))
+        Ok((
+            hidden_size,
+            num_layers,
+            dropout_descriptor,
+            input_mode,
+            direction,
+            mode,
+            bias_mode,
+            algo,
+            data_type,
+        ))
     }
 
     /// Set the RNN padding mode
     pub fn set_padding_mode(&mut self, padding_mode: ffi::miopenRNNPaddingMode_t) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetRNNPaddingMode(
-                self.desc,
-                padding_mode,
-            )
-        };
+        let status = unsafe { ffi::miopenSetRNNPaddingMode(self.desc, padding_mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -201,12 +240,7 @@ impl RNNDescriptor {
     pub fn get_padding_mode(&self) -> Result<ffi::miopenRNNPaddingMode_t> {
         let mut padding_mode = 0;
 
-        let status = unsafe {
-            ffi::miopenGetRNNPaddingMode(
-                self.desc,
-                &mut padding_mode,
-            )
-        };
+        let status = unsafe { ffi::miopenGetRNNPaddingMode(self.desc, &mut padding_mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -216,7 +250,12 @@ impl RNNDescriptor {
     }
 
     /// Get workspace size for RNN
-    pub fn get_workspace_size(&self, handle: &Handle, sequence_len: i32, x_desc: &[&TensorDescriptor]) -> Result<usize> {
+    pub fn get_workspace_size(
+        &self,
+        handle: &Handle,
+        sequence_len: i32,
+        x_desc: &[&TensorDescriptor],
+    ) -> Result<usize> {
         let mut workspace_size = 0;
 
         let status = unsafe {
@@ -224,7 +263,11 @@ impl RNNDescriptor {
                 handle.as_raw(),
                 self.desc,
                 sequence_len,
-                x_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+                x_desc
+                    .iter()
+                    .map(|d| d.as_raw())
+                    .collect::<Vec<_>>()
+                    .as_ptr(),
                 &mut workspace_size,
             )
         };
@@ -237,7 +280,12 @@ impl RNNDescriptor {
     }
 
     /// Get reserve space size for RNN training
-    pub fn get_training_reserve_size(&self, handle: &Handle, sequence_len: i32, x_desc: &[&TensorDescriptor]) -> Result<usize> {
+    pub fn get_training_reserve_size(
+        &self,
+        handle: &Handle,
+        sequence_len: i32,
+        x_desc: &[&TensorDescriptor],
+    ) -> Result<usize> {
         let mut reserve_size = 0;
 
         let status = unsafe {
@@ -245,7 +293,11 @@ impl RNNDescriptor {
                 handle.as_raw(),
                 self.desc,
                 sequence_len,
-                x_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+                x_desc
+                    .iter()
+                    .map(|d| d.as_raw())
+                    .collect::<Vec<_>>()
+                    .as_ptr(),
                 &mut reserve_size,
             )
         };
@@ -284,7 +336,7 @@ impl DropoutDescriptor {
 }
 
 /// Execute forward inference for RNN
-pub fn rnn_forward_inference(
+pub unsafe fn rnn_forward_inference(
     handle: &Handle,
     rnn_desc: &RNNDescriptor,
     sequence_len: i32,
@@ -310,7 +362,11 @@ pub fn rnn_forward_inference(
             handle.as_raw(),
             rnn_desc.as_raw(),
             sequence_len,
-            x_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            x_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             x,
             hx_desc.as_raw(),
             hx,
@@ -318,7 +374,11 @@ pub fn rnn_forward_inference(
             cx,
             w_desc.as_raw(),
             w,
-            y_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            y_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             y,
             hy_desc.as_raw(),
             hy,
@@ -337,7 +397,7 @@ pub fn rnn_forward_inference(
 }
 
 /// Execute forward training for RNN
-pub fn rnn_forward_training(
+pub unsafe fn rnn_forward_training(
     handle: &Handle,
     rnn_desc: &RNNDescriptor,
     sequence_len: i32,
@@ -365,7 +425,11 @@ pub fn rnn_forward_training(
             handle.as_raw(),
             rnn_desc.as_raw(),
             sequence_len,
-            x_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            x_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             x,
             hx_desc.as_raw(),
             hx,
@@ -373,7 +437,11 @@ pub fn rnn_forward_training(
             cx,
             w_desc.as_raw(),
             w,
-            y_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            y_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             y,
             hy_desc.as_raw(),
             hy,
@@ -394,7 +462,7 @@ pub fn rnn_forward_training(
 }
 
 /// Execute backward data for RNN
-pub fn rnn_backward_data(
+pub unsafe fn rnn_backward_data(
     handle: &Handle,
     rnn_desc: &RNNDescriptor,
     sequence_len: i32,
@@ -428,9 +496,17 @@ pub fn rnn_backward_data(
             handle.as_raw(),
             rnn_desc.as_raw(),
             sequence_len,
-            y_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            y_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             y,
-            dy_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            dy_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             dy,
             dhy_desc.as_raw(),
             dhy,
@@ -442,7 +518,11 @@ pub fn rnn_backward_data(
             hx,
             cx_desc.as_raw(),
             cx,
-            dx_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            dx_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             dx,
             dhx_desc.as_raw(),
             dhx,
@@ -463,7 +543,7 @@ pub fn rnn_backward_data(
 }
 
 /// Execute backward weights for RNN
-pub fn rnn_backward_weights(
+pub unsafe fn rnn_backward_weights(
     handle: &Handle,
     rnn_desc: &RNNDescriptor,
     sequence_len: i32,
@@ -485,11 +565,19 @@ pub fn rnn_backward_weights(
             handle.as_raw(),
             rnn_desc.as_raw(),
             sequence_len,
-            x_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            x_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             x,
             hx_desc.as_raw(),
             hx,
-            y_desc.iter().map(|d| d.as_raw()).collect::<Vec<_>>().as_ptr(),
+            y_desc
+                .iter()
+                .map(|d| d.as_raw())
+                .collect::<Vec<_>>()
+                .as_ptr(),
             y,
             dw_desc.as_raw(),
             dw,

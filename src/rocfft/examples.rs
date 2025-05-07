@@ -1,14 +1,18 @@
 // examples/rocfft_examples.rs
 
 use crate::hip::{self, Device, DeviceMemory, Stream};
-use crate::rocfft::{self, plan::{Plan, PlacementType, Precision, TransformType, ArrayType}, description::PlanDescription};
+use crate::rocfft::{
+    self,
+    description::PlanDescription,
+    plan::{ArrayType, PlacementType, Plan, Precision, TransformType},
+};
 
 /// Example of a 1D complex-to-complex FFT
 pub fn run_1d_complex_example() -> Result<(), Box<dyn std::error::Error>> {
     // Set up a simple 1D complex FFT
     let length = 1024;
     let lengths = vec![length];
-    
+
     // Create a plan for a forward complex FFT
     let mut plan = Plan::new(
         PlacementType::InPlace,
@@ -19,11 +23,11 @@ pub fn run_1d_complex_example() -> Result<(), Box<dyn std::error::Error>> {
         1,
         None,
     )?;
-    
+
     // Create input data (complex interleaved: real, imag, real, imag, ...)
     let complex_length = length * 2;
     let mut input_data = vec![0.0f32; complex_length];
-    
+
     // Initialize with a sine wave - ENSURE THIS IS WORKING
     println!("Initializing sine wave...");
     for i in 0..length {
@@ -32,47 +36,51 @@ pub fn run_1d_complex_example() -> Result<(), Box<dyn std::error::Error>> {
         input_data[i * 2] = f32::sin(2.0 * std::f32::consts::PI * 10.0 * x);
         input_data[i * 2 + 1] = 0.0; // Imaginary part is zero
     }
-    
+
     // Print a few input values to verify
     println!("Input data samples:");
     for i in 0..5 {
-        println!("  Element {}: Real={:.4}, Imag={:.4}", 
-                i, input_data[i*2], input_data[i*2+1]);
+        println!(
+            "  Element {}: Real={:.4}, Imag={:.4}",
+            i,
+            input_data[i * 2],
+            input_data[i * 2 + 1]
+        );
     }
-    
+
     // Allocate device memory
     let mut d_input = DeviceMemory::<f32>::new(complex_length)?;
-    
+
     // Copy input data to device
     d_input.copy_from_host(&input_data)?;
-    
+
     // Execute the transform
     let input_ptr = [d_input.as_ptr()];
     plan.execute(&input_ptr, &[], None)?;
-    
+
     // Copy result back to host
     let mut output_data = vec![0.0f32; complex_length];
     d_input.copy_to_host(&mut output_data)?;
-    
+
     // Print results
     println!("FFT Results:");
     let mut found_nonzero = false;
-    
+
     // Print the first few frequency bins
     for i in 0..15 {
         let real = output_data[i * 2];
         let imag = output_data[i * 2 + 1];
         let magnitude = (real * real + imag * imag).sqrt();
         println!("Freq {}: Magnitude = {:.4}", i, magnitude);
-        
+
         if magnitude > 0.1 {
             found_nonzero = true;
         }
     }
-    
+
     if !found_nonzero {
         println!("WARNING: No significant magnitudes found. This may indicate a problem.");
-        
+
         // Check some more frequencies, including bin 10 where we expect a peak
         println!("Checking bin 10 where we expect a peak:");
         let i = 10;
@@ -81,7 +89,7 @@ pub fn run_1d_complex_example() -> Result<(), Box<dyn std::error::Error>> {
         let magnitude = (real * real + imag * imag).sqrt();
         println!("Freq {}: Magnitude = {:.4}", i, magnitude);
     }
-    
+
     Ok(())
 }
 /// Example of a 1D real-to-complex and complex-to-real FFT
@@ -126,8 +134,8 @@ pub fn run_1d_real_example() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize input with a simple sine wave plus noise
     for i in 0..length {
         let x = i as f32 / length as f32;
-        input_data[i] = f32::sin(2.0 * std::f32::consts::PI * 10.0 * x) +
-            0.5 * f32::sin(2.0 * std::f32::consts::PI * 25.0 * x);
+        input_data[i] = f32::sin(2.0 * std::f32::consts::PI * 10.0 * x)
+            + 0.5 * f32::sin(2.0 * std::f32::consts::PI * 25.0 * x);
     }
 
     // Allocate device memory
@@ -150,16 +158,16 @@ pub fn run_1d_real_example() -> Result<(), Box<dyn std::error::Error>> {
     // Print frequency domain data
     println!("Real FFT Results (first 5 frequencies):");
     for i in 0..5 {
-        let mag = (output_data[i*2].powi(2) + output_data[i*2+1].powi(2)).sqrt();
+        let mag = (output_data[i * 2].powi(2) + output_data[i * 2 + 1].powi(2)).sqrt();
         println!("Freq {}: Magnitude = {:.4}", i, mag);
     }
 
     // Filter the signal (zero out high frequencies as an example)
     // Keep only the first 20% of frequencies
     let cutoff = (length / 2 + 1) / 5;
-    for i in cutoff..(length/2+1) {
-        output_data[i*2] = 0.0;     // Real part
-        output_data[i*2+1] = 0.0;   // Imaginary part
+    for i in cutoff..(length / 2 + 1) {
+        output_data[i * 2] = 0.0; // Real part
+        output_data[i * 2 + 1] = 0.0; // Imaginary part
     }
 
     // Copy filtered data back to device

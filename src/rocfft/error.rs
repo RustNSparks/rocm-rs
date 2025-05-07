@@ -1,7 +1,7 @@
-use std::fmt;
+use crate::rocfft::bindings;
 use std::error::Error as StdError;
 use std::ffi::NulError;
-use crate::rocfft::bindings;
+use std::fmt;
 
 /// Custom error type for rocFFT operations
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,7 +77,9 @@ impl From<NulError> for Error {
 impl From<u32> for Error {
     fn from(status: u32) -> Self {
         match status {
-            bindings::rocfft_status_e_rocfft_status_success => panic!("Tried to convert successful status to error"),
+            bindings::rocfft_status_e_rocfft_status_success => {
+                panic!("Tried to convert successful status to error")
+            }
             bindings::rocfft_status_e_rocfft_status_failure => Error::Failure,
             bindings::rocfft_status_e_rocfft_status_invalid_arg_value => Error::InvalidArgValue,
             bindings::rocfft_status_e_rocfft_status_invalid_dimensions => Error::InvalidDimensions,
@@ -129,7 +131,7 @@ pub(crate) fn check_ptr<T>(ptr: *const T) -> Result<()> {
     }
 }
 
-/// Validate mutable pointer arguments and return an error if null 
+/// Validate mutable pointer arguments and return an error if null
 #[inline]
 pub(crate) fn check_mut_ptr<T>(ptr: *mut T) -> Result<()> {
     if ptr.is_null() {
@@ -154,41 +156,51 @@ pub(crate) fn check_dimensions(dimensions: usize) -> Result<()> {
 pub(crate) fn check_compatible_types(
     transform_type: u32,
     in_array_type: u32,
-    out_array_type: u32
+    out_array_type: u32,
 ) -> Result<()> {
     match transform_type {
-        bindings::rocfft_transform_type_e_rocfft_transform_type_complex_forward |
-        bindings::rocfft_transform_type_e_rocfft_transform_type_complex_inverse => {
+        bindings::rocfft_transform_type_e_rocfft_transform_type_complex_forward
+        | bindings::rocfft_transform_type_e_rocfft_transform_type_complex_inverse => {
             // Both input and output must be complex
-            if (in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved ||
-                in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_complex_planar) &&
-                (out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved ||
-                    out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_complex_planar) {
+            if (in_array_type
+                == bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved
+                || in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_complex_planar)
+                && (out_array_type
+                    == bindings::rocfft_array_type_e_rocfft_array_type_complex_interleaved
+                    || out_array_type
+                        == bindings::rocfft_array_type_e_rocfft_array_type_complex_planar)
+            {
                 Ok(())
             } else {
                 Err(Error::IncompatibleTypes)
             }
-        },
+        }
         bindings::rocfft_transform_type_e_rocfft_transform_type_real_forward => {
             // Input must be real, output must be hermitian
-            if in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_real &&
-                (out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved ||
-                    out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar) {
+            if in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_real
+                && (out_array_type
+                    == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved
+                    || out_array_type
+                        == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar)
+            {
                 Ok(())
             } else {
                 Err(Error::IncompatibleTypes)
             }
-        },
+        }
         bindings::rocfft_transform_type_e_rocfft_transform_type_real_inverse => {
             // Input must be hermitian, output must be real
-            if (in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved ||
-                in_array_type == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar) &&
-                out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_real {
+            if (in_array_type
+                == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_interleaved
+                || in_array_type
+                    == bindings::rocfft_array_type_e_rocfft_array_type_hermitian_planar)
+                && out_array_type == bindings::rocfft_array_type_e_rocfft_array_type_real
+            {
                 Ok(())
             } else {
                 Err(Error::IncompatibleTypes)
             }
-        },
+        }
         _ => Err(Error::InvalidArgValue),
     }
 }

@@ -1,9 +1,9 @@
 // src/rocblas/level3.rs
 
+use crate::rocblas::error::{Error, Result};
 use crate::rocblas::ffi;
 use crate::rocblas::handle::Handle;
-use crate::rocblas::error::{Error, Result};
-use crate::rocblas::types::{Operation, DataType};
+use crate::rocblas::types::{DataType, Operation};
 use crate::rocblas::utils::GemmAlgo;
 
 use super::types::{Fill, Side};
@@ -13,16 +13,16 @@ use super::types::{Fill, Side};
 //==============================================================================
 
 /// Matrix-matrix multiplication
-/// 
+///
 /// Computes one of the following matrix-matrix operations:
-/// 
+///
 /// C := alpha * A * B + beta * C
 /// C := alpha * A^T * B + beta * C
 /// C := alpha * A * B^T + beta * C
 /// C := alpha * A^T * B^T + beta * C
-/// 
+///
 /// where alpha and beta are scalars, and A, B, C are matrices.
-/// 
+///
 /// # Arguments
 /// * `handle` - RocBLAS handle
 /// * `transa` - Operation op(A) that is non-or (conjugate) transpose
@@ -38,7 +38,7 @@ use super::types::{Fill, Side};
 /// * `beta` - Scalar beta
 /// * `C` - Buffer storing matrix C
 /// * `ldc` - Leading dimension of matrix C
-pub fn gemm<T>(
+pub unsafe fn gemm<T>(
     handle: &Handle,
     transa: Operation,
     transb: Operation,
@@ -58,19 +58,18 @@ where
     T: GemmType,
 {
     T::rocblas_gemm(
-        handle, transa, transb, m, n, k, 
-        alpha, A, lda, B, ldb, beta, C, ldc,
+        handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
     )
 }
 
 /// Batched matrix-matrix multiplication
-/// 
+///
 /// Computes one of the following batched matrix-matrix operations:
-/// 
+///
 /// C_i := alpha * op(A_i) * op(B_i) + beta * C_i
-/// 
+///
 /// where (A_i, B_i, C_i) is the i-th instance of the batch.
-/// 
+///
 /// # Arguments
 /// * `handle` - RocBLAS handle
 /// * `transa` - Operation op(A) that is non-or (conjugate) transpose
@@ -87,7 +86,7 @@ where
 /// * `C` - Array of pointers to matrices C_i
 /// * `ldc` - Leading dimension of matrices C_i
 /// * `batch_count` - Number of instances in the batch
-pub fn gemm_batched<T>(
+pub unsafe fn gemm_batched<T>(
     handle: &Handle,
     transa: Operation,
     transb: Operation,
@@ -108,19 +107,32 @@ where
     T: GemmBatchedType,
 {
     T::rocblas_gemm_batched(
-        handle, transa, transb, m, n, k, 
-        alpha, A, lda, B, ldb, beta, C, ldc, batch_count,
+        handle,
+        transa,
+        transb,
+        m,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        B,
+        ldb,
+        beta,
+        C,
+        ldc,
+        batch_count,
     )
 }
 
 /// Strided batched matrix-matrix multiplication
-/// 
+///
 /// Computes one of the following strided batched matrix-matrix operations:
-/// 
+///
 /// C_i := alpha * op(A_i) * op(B_i) + beta * C_i
-/// 
+///
 /// where (A_i, B_i, C_i) is the i-th instance of the batch.
-/// 
+///
 /// # Arguments
 /// * `handle` - RocBLAS handle
 /// * `transa` - Operation op(A) that is non-or (conjugate) transpose
@@ -140,7 +152,7 @@ where
 /// * `ldc` - Leading dimension of matrices C_i
 /// * `stride_C` - Stride from start of one matrix (C_i) to the next (C_i+1)
 /// * `batch_count` - Number of instances in the batch
-pub fn gemm_strided_batched<T>(
+pub unsafe fn gemm_strided_batched<T>(
     handle: &Handle,
     transa: Operation,
     transb: Operation,
@@ -164,9 +176,24 @@ where
     T: GemmStridedBatchedType,
 {
     T::rocblas_gemm_strided_batched(
-        handle, transa, transb, m, n, k, 
-        alpha, A, lda, stride_A, B, ldb, stride_B, 
-        beta, C, ldc, stride_C, batch_count,
+        handle,
+        transa,
+        transb,
+        m,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        stride_A,
+        B,
+        ldb,
+        stride_B,
+        beta,
+        C,
+        ldc,
+        stride_C,
+        batch_count,
     )
 }
 
@@ -197,7 +224,7 @@ where
 /// * `ldc` - Leading dimension of matrix C
 /// * `compute_type` - Computation type
 /// * `algo` - GEMM algorithm
-pub fn gemm_ex(
+pub unsafe fn gemm_ex(
     handle: &Handle,
     transa: Operation,
     transb: Operation,
@@ -246,11 +273,11 @@ pub fn gemm_ex(
             0, // Flags
         )
     };
-    
+
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));
     }
-    
+
     Ok(())
 }
 
@@ -260,7 +287,7 @@ pub fn gemm_ex(
 
 /// Trait for types that can be used with gemm
 pub trait GemmType {
-    fn rocblas_gemm(
+    unsafe fn rocblas_gemm(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -279,7 +306,7 @@ pub trait GemmType {
 }
 
 impl GemmType for f32 {
-    fn rocblas_gemm(
+    unsafe fn rocblas_gemm(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -321,7 +348,7 @@ impl GemmType for f32 {
 }
 
 impl GemmType for f64 {
-    fn rocblas_gemm(
+    unsafe fn rocblas_gemm(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -363,7 +390,7 @@ impl GemmType for f64 {
 }
 
 impl GemmType for ffi::rocblas_float_complex {
-    fn rocblas_gemm(
+    unsafe fn rocblas_gemm(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -405,7 +432,7 @@ impl GemmType for ffi::rocblas_float_complex {
 }
 
 impl GemmType for ffi::rocblas_double_complex {
-    fn rocblas_gemm(
+    unsafe fn rocblas_gemm(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -448,7 +475,7 @@ impl GemmType for ffi::rocblas_double_complex {
 
 /// Trait for types that can be used with gemm_batched
 pub trait GemmBatchedType {
-    fn rocblas_gemm_batched(
+    unsafe fn rocblas_gemm_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -468,7 +495,7 @@ pub trait GemmBatchedType {
 }
 
 impl GemmBatchedType for f32 {
-    fn rocblas_gemm_batched(
+    unsafe fn rocblas_gemm_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -512,7 +539,7 @@ impl GemmBatchedType for f32 {
 }
 
 impl GemmBatchedType for f64 {
-    fn rocblas_gemm_batched(
+    unsafe fn rocblas_gemm_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -556,7 +583,7 @@ impl GemmBatchedType for f64 {
 }
 
 impl GemmBatchedType for ffi::rocblas_float_complex {
-    fn rocblas_gemm_batched(
+    unsafe fn rocblas_gemm_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -600,7 +627,7 @@ impl GemmBatchedType for ffi::rocblas_float_complex {
 }
 
 impl GemmBatchedType for ffi::rocblas_double_complex {
-    fn rocblas_gemm_batched(
+    unsafe fn rocblas_gemm_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -645,7 +672,7 @@ impl GemmBatchedType for ffi::rocblas_double_complex {
 
 /// Trait for types that can be used with gemm_strided_batched
 pub trait GemmStridedBatchedType {
-    fn rocblas_gemm_strided_batched(
+    unsafe fn rocblas_gemm_strided_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -668,7 +695,7 @@ pub trait GemmStridedBatchedType {
 }
 
 impl GemmStridedBatchedType for f32 {
-    fn rocblas_gemm_strided_batched(
+    unsafe fn rocblas_gemm_strided_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -718,7 +745,7 @@ impl GemmStridedBatchedType for f32 {
 }
 
 impl GemmStridedBatchedType for f64 {
-    fn rocblas_gemm_strided_batched(
+    unsafe fn rocblas_gemm_strided_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -768,7 +795,7 @@ impl GemmStridedBatchedType for f64 {
 }
 
 impl GemmStridedBatchedType for ffi::rocblas_float_complex {
-    fn rocblas_gemm_strided_batched(
+    unsafe fn rocblas_gemm_strided_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -818,7 +845,7 @@ impl GemmStridedBatchedType for ffi::rocblas_float_complex {
 }
 
 impl GemmStridedBatchedType for ffi::rocblas_double_complex {
-    fn rocblas_gemm_strided_batched(
+    unsafe fn rocblas_gemm_strided_batched(
         handle: &Handle,
         transa: Operation,
         transb: Operation,
@@ -869,7 +896,7 @@ impl GemmStridedBatchedType for ffi::rocblas_double_complex {
 
 // Trait definitions for HEMM operations
 pub trait HemmType {
-    fn rocblas_hemm(
+    unsafe fn rocblas_hemm(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -887,7 +914,7 @@ pub trait HemmType {
 }
 
 impl HemmType for ffi::rocblas_float_complex {
-    fn rocblas_hemm(
+    unsafe fn rocblas_hemm(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -927,7 +954,7 @@ impl HemmType for ffi::rocblas_float_complex {
 }
 
 impl HemmType for ffi::rocblas_double_complex {
-    fn rocblas_hemm(
+    unsafe fn rocblas_hemm(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -969,8 +996,8 @@ impl HemmType for ffi::rocblas_double_complex {
 // Trait for HERK operations
 pub trait HerkType {
     type ScalarType;
-    
-    fn rocblas_herk(
+
+    unsafe fn rocblas_herk(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -987,8 +1014,8 @@ pub trait HerkType {
 
 impl HerkType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herk(
+
+    unsafe fn rocblas_herk(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1025,8 +1052,8 @@ impl HerkType for ffi::rocblas_float_complex {
 
 impl HerkType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herk(
+
+    unsafe fn rocblas_herk(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1063,7 +1090,7 @@ impl HerkType for ffi::rocblas_double_complex {
 
 // Trait definitions for SPR operations (packed symmetric rank-1 update)
 pub trait SprType {
-    fn rocblas_spr(
+    unsafe fn rocblas_spr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1075,7 +1102,7 @@ pub trait SprType {
 }
 
 impl SprType for f32 {
-    fn rocblas_spr(
+    unsafe fn rocblas_spr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1084,17 +1111,8 @@ impl SprType for f32 {
         incx: i32,
         AP: *mut Self,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_sspr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                AP,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_sspr(handle.as_raw(), uplo.into(), n, alpha, x, incx, AP) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1103,7 +1121,7 @@ impl SprType for f32 {
 }
 
 impl SprType for f64 {
-    fn rocblas_spr(
+    unsafe fn rocblas_spr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1112,17 +1130,8 @@ impl SprType for f64 {
         incx: i32,
         AP: *mut Self,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_dspr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                AP,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_dspr(handle.as_raw(), uplo.into(), n, alpha, x, incx, AP) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1132,7 +1141,7 @@ impl SprType for f64 {
 
 // There are also complex versions in the bindings
 impl SprType for ffi::rocblas_float_complex {
-    fn rocblas_spr(
+    unsafe fn rocblas_spr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1141,17 +1150,8 @@ impl SprType for ffi::rocblas_float_complex {
         incx: i32,
         AP: *mut Self,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_cspr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                AP,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_cspr(handle.as_raw(), uplo.into(), n, alpha, x, incx, AP) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1160,7 +1160,7 @@ impl SprType for ffi::rocblas_float_complex {
 }
 
 impl SprType for ffi::rocblas_double_complex {
-    fn rocblas_spr(
+    unsafe fn rocblas_spr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1169,17 +1169,8 @@ impl SprType for ffi::rocblas_double_complex {
         incx: i32,
         AP: *mut Self,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_zspr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                AP,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_zspr(handle.as_raw(), uplo.into(), n, alpha, x, incx, AP) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1189,7 +1180,7 @@ impl SprType for ffi::rocblas_double_complex {
 
 // Trait for SPR2 operations (packed symmetric rank-2 update)
 pub trait Spr2Type {
-    fn rocblas_spr2(
+    unsafe fn rocblas_spr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1203,7 +1194,7 @@ pub trait Spr2Type {
 }
 
 impl Spr2Type for f32 {
-    fn rocblas_spr2(
+    unsafe fn rocblas_spr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1215,17 +1206,7 @@ impl Spr2Type for f32 {
         AP: *mut Self,
     ) -> Result<()> {
         let status = unsafe {
-            ffi::rocblas_sspr2(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                y,
-                incy,
-                AP,
-            )
+            ffi::rocblas_sspr2(handle.as_raw(), uplo.into(), n, alpha, x, incx, y, incy, AP)
         };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
@@ -1235,7 +1216,7 @@ impl Spr2Type for f32 {
 }
 
 impl Spr2Type for f64 {
-    fn rocblas_spr2(
+    unsafe fn rocblas_spr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1247,17 +1228,7 @@ impl Spr2Type for f64 {
         AP: *mut Self,
     ) -> Result<()> {
         let status = unsafe {
-            ffi::rocblas_dspr2(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                y,
-                incy,
-                AP,
-            )
+            ffi::rocblas_dspr2(handle.as_raw(), uplo.into(), n, alpha, x, incx, y, incy, AP)
         };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
@@ -1268,7 +1239,7 @@ impl Spr2Type for f64 {
 
 // Trait for SYR operations (symmetric rank-1 update)
 pub trait SyrType {
-    fn rocblas_syr(
+    unsafe fn rocblas_syr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1281,7 +1252,7 @@ pub trait SyrType {
 }
 
 impl SyrType for f32 {
-    fn rocblas_syr(
+    unsafe fn rocblas_syr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1291,18 +1262,8 @@ impl SyrType for f32 {
         A: *mut Self,
         lda: i32,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_ssyr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                A,
-                lda,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_ssyr(handle.as_raw(), uplo.into(), n, alpha, x, incx, A, lda) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1312,7 +1273,7 @@ impl SyrType for f32 {
 
 // Trait for SYR2 operations (symmetric rank-2 update)
 pub trait Syr2Type {
-    fn rocblas_syr2(
+    unsafe fn rocblas_syr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1327,7 +1288,7 @@ pub trait Syr2Type {
 }
 
 impl Syr2Type for f32 {
-    fn rocblas_syr2(
+    unsafe fn rocblas_syr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1361,7 +1322,7 @@ impl Syr2Type for f32 {
 }
 
 impl Syr2Type for f64 {
-    fn rocblas_syr2(
+    unsafe fn rocblas_syr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1396,7 +1357,7 @@ impl Syr2Type for f64 {
 
 // Implementations for complex versions (CSYR, ZSYR, CSYR2, ZSYR2)
 impl SyrType for ffi::rocblas_float_complex {
-    fn rocblas_syr(
+    unsafe fn rocblas_syr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1406,18 +1367,8 @@ impl SyrType for ffi::rocblas_float_complex {
         A: *mut Self,
         lda: i32,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_csyr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                A,
-                lda,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_csyr(handle.as_raw(), uplo.into(), n, alpha, x, incx, A, lda) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1426,7 +1377,7 @@ impl SyrType for ffi::rocblas_float_complex {
 }
 
 impl SyrType for ffi::rocblas_double_complex {
-    fn rocblas_syr(
+    unsafe fn rocblas_syr(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1436,18 +1387,8 @@ impl SyrType for ffi::rocblas_double_complex {
         A: *mut Self,
         lda: i32,
     ) -> Result<()> {
-        let status = unsafe {
-            ffi::rocblas_zsyr(
-                handle.as_raw(),
-                uplo.into(),
-                n,
-                alpha,
-                x,
-                incx,
-                A,
-                lda,
-            )
-        };
+        let status =
+            unsafe { ffi::rocblas_zsyr(handle.as_raw(), uplo.into(), n, alpha, x, incx, A, lda) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -1456,7 +1397,7 @@ impl SyrType for ffi::rocblas_double_complex {
 }
 
 impl Syr2Type for ffi::rocblas_float_complex {
-    fn rocblas_syr2(
+    unsafe fn rocblas_syr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1490,7 +1431,7 @@ impl Syr2Type for ffi::rocblas_float_complex {
 }
 
 impl Syr2Type for ffi::rocblas_double_complex {
-    fn rocblas_syr2(
+    unsafe fn rocblas_syr2(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1526,7 +1467,7 @@ impl Syr2Type for ffi::rocblas_double_complex {
 // Batched and strided batched implementations for SYR and SYR2
 
 pub trait SyrBatchedType {
-    fn rocblas_syr_batched(
+    unsafe fn rocblas_syr_batched(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1540,7 +1481,7 @@ pub trait SyrBatchedType {
 }
 
 impl SyrBatchedType for f32 {
-    fn rocblas_syr_batched(
+    unsafe fn rocblas_syr_batched(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1574,7 +1515,7 @@ impl SyrBatchedType for f32 {
 // Similar implementations for other data types and strided batched versions
 
 pub trait SyrStridedBatchedType {
-    fn rocblas_syr_strided_batched(
+    unsafe fn rocblas_syr_strided_batched(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1590,7 +1531,7 @@ pub trait SyrStridedBatchedType {
 }
 
 impl SyrStridedBatchedType for f32 {
-    fn rocblas_syr_strided_batched(
+    unsafe fn rocblas_syr_strided_batched(
         handle: &Handle,
         uplo: Fill,
         n: i32,
@@ -1628,7 +1569,7 @@ impl SyrStridedBatchedType for f32 {
 // Additional implementations for batched versions of HEMM and HERK
 
 pub trait HemmBatchedType {
-    fn rocblas_hemm_batched(
+    unsafe fn rocblas_hemm_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1647,7 +1588,7 @@ pub trait HemmBatchedType {
 }
 
 impl HemmBatchedType for ffi::rocblas_float_complex {
-    fn rocblas_hemm_batched(
+    unsafe fn rocblas_hemm_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1689,7 +1630,7 @@ impl HemmBatchedType for ffi::rocblas_float_complex {
 }
 
 impl HemmBatchedType for ffi::rocblas_double_complex {
-    fn rocblas_hemm_batched(
+    unsafe fn rocblas_hemm_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1731,7 +1672,7 @@ impl HemmBatchedType for ffi::rocblas_double_complex {
 }
 
 pub trait HemmStridedBatchedType {
-    fn rocblas_hemm_strided_batched(
+    unsafe fn rocblas_hemm_strided_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1753,7 +1694,7 @@ pub trait HemmStridedBatchedType {
 }
 
 impl HemmStridedBatchedType for ffi::rocblas_float_complex {
-    fn rocblas_hemm_strided_batched(
+    unsafe fn rocblas_hemm_strided_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1801,7 +1742,7 @@ impl HemmStridedBatchedType for ffi::rocblas_float_complex {
 }
 
 impl HemmStridedBatchedType for ffi::rocblas_double_complex {
-    fn rocblas_hemm_strided_batched(
+    unsafe fn rocblas_hemm_strided_batched(
         handle: &Handle,
         side: Side,
         uplo: Fill,
@@ -1850,8 +1791,8 @@ impl HemmStridedBatchedType for ffi::rocblas_double_complex {
 
 pub trait HerkBatchedType {
     type ScalarType;
-    
-    fn rocblas_herk_batched(
+
+    unsafe fn rocblas_herk_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1869,8 +1810,8 @@ pub trait HerkBatchedType {
 
 impl HerkBatchedType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herk_batched(
+
+    unsafe fn rocblas_herk_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1909,8 +1850,8 @@ impl HerkBatchedType for ffi::rocblas_float_complex {
 
 impl HerkBatchedType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herk_batched(
+
+    unsafe fn rocblas_herk_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1949,8 +1890,8 @@ impl HerkBatchedType for ffi::rocblas_double_complex {
 
 pub trait HerkStridedBatchedType {
     type ScalarType;
-    
-    fn rocblas_herk_strided_batched(
+
+    unsafe fn rocblas_herk_strided_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -1970,8 +1911,8 @@ pub trait HerkStridedBatchedType {
 
 impl HerkStridedBatchedType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herk_strided_batched(
+
+    unsafe fn rocblas_herk_strided_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -2014,8 +1955,8 @@ impl HerkStridedBatchedType for ffi::rocblas_float_complex {
 
 impl HerkStridedBatchedType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herk_strided_batched(
+
+    unsafe fn rocblas_herk_strided_batched(
         handle: &Handle,
         uplo: Fill,
         transA: Operation,
@@ -2056,7 +1997,7 @@ impl HerkStridedBatchedType for ffi::rocblas_double_complex {
     }
 }
 
-pub fn hemm_batched<T>(
+pub unsafe fn hemm_batched<T>(
     handle: &Handle,
     side: Side,
     uplo: Fill,
@@ -2075,11 +2016,26 @@ pub fn hemm_batched<T>(
 where
     T: HemmBatchedType,
 {
-    T::rocblas_hemm_batched(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc, batch_count)
+    T::rocblas_hemm_batched(
+        handle,
+        side,
+        uplo,
+        m,
+        n,
+        alpha,
+        A,
+        lda,
+        B,
+        ldb,
+        beta,
+        C,
+        ldc,
+        batch_count,
+    )
 }
 
 /// Strided batched Hermitian matrix-matrix multiplication
-pub fn hemm_strided_batched<T>(
+pub unsafe fn hemm_strided_batched<T>(
     handle: &Handle,
     side: Side,
     uplo: Fill,
@@ -2102,12 +2058,28 @@ where
     T: HemmStridedBatchedType,
 {
     T::rocblas_hemm_strided_batched(
-        handle, side, uplo, m, n, alpha, A, lda, stride_A, B, ldb, stride_B, beta, C, ldc, stride_C, batch_count,
+        handle,
+        side,
+        uplo,
+        m,
+        n,
+        alpha,
+        A,
+        lda,
+        stride_A,
+        B,
+        ldb,
+        stride_B,
+        beta,
+        C,
+        ldc,
+        stride_C,
+        batch_count,
     )
 }
 
 /// Batched Hermitian rank-k update
-pub fn herk_batched<T, R>(
+pub unsafe fn herk_batched<T, R>(
     handle: &Handle,
     uplo: Fill,
     transA: Operation,
@@ -2124,11 +2096,24 @@ pub fn herk_batched<T, R>(
 where
     T: HerkBatchedType<ScalarType = R>,
 {
-    T::rocblas_herk_batched(handle, uplo, transA, n, k, alpha, A, lda, beta, C, ldc, batch_count)
+    T::rocblas_herk_batched(
+        handle,
+        uplo,
+        transA,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        beta,
+        C,
+        ldc,
+        batch_count,
+    )
 }
 
 /// Strided batched Hermitian rank-k update
-pub fn herk_strided_batched<T, R>(
+pub unsafe fn herk_strided_batched<T, R>(
     handle: &Handle,
     uplo: Fill,
     transA: Operation,
@@ -2148,19 +2133,31 @@ where
     T: HerkStridedBatchedType<ScalarType = R>,
 {
     T::rocblas_herk_strided_batched(
-        handle, uplo, transA, n, k, alpha, A, lda, stride_A, beta, C, ldc, stride_C, batch_count,
+        handle,
+        uplo,
+        transA,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        stride_A,
+        beta,
+        C,
+        ldc,
+        stride_C,
+        batch_count,
     )
 }
 
-
 /// Hermitian rank-k update with two matrices
-/// 
+///
 /// Computes the matrix-matrix operation:
-/// 
+///
 /// C := alpha * op(A) * op(B)^H + beta * C
-/// 
+///
 /// This routine should only be used when the result of op(A)*op(B)^H will be Hermitian.
-/// 
+///
 /// # Arguments
 /// * `handle` - RocBLAS handle
 /// * `uplo` - Specifies whether the upper or lower triangular part of C is used
@@ -2175,7 +2172,7 @@ where
 /// * `beta` - Scalar beta
 /// * `C` - Buffer storing matrix C
 /// * `ldc` - Leading dimension of matrix C
-pub fn herkx<T, R>(
+pub unsafe fn herkx<T, R>(
     handle: &Handle,
     uplo: Fill,
     trans: Operation,
@@ -2193,11 +2190,13 @@ pub fn herkx<T, R>(
 where
     T: HerkxType<ScalarType = R>,
 {
-    T::rocblas_herkx(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
+    T::rocblas_herkx(
+        handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc,
+    )
 }
 
 /// Batched Hermitian rank-k update with two matrices
-pub fn herkx_batched<T, R>(
+pub unsafe fn herkx_batched<T, R>(
     handle: &Handle,
     uplo: Fill,
     trans: Operation,
@@ -2216,11 +2215,26 @@ pub fn herkx_batched<T, R>(
 where
     T: HerkxBatchedType<ScalarType = R>,
 {
-    T::rocblas_herkx_batched(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batch_count)
+    T::rocblas_herkx_batched(
+        handle,
+        uplo,
+        trans,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        B,
+        ldb,
+        beta,
+        C,
+        ldc,
+        batch_count,
+    )
 }
 
 /// Strided batched Hermitian rank-k update with two matrices
-pub fn herkx_strided_batched<T, R>(
+pub unsafe fn herkx_strided_batched<T, R>(
     handle: &Handle,
     uplo: Fill,
     trans: Operation,
@@ -2243,16 +2257,31 @@ where
     T: HerkxStridedBatchedType<ScalarType = R>,
 {
     T::rocblas_herkx_strided_batched(
-        handle, uplo, trans, n, k, alpha, A, lda, stride_A, 
-        B, ldb, stride_B, beta, C, ldc, stride_C, batch_count,
+        handle,
+        uplo,
+        trans,
+        n,
+        k,
+        alpha,
+        A,
+        lda,
+        stride_A,
+        B,
+        ldb,
+        stride_B,
+        beta,
+        C,
+        ldc,
+        stride_C,
+        batch_count,
     )
 }
 
 /// Trait for types that can be used with herkx
 pub trait HerkxType {
     type ScalarType;
-    
-    fn rocblas_herkx(
+
+    unsafe fn rocblas_herkx(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2271,8 +2300,8 @@ pub trait HerkxType {
 
 impl HerkxType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herkx(
+
+    unsafe fn rocblas_herkx(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2313,8 +2342,8 @@ impl HerkxType for ffi::rocblas_float_complex {
 
 impl HerkxType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herkx(
+
+    unsafe fn rocblas_herkx(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2356,8 +2385,8 @@ impl HerkxType for ffi::rocblas_double_complex {
 /// Trait for types that can be used with herkx_batched
 pub trait HerkxBatchedType {
     type ScalarType;
-    
-    fn rocblas_herkx_batched(
+
+    unsafe fn rocblas_herkx_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2377,8 +2406,8 @@ pub trait HerkxBatchedType {
 
 impl HerkxBatchedType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herkx_batched(
+
+    unsafe fn rocblas_herkx_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2421,8 +2450,8 @@ impl HerkxBatchedType for ffi::rocblas_float_complex {
 
 impl HerkxBatchedType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herkx_batched(
+
+    unsafe fn rocblas_herkx_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2466,8 +2495,8 @@ impl HerkxBatchedType for ffi::rocblas_double_complex {
 /// Trait for types that can be used with herkx_strided_batched
 pub trait HerkxStridedBatchedType {
     type ScalarType;
-    
-    fn rocblas_herkx_strided_batched(
+
+    unsafe fn rocblas_herkx_strided_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2490,8 +2519,8 @@ pub trait HerkxStridedBatchedType {
 
 impl HerkxStridedBatchedType for ffi::rocblas_float_complex {
     type ScalarType = f32;
-    
-    fn rocblas_herkx_strided_batched(
+
+    unsafe fn rocblas_herkx_strided_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,
@@ -2540,8 +2569,8 @@ impl HerkxStridedBatchedType for ffi::rocblas_float_complex {
 
 impl HerkxStridedBatchedType for ffi::rocblas_double_complex {
     type ScalarType = f64;
-    
-    fn rocblas_herkx_strided_batched(
+
+    unsafe fn rocblas_herkx_strided_batched(
         handle: &Handle,
         uplo: Fill,
         trans: Operation,

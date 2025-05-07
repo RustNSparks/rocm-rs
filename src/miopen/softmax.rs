@@ -1,11 +1,11 @@
 // src/miopen/softmax.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// Softmax algorithm type
 pub type SoftmaxAlgorithm = ffi::miopenSoftmaxAlgorithm_t;
@@ -18,7 +18,8 @@ pub mod softmax_algorithm {
     pub const FAST: super::SoftmaxAlgorithm = ffi::miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_FAST;
 
     /// Accurate softmax implementation
-    pub const ACCURATE: super::SoftmaxAlgorithm = ffi::miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_ACCURATE;
+    pub const ACCURATE: super::SoftmaxAlgorithm =
+        ffi::miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_ACCURATE;
 
     /// Log softmax implementation
     pub const LOG: super::SoftmaxAlgorithm = ffi::miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_LOG;
@@ -61,10 +62,15 @@ impl SoftmaxDescriptor {
     }
 
     /// Set the softmax descriptor parameters
-    pub fn set(&mut self, alpha: f32, beta: f32, algorithm: SoftmaxAlgorithm, mode: SoftmaxMode) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetSoftmaxDescriptor(self.desc, alpha, beta, algorithm, mode)
-        };
+    pub fn set(
+        &mut self,
+        alpha: f32,
+        beta: f32,
+        algorithm: SoftmaxAlgorithm,
+        mode: SoftmaxMode,
+    ) -> Result<()> {
+        let status =
+            unsafe { ffi::miopenSetSoftmaxDescriptor(self.desc, alpha, beta, algorithm, mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -86,7 +92,7 @@ impl SoftmaxDescriptor {
                 &mut alpha,
                 &mut beta,
                 &mut algorithm,
-                &mut mode
+                &mut mode,
             )
         };
 
@@ -104,7 +110,7 @@ impl SoftmaxDescriptor {
 }
 
 /// Execute a softmax forward operation
-pub fn softmax_forward(
+pub unsafe fn softmax_forward(
     handle: &Handle,
     alpha: &[u8],
     x_desc: &TensorDescriptor,
@@ -133,7 +139,7 @@ pub fn softmax_forward(
 }
 
 /// Execute a softmax forward operation with specified algorithm and mode
-pub fn softmax_forward_v2(
+pub unsafe fn softmax_forward_v2(
     handle: &Handle,
     alpha: &[u8],
     x_desc: &TensorDescriptor,
@@ -166,7 +172,7 @@ pub fn softmax_forward_v2(
 }
 
 /// Execute a softmax backward operation
-pub fn softmax_backward(
+pub unsafe fn softmax_backward(
     handle: &Handle,
     alpha: &[u8],
     y_desc: &TensorDescriptor,
@@ -199,7 +205,7 @@ pub fn softmax_backward(
 }
 
 /// Execute a softmax backward operation with specified algorithm and mode
-pub fn softmax_backward_v2(
+pub unsafe fn softmax_backward_v2(
     handle: &Handle,
     alpha: &[u8],
     y_desc: &TensorDescriptor,

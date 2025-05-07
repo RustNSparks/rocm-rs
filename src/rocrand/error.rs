@@ -1,7 +1,7 @@
 // src/rocrand/error.rs
 
-use std::fmt;
 use crate::rocrand::bindings;
+use std::fmt;
 
 /// rocRAND error types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,11 +39,17 @@ impl Error {
             bindings::rocrand_status_ROCRAND_STATUS_SUCCESS => Ok(()),
             bindings::rocrand_status_ROCRAND_STATUS_VERSION_MISMATCH => Err(Error::VersionMismatch),
             bindings::rocrand_status_ROCRAND_STATUS_NOT_CREATED => Err(Error::NotCreated),
-            bindings::rocrand_status_ROCRAND_STATUS_ALLOCATION_FAILED => Err(Error::AllocationFailed),
+            bindings::rocrand_status_ROCRAND_STATUS_ALLOCATION_FAILED => {
+                Err(Error::AllocationFailed)
+            }
             bindings::rocrand_status_ROCRAND_STATUS_TYPE_ERROR => Err(Error::TypeError),
             bindings::rocrand_status_ROCRAND_STATUS_OUT_OF_RANGE => Err(Error::OutOfRange),
-            bindings::rocrand_status_ROCRAND_STATUS_LENGTH_NOT_MULTIPLE => Err(Error::LengthNotMultiple),
-            bindings::rocrand_status_ROCRAND_STATUS_DOUBLE_PRECISION_REQUIRED => Err(Error::DoublePrecisionRequired),
+            bindings::rocrand_status_ROCRAND_STATUS_LENGTH_NOT_MULTIPLE => {
+                Err(Error::LengthNotMultiple)
+            }
+            bindings::rocrand_status_ROCRAND_STATUS_DOUBLE_PRECISION_REQUIRED => {
+                Err(Error::DoublePrecisionRequired)
+            }
             bindings::rocrand_status_ROCRAND_STATUS_LAUNCH_FAILURE => Err(Error::LaunchFailure),
             bindings::rocrand_status_ROCRAND_STATUS_INTERNAL_ERROR => Err(Error::InternalError),
             other => Err(Error::Unknown(other)),
@@ -54,12 +60,20 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::VersionMismatch => write!(f, "Header file and linked library version do not match"),
-            Error::NotCreated => write!(f, "Generator was not created using rocrand_create_generator"),
+            Error::VersionMismatch => {
+                write!(f, "Header file and linked library version do not match")
+            }
+            Error::NotCreated => write!(
+                f,
+                "Generator was not created using rocrand_create_generator"
+            ),
             Error::AllocationFailed => write!(f, "Memory allocation failed during execution"),
             Error::TypeError => write!(f, "Generator type is wrong"),
             Error::OutOfRange => write!(f, "Argument out of range"),
-            Error::LengthNotMultiple => write!(f, "Length not multiple of dimension or other alignment issue"),
+            Error::LengthNotMultiple => write!(
+                f,
+                "Length not multiple of dimension or other alignment issue"
+            ),
             Error::DoublePrecisionRequired => write!(f, "GPU does not have double precision"),
             Error::LaunchFailure => write!(f, "Kernel launch failure"),
             Error::InternalError => write!(f, "Internal library error"),

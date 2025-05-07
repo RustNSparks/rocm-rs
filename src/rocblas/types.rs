@@ -3,10 +3,10 @@
 use crate::rocblas::ffi;
 
 // Re-export the basic types
-pub use ffi::rocblas_float_complex;
-pub use ffi::rocblas_double_complex;
-pub use ffi::rocblas_half;
 pub use ffi::rocblas_bfloat16;
+pub use ffi::rocblas_double_complex;
+pub use ffi::rocblas_float_complex;
+pub use ffi::rocblas_half;
 
 /// Enum for matrix operation types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,7 +24,9 @@ impl From<Operation> for ffi::rocblas_operation {
         match op {
             Operation::None => ffi::rocblas_operation__rocblas_operation_none,
             Operation::Transpose => ffi::rocblas_operation__rocblas_operation_transpose,
-            Operation::ConjugateTranspose => ffi::rocblas_operation__rocblas_operation_conjugate_transpose,
+            Operation::ConjugateTranspose => {
+                ffi::rocblas_operation__rocblas_operation_conjugate_transpose
+            }
         }
     }
 }
@@ -34,7 +36,9 @@ impl From<ffi::rocblas_operation> for Operation {
         match op {
             ffi::rocblas_operation__rocblas_operation_none => Operation::None,
             ffi::rocblas_operation__rocblas_operation_transpose => Operation::Transpose,
-            ffi::rocblas_operation__rocblas_operation_conjugate_transpose => Operation::ConjugateTranspose,
+            ffi::rocblas_operation__rocblas_operation_conjugate_transpose => {
+                Operation::ConjugateTranspose
+            }
             _ => Operation::None, // Default to None for unknown values
         }
     }
@@ -225,8 +229,8 @@ impl From<ffi::rocblas_datatype> for DataType {
 }
 
 // Re-export the types with their rocblas_ prefixes for compatibility
-pub use ffi::rocblas_operation;
-pub use ffi::rocblas_fill;
-pub use ffi::rocblas_diagonal;
-pub use ffi::rocblas_side;
 pub use ffi::rocblas_datatype;
+pub use ffi::rocblas_diagonal;
+pub use ffi::rocblas_fill;
+pub use ffi::rocblas_operation;
+pub use ffi::rocblas_side;

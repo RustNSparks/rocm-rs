@@ -1,11 +1,11 @@
 // src/miopen/activation.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// Activation mode type
 pub type ActivationMode = ffi::miopenActivationMode_t;
@@ -34,9 +34,8 @@ impl ActivationDescriptor {
 
     /// Set the activation descriptor details
     pub fn set(&mut self, mode: ActivationMode, alpha: f64, beta: f64, gamma: f64) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetActivationDescriptor(self.desc, mode, alpha, beta, gamma)
-        };
+        let status =
+            unsafe { ffi::miopenSetActivationDescriptor(self.desc, mode, alpha, beta, gamma) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -53,7 +52,9 @@ impl ActivationDescriptor {
         let mut gamma = 0.0;
 
         let status = unsafe {
-            ffi::miopenGetActivationDescriptor(self.desc, &mut mode, &mut alpha, &mut beta, &mut gamma)
+            ffi::miopenGetActivationDescriptor(
+                self.desc, &mut mode, &mut alpha, &mut beta, &mut gamma,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -64,7 +65,7 @@ impl ActivationDescriptor {
     }
 
     /// Execute a forward activation operation
-    pub fn forward(
+    pub unsafe fn forward(
         &self,
         handle: &Handle,
         alpha: &[u8],
@@ -95,7 +96,7 @@ impl ActivationDescriptor {
     }
 
     /// Execute a backward activation operation
-    pub fn backward(
+    pub unsafe fn backward(
         &self,
         handle: &Handle,
         alpha: &[u8],

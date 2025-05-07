@@ -1,8 +1,8 @@
 // src/hip/device.rs
 
-use std::ffi::CStr;
-use crate::hip::ffi;
 use crate::hip::error::{Error, Result};
+use crate::hip::ffi;
+use std::ffi::CStr;
 
 /// Get the number of available devices
 pub fn get_device_count() -> Result<i32> {
@@ -47,9 +47,7 @@ pub fn get_device_properties(device_id: i32) -> Result<DeviceProperties> {
 
     let name = unsafe {
         let name_ptr = props.name.as_ptr() as *const i8;
-        CStr::from_ptr(name_ptr)
-            .to_string_lossy()
-            .into_owned()
+        CStr::from_ptr(name_ptr).to_string_lossy().into_owned()
     };
 
     Ok(DeviceProperties {

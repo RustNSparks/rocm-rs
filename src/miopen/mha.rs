@@ -1,10 +1,10 @@
 // src/miopen/mha.rs
 
-use std::ptr;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
+use std::ptr;
 
-/// MHA mask mode 
+/// MHA mask mode
 pub type MhaMask = ffi::miopenMhaMask_t;
 
 /// Constants for MHA mask modes
@@ -93,38 +93,61 @@ pub mod tensor_argument_id {
     pub const MHA_BIAS: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaBias;
 
     // Scale/descale tensors
-    pub const MHA_DESCALE_K: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleK;
-    pub const MHA_DESCALE_Q: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleQ;
-    pub const MHA_DESCALE_V: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleV;
-    pub const MHA_DESCALE_S: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleS;
-    pub const MHA_SCALE_S: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleS;
-    pub const MHA_SCALE_O: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleO;
+    pub const MHA_DESCALE_K: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleK;
+    pub const MHA_DESCALE_Q: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleQ;
+    pub const MHA_DESCALE_V: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleV;
+    pub const MHA_DESCALE_S: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleS;
+    pub const MHA_SCALE_S: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleS;
+    pub const MHA_SCALE_O: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleO;
 
     // Dropout related tensors
-    pub const MHA_DROPOUT_PROBABILITY: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutProbability;
-    pub const MHA_DROPOUT_SEED: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutSeed;
-    pub const MHA_DROPOUT_OFFSET: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutOffset;
+    pub const MHA_DROPOUT_PROBABILITY: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutProbability;
+    pub const MHA_DROPOUT_SEED: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutSeed;
+    pub const MHA_DROPOUT_OFFSET: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDropoutOffset;
 
     // Other MHA tensors
-    pub const MHA_AMAX_O: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxO;
-    pub const MHA_AMAX_S: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxS;
+    pub const MHA_AMAX_O: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxO;
+    pub const MHA_AMAX_S: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxS;
     pub const MHA_M: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaM;
-    pub const MHA_Z_INV: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaZInv;
+    pub const MHA_Z_INV: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaZInv;
 
     // Backward tensors
     pub const MHA_DO: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDO;
-    pub const MHA_DESCALE_O: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleO;
-    pub const MHA_DESCALE_DO: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleDO;
-    pub const MHA_DESCALE_DS: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleDS;
-    pub const MHA_SCALE_DS: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDS;
-    pub const MHA_SCALE_DQ: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDQ;
-    pub const MHA_SCALE_DK: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDK;
-    pub const MHA_SCALE_DV: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDV;
+    pub const MHA_DESCALE_O: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleO;
+    pub const MHA_DESCALE_DO: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleDO;
+    pub const MHA_DESCALE_DS: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaDescaleDS;
+    pub const MHA_SCALE_DS: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDS;
+    pub const MHA_SCALE_DQ: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDQ;
+    pub const MHA_SCALE_DK: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDK;
+    pub const MHA_SCALE_DV: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaScaleDV;
     pub const MHA_DQ: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDQ;
     pub const MHA_DK: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDK;
     pub const MHA_DV: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaDV;
-    pub const MHA_AMAX_DQ: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDQ;
-    pub const MHA_AMAX_DK: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDK;
-    pub const MHA_AMAX_DV: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDV;
-    pub const MHA_AMAX_DS: super::TensorArgumentId = ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDS;
+    pub const MHA_AMAX_DQ: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDQ;
+    pub const MHA_AMAX_DK: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDK;
+    pub const MHA_AMAX_DV: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDV;
+    pub const MHA_AMAX_DS: super::TensorArgumentId =
+        ffi::miopenTensorArgumentId_t_miopenTensorMhaAmaxDS;
 }

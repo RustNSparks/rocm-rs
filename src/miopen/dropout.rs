@@ -1,11 +1,11 @@
 // src/miopen/dropout.rs
 
-use std::ptr;
-use std::os::raw::{c_void, c_ulonglong};
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::{c_ulonglong, c_void};
+use std::ptr;
 
 /// RNG type for dropout operations
 pub type RNGType = ffi::miopenRNGType_t;
@@ -33,7 +33,7 @@ impl DropoutDescriptor {
     }
 
     /// Initialize the dropout descriptor
-    pub fn set(
+    pub unsafe fn set(
         &mut self,
         handle: &Handle,
         dropout: f32,
@@ -66,7 +66,7 @@ impl DropoutDescriptor {
     }
 
     /// Restore the dropout descriptor from a saved state
-    pub fn restore(
+    pub unsafe fn restore(
         &mut self,
         handle: &Handle,
         dropout: f32,
@@ -135,10 +135,7 @@ impl DropoutDescriptor {
         let mut reserve_space_size_in_bytes = 0;
 
         let status = unsafe {
-            ffi::miopenDropoutGetReserveSpaceSize(
-                x_desc.as_raw(),
-                &mut reserve_space_size_in_bytes,
-            )
+            ffi::miopenDropoutGetReserveSpaceSize(x_desc.as_raw(), &mut reserve_space_size_in_bytes)
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -152,12 +149,8 @@ impl DropoutDescriptor {
     pub fn get_states_size(handle: &Handle) -> Result<usize> {
         let mut state_size_in_bytes = 0;
 
-        let status = unsafe {
-            ffi::miopenDropoutGetStatesSize(
-                handle.as_raw(),
-                &mut state_size_in_bytes,
-            )
-        };
+        let status =
+            unsafe { ffi::miopenDropoutGetStatesSize(handle.as_raw(), &mut state_size_in_bytes) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -167,7 +160,7 @@ impl DropoutDescriptor {
     }
 
     /// Execute a forward dropout operation
-    pub fn forward(
+    pub unsafe fn forward(
         &self,
         handle: &Handle,
         noise_shape: &TensorDescriptor,
@@ -200,7 +193,7 @@ impl DropoutDescriptor {
     }
 
     /// Execute a backward dropout operation
-    pub fn backward(
+    pub unsafe fn backward(
         &self,
         handle: &Handle,
         noise_shape: &TensorDescriptor,

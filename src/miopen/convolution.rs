@@ -1,13 +1,13 @@
 // src/miopen/convolution.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
-/// Convolution mode 
+/// Convolution mode
 pub type ConvolutionMode = ffi::miopenConvolutionMode_t;
 
 /// Convolution forward algorithm
@@ -54,11 +54,20 @@ impl ConvolutionDescriptor {
     }
 
     /// Initialize a 2D convolution descriptor
-    pub fn init_2d(&mut self, c_mode: ConvolutionMode, pad_h: i32, pad_w: i32,
-                   stride_h: i32, stride_w: i32, dilation_h: i32, dilation_w: i32) -> Result<()> {
+    pub fn init_2d(
+        &mut self,
+        c_mode: ConvolutionMode,
+        pad_h: i32,
+        pad_w: i32,
+        stride_h: i32,
+        stride_w: i32,
+        dilation_h: i32,
+        dilation_w: i32,
+    ) -> Result<()> {
         let status = unsafe {
-            ffi::miopenInitConvolutionDescriptor(self.desc, c_mode, pad_h, pad_w,
-                                                 stride_h, stride_w, dilation_h, dilation_w)
+            ffi::miopenInitConvolutionDescriptor(
+                self.desc, c_mode, pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -69,8 +78,13 @@ impl ConvolutionDescriptor {
     }
 
     /// Initialize an N-dimensional convolution descriptor
-    pub fn init_nd(&mut self, padA: &[i32], strideA: &[i32], dilationA: &[i32],
-                   c_mode: ConvolutionMode) -> Result<()> {
+    pub fn init_nd(
+        &mut self,
+        padA: &[i32],
+        strideA: &[i32],
+        dilationA: &[i32],
+        c_mode: ConvolutionMode,
+    ) -> Result<()> {
         let spatial_dim = padA.len() as i32;
 
         if spatial_dim as usize != strideA.len() || spatial_dim as usize != dilationA.len() {
@@ -78,9 +92,14 @@ impl ConvolutionDescriptor {
         }
 
         let status = unsafe {
-            ffi::miopenInitConvolutionNdDescriptor(self.desc, spatial_dim,
-                                                   padA.as_ptr(), strideA.as_ptr(),
-                                                   dilationA.as_ptr(), c_mode)
+            ffi::miopenInitConvolutionNdDescriptor(
+                self.desc,
+                spatial_dim,
+                padA.as_ptr(),
+                strideA.as_ptr(),
+                dilationA.as_ptr(),
+                c_mode,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -94,9 +113,7 @@ impl ConvolutionDescriptor {
     pub fn get_spatial_dim(&self) -> Result<i32> {
         let mut spatial_dim = 0;
 
-        let status = unsafe {
-            ffi::miopenGetConvolutionSpatialDim(self.desc, &mut spatial_dim)
-        };
+        let status = unsafe { ffi::miopenGetConvolutionSpatialDim(self.desc, &mut spatial_dim) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -116,21 +133,32 @@ impl ConvolutionDescriptor {
         let mut dilation_w = 0;
 
         let status = unsafe {
-            ffi::miopenGetConvolutionDescriptor(self.desc, &mut c_mode,
-                                                &mut pad_h, &mut pad_w,
-                                                &mut stride_h, &mut stride_w,
-                                                &mut dilation_h, &mut dilation_w)
+            ffi::miopenGetConvolutionDescriptor(
+                self.desc,
+                &mut c_mode,
+                &mut pad_h,
+                &mut pad_w,
+                &mut stride_h,
+                &mut stride_w,
+                &mut dilation_h,
+                &mut dilation_w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
         }
 
-        Ok((c_mode, pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w))
+        Ok((
+            c_mode, pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w,
+        ))
     }
 
     /// Get the details of an N-dimensional convolution descriptor
-    pub fn get_nd(&self, requested_spatial_dim: i32) -> Result<(i32, Vec<i32>, Vec<i32>, Vec<i32>, ConvolutionMode)> {
+    pub fn get_nd(
+        &self,
+        requested_spatial_dim: i32,
+    ) -> Result<(i32, Vec<i32>, Vec<i32>, Vec<i32>, ConvolutionMode)> {
         let mut spatial_dim = 0;
         let mut padA = vec![0; requested_spatial_dim as usize];
         let mut strideA = vec![0; requested_spatial_dim as usize];
@@ -138,10 +166,15 @@ impl ConvolutionDescriptor {
         let mut c_mode = 0;
 
         let status = unsafe {
-            ffi::miopenGetConvolutionNdDescriptor(self.desc, requested_spatial_dim,
-                                                  &mut spatial_dim, padA.as_mut_ptr(),
-                                                  strideA.as_mut_ptr(), dilationA.as_mut_ptr(),
-                                                  &mut c_mode)
+            ffi::miopenGetConvolutionNdDescriptor(
+                self.desc,
+                requested_spatial_dim,
+                &mut spatial_dim,
+                padA.as_mut_ptr(),
+                strideA.as_mut_ptr(),
+                dilationA.as_mut_ptr(),
+                &mut c_mode,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -155,9 +188,7 @@ impl ConvolutionDescriptor {
     pub fn get_group_count(&self) -> Result<i32> {
         let mut group_count = 0;
 
-        let status = unsafe {
-            ffi::miopenGetConvolutionGroupCount(self.desc, &mut group_count)
-        };
+        let status = unsafe { ffi::miopenGetConvolutionGroupCount(self.desc, &mut group_count) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -168,9 +199,7 @@ impl ConvolutionDescriptor {
 
     /// Set the number of groups for group/depthwise convolution
     pub fn set_group_count(&mut self, group_count: i32) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetConvolutionGroupCount(self.desc, group_count)
-        };
+        let status = unsafe { ffi::miopenSetConvolutionGroupCount(self.desc, group_count) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -181,9 +210,7 @@ impl ConvolutionDescriptor {
 
     /// Set output padding for 2D transpose convolution
     pub fn set_transpose_conv_output_padding(&mut self, adj_h: i32, adj_w: i32) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetTransposeConvOutputPadding(self.desc, adj_h, adj_w)
-        };
+        let status = unsafe { ffi::miopenSetTransposeConvOutputPadding(self.desc, adj_h, adj_w) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -208,17 +235,26 @@ impl ConvolutionDescriptor {
     }
 
     /// Get the output dimensions of a 2D convolution
-    pub fn get_forward_output_dim(&self, input_desc: &TensorDescriptor,
-                                  filter_desc: &TensorDescriptor) -> Result<(i32, i32, i32, i32)> {
+    pub fn get_forward_output_dim(
+        &self,
+        input_desc: &TensorDescriptor,
+        filter_desc: &TensorDescriptor,
+    ) -> Result<(i32, i32, i32, i32)> {
         let mut n = 0;
         let mut c = 0;
         let mut h = 0;
         let mut w = 0;
 
         let status = unsafe {
-            ffi::miopenGetConvolutionForwardOutputDim(self.desc, input_desc.as_raw(),
-                                                      filter_desc.as_raw(), &mut n,
-                                                      &mut c, &mut h, &mut w)
+            ffi::miopenGetConvolutionForwardOutputDim(
+                self.desc,
+                input_desc.as_raw(),
+                filter_desc.as_raw(),
+                &mut n,
+                &mut c,
+                &mut h,
+                &mut w,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -229,16 +265,23 @@ impl ConvolutionDescriptor {
     }
 
     /// Get the output dimensions of an N-dimensional convolution
-    pub fn get_nd_forward_output_dim(&self, input_desc: &TensorDescriptor,
-                                     filter_desc: &TensorDescriptor, dims_capacity: usize)
-                                     -> Result<(i32, Vec<i32>)> {
+    pub fn get_nd_forward_output_dim(
+        &self,
+        input_desc: &TensorDescriptor,
+        filter_desc: &TensorDescriptor,
+        dims_capacity: usize,
+    ) -> Result<(i32, Vec<i32>)> {
         let mut n_dim = 0;
         let mut output_dims = vec![0; dims_capacity];
 
         let status = unsafe {
-            ffi::miopenGetConvolutionNdForwardOutputDim(self.desc, input_desc.as_raw(),
-                                                        filter_desc.as_raw(), &mut n_dim,
-                                                        output_dims.as_mut_ptr())
+            ffi::miopenGetConvolutionNdForwardOutputDim(
+                self.desc,
+                input_desc.as_raw(),
+                filter_desc.as_raw(),
+                &mut n_dim,
+                output_dims.as_mut_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -250,9 +293,7 @@ impl ConvolutionDescriptor {
 
     /// Set an attribute for the convolution descriptor
     pub fn set_attribute(&mut self, attr: ConvolutionAttribute, value: i32) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSetConvolutionAttribute(self.desc, attr, value)
-        };
+        let status = unsafe { ffi::miopenSetConvolutionAttribute(self.desc, attr, value) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -265,9 +306,7 @@ impl ConvolutionDescriptor {
     pub fn get_attribute(&self, attr: ConvolutionAttribute) -> Result<i32> {
         let mut value = 0;
 
-        let status = unsafe {
-            ffi::miopenGetConvolutionAttribute(self.desc, attr, &mut value)
-        };
+        let status = unsafe { ffi::miopenGetConvolutionAttribute(self.desc, attr, &mut value) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -323,7 +362,7 @@ pub fn get_convolution_forward_workspace_size(
 }
 
 /// Search for the fastest convolution forward algorithm
-pub fn find_convolution_forward_algorithm(
+pub unsafe fn find_convolution_forward_algorithm(
     handle: &Handle,
     x_desc: &TensorDescriptor,
     x: *const c_void,
@@ -368,7 +407,7 @@ pub fn find_convolution_forward_algorithm(
 }
 
 /// Execute a forward convolution operation
-pub fn convolution_forward(
+pub unsafe fn convolution_forward(
     handle: &Handle,
     alpha: &[u8],
     x_desc: &TensorDescriptor,
@@ -409,7 +448,7 @@ pub fn convolution_forward(
 }
 
 /// Apply element-wise bias to a tensor
-pub fn convolution_forward_bias(
+pub unsafe fn convolution_forward_bias(
     handle: &Handle,
     alpha: &[u8],
     b_desc: &TensorDescriptor,
@@ -466,7 +505,7 @@ pub fn get_convolution_backward_data_workspace_size(
 }
 
 /// Search for the fastest convolution backward data algorithm
-pub fn find_convolution_backward_data_algorithm(
+pub unsafe fn find_convolution_backward_data_algorithm(
     handle: &Handle,
     dy_desc: &TensorDescriptor,
     dy: *const c_void,
@@ -511,7 +550,7 @@ pub fn find_convolution_backward_data_algorithm(
 }
 
 /// Execute a backward data convolution operation
-pub fn convolution_backward_data(
+pub unsafe fn convolution_backward_data(
     handle: &Handle,
     alpha: &[u8],
     dy_desc: &TensorDescriptor,
@@ -580,7 +619,7 @@ pub fn get_convolution_backward_weights_workspace_size(
 }
 
 /// Search for the fastest convolution backward weights algorithm
-pub fn find_convolution_backward_weights_algorithm(
+pub unsafe fn find_convolution_backward_weights_algorithm(
     handle: &Handle,
     dy_desc: &TensorDescriptor,
     dy: *const c_void,
@@ -625,7 +664,7 @@ pub fn find_convolution_backward_weights_algorithm(
 }
 
 /// Execute a backward weights convolution operation
-pub fn convolution_backward_weights(
+pub unsafe fn convolution_backward_weights(
     handle: &Handle,
     alpha: &[u8],
     dy_desc: &TensorDescriptor,
@@ -666,7 +705,7 @@ pub fn convolution_backward_weights(
 }
 
 /// Calculates the gradient with respect to the bias
-pub fn convolution_backward_bias(
+pub unsafe fn convolution_backward_bias(
     handle: &Handle,
     alpha: &[u8],
     dy_desc: &TensorDescriptor,

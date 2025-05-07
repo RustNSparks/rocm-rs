@@ -1,10 +1,10 @@
 // src/rocblas/async_ops.rs
-use std::mem;
-use crate::rocblas::ffi;
-use crate::rocblas::error::{Error, Result};
-use crate::rocblas::handle::Handle;
 use crate::hip::Stream;
 use crate::rocblas::bindings::hipEvent_t;
+use crate::rocblas::error::{Error, Result};
+use crate::rocblas::ffi;
+use crate::rocblas::handle::Handle;
+use std::mem;
 
 /// Set vector asynchronously from host to device
 ///
@@ -335,13 +335,8 @@ pub fn set_start_stop_events(
     start_event: hipEvent_t,
     stop_event: hipEvent_t,
 ) -> Result<()> {
-    let status = unsafe {
-        ffi::rocblas_set_start_stop_events(
-            handle.as_raw(),
-            start_event,
-            stop_event,
-        )
-    };
+    let status =
+        unsafe { ffi::rocblas_set_start_stop_events(handle.as_raw(), start_event, stop_event) };
 
     if status != ffi::rocblas_status__rocblas_status_success {
         return Err(Error::new(status));

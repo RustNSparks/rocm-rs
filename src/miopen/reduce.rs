@@ -1,11 +1,11 @@
 // src/miopen/reduce.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// Reduction tensor operation
 pub type ReduceTensorOp = ffi::miopenReduceTensorOp_t;
@@ -42,12 +42,14 @@ impl ReduceTensorDescriptor {
     }
 
     /// Set the reduce tensor descriptor
-    pub fn set(&mut self,
-               reduce_op: ReduceTensorOp,
-               comp_type: ffi::miopenDataType_t,
-               nan_opt: NanPropagation,
-               indices: ReduceTensorIndices,
-               indices_type: IndicesType) -> Result<()> {
+    pub fn set(
+        &mut self,
+        reduce_op: ReduceTensorOp,
+        comp_type: ffi::miopenDataType_t,
+        nan_opt: NanPropagation,
+        indices: ReduceTensorIndices,
+        indices_type: IndicesType,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetReduceTensorDescriptor(
                 self.desc,
@@ -67,7 +69,15 @@ impl ReduceTensorDescriptor {
     }
 
     /// Get the reduce tensor descriptor details
-    pub fn get(&self) -> Result<(ReduceTensorOp, ffi::miopenDataType_t, NanPropagation, ReduceTensorIndices, IndicesType)> {
+    pub fn get(
+        &self,
+    ) -> Result<(
+        ReduceTensorOp,
+        ffi::miopenDataType_t,
+        NanPropagation,
+        ReduceTensorIndices,
+        IndicesType,
+    )> {
         let mut reduce_op = 0;
         let mut comp_type = 0;
         let mut nan_opt = 0;
@@ -111,8 +121,12 @@ impl Drop for ReduceTensorDescriptor {
 }
 
 /// Get the size required for reduction indices
-pub fn get_reduction_indices_size(handle: &Handle, reduce_desc: &ReduceTensorDescriptor,
-                                  a_desc: &TensorDescriptor, c_desc: &TensorDescriptor) -> Result<usize> {
+pub fn get_reduction_indices_size(
+    handle: &Handle,
+    reduce_desc: &ReduceTensorDescriptor,
+    a_desc: &TensorDescriptor,
+    c_desc: &TensorDescriptor,
+) -> Result<usize> {
     let mut size_in_bytes = 0;
 
     let status = unsafe {
@@ -133,8 +147,12 @@ pub fn get_reduction_indices_size(handle: &Handle, reduce_desc: &ReduceTensorDes
 }
 
 /// Get the workspace size required for reduction
-pub fn get_reduction_workspace_size(handle: &Handle, reduce_desc: &ReduceTensorDescriptor,
-                                    a_desc: &TensorDescriptor, c_desc: &TensorDescriptor) -> Result<usize> {
+pub fn get_reduction_workspace_size(
+    handle: &Handle,
+    reduce_desc: &ReduceTensorDescriptor,
+    a_desc: &TensorDescriptor,
+    c_desc: &TensorDescriptor,
+) -> Result<usize> {
     let mut size_in_bytes = 0;
 
     let status = unsafe {
@@ -155,11 +173,20 @@ pub fn get_reduction_workspace_size(handle: &Handle, reduce_desc: &ReduceTensorD
 }
 
 /// Execute a reduction operation
-pub fn reduce_tensor(handle: &Handle, reduce_desc: &ReduceTensorDescriptor,
-                     indices: *mut c_void, indices_size: usize,
-                     workspace: *mut c_void, workspace_size: usize,
-                     alpha: &[u8], a_desc: &TensorDescriptor, a: *const c_void,
-                     beta: &[u8], c_desc: &TensorDescriptor, c: *mut c_void) -> Result<()> {
+pub unsafe fn reduce_tensor(
+    handle: &Handle,
+    reduce_desc: &ReduceTensorDescriptor,
+    indices: *mut c_void,
+    indices_size: usize,
+    workspace: *mut c_void,
+    workspace_size: usize,
+    alpha: &[u8],
+    a_desc: &TensorDescriptor,
+    a: *const c_void,
+    beta: &[u8],
+    c_desc: &TensorDescriptor,
+    c: *mut c_void,
+) -> Result<()> {
     let status = unsafe {
         ffi::miopenReduceTensor(
             handle.as_raw(),

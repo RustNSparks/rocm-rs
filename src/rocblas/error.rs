@@ -1,8 +1,8 @@
 // src/rocblas/error.rs
 
-use std::fmt;
-use std::error::Error as StdError;
 use crate::rocblas::ffi;
+use std::error::Error as StdError;
+use std::fmt;
 
 /// Error type for RocBLAS operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,13 +61,19 @@ impl Error {
             ffi::rocblas_status__rocblas_status_memory_error => "rocblas_status_memory_error",
             ffi::rocblas_status__rocblas_status_internal_error => "rocblas_status_internal_error",
             ffi::rocblas_status__rocblas_status_perf_degraded => "rocblas_status_perf_degraded",
-            ffi::rocblas_status__rocblas_status_size_query_mismatch => "rocblas_status_size_query_mismatch",
+            ffi::rocblas_status__rocblas_status_size_query_mismatch => {
+                "rocblas_status_size_query_mismatch"
+            }
             ffi::rocblas_status__rocblas_status_size_increased => "rocblas_status_size_increased",
             ffi::rocblas_status__rocblas_status_size_unchanged => "rocblas_status_size_unchanged",
             ffi::rocblas_status__rocblas_status_invalid_value => "rocblas_status_invalid_value",
             ffi::rocblas_status__rocblas_status_continue => "rocblas_status_continue",
-            ffi::rocblas_status__rocblas_status_check_numerics_fail => "rocblas_status_check_numerics_fail",
-            ffi::rocblas_status__rocblas_status_excluded_from_build => "rocblas_status_excluded_from_build",
+            ffi::rocblas_status__rocblas_status_check_numerics_fail => {
+                "rocblas_status_check_numerics_fail"
+            }
+            ffi::rocblas_status__rocblas_status_excluded_from_build => {
+                "rocblas_status_excluded_from_build"
+            }
             ffi::rocblas_status__rocblas_status_arch_mismatch => "rocblas_status_arch_mismatch",
             _ => "Unknown rocblas_status code",
         }
@@ -77,20 +83,36 @@ impl Error {
     pub fn description(&self) -> &'static str {
         match self.code {
             ffi::rocblas_status__rocblas_status_success => "Success",
-            ffi::rocblas_status__rocblas_status_invalid_handle => "Handle not initialized, invalid, or null",
+            ffi::rocblas_status__rocblas_status_invalid_handle => {
+                "Handle not initialized, invalid, or null"
+            }
             ffi::rocblas_status__rocblas_status_not_implemented => "Function is not implemented",
             ffi::rocblas_status__rocblas_status_invalid_pointer => "Invalid pointer argument",
             ffi::rocblas_status__rocblas_status_invalid_size => "Invalid size argument",
-            ffi::rocblas_status__rocblas_status_memory_error => "Failed internal memory allocation, copy, or dealloc",
+            ffi::rocblas_status__rocblas_status_memory_error => {
+                "Failed internal memory allocation, copy, or dealloc"
+            }
             ffi::rocblas_status__rocblas_status_internal_error => "Other internal library failure",
-            ffi::rocblas_status__rocblas_status_perf_degraded => "Performance degraded due to low device memory",
-            ffi::rocblas_status__rocblas_status_size_query_mismatch => "Unmatched start/stop size query",
-            ffi::rocblas_status__rocblas_status_size_increased => "Queried device memory size increased",
-            ffi::rocblas_status__rocblas_status_size_unchanged => "Queried device memory size unchanged",
+            ffi::rocblas_status__rocblas_status_perf_degraded => {
+                "Performance degraded due to low device memory"
+            }
+            ffi::rocblas_status__rocblas_status_size_query_mismatch => {
+                "Unmatched start/stop size query"
+            }
+            ffi::rocblas_status__rocblas_status_size_increased => {
+                "Queried device memory size increased"
+            }
+            ffi::rocblas_status__rocblas_status_size_unchanged => {
+                "Queried device memory size unchanged"
+            }
             ffi::rocblas_status__rocblas_status_invalid_value => "Passed argument not valid",
-            ffi::rocblas_status__rocblas_status_continue => "Nothing preventing function to proceed",
+            ffi::rocblas_status__rocblas_status_continue => {
+                "Nothing preventing function to proceed"
+            }
             ffi::rocblas_status__rocblas_status_check_numerics_fail => "Check numerics failure",
-            ffi::rocblas_status__rocblas_status_excluded_from_build => "Feature excluded from build",
+            ffi::rocblas_status__rocblas_status_excluded_from_build => {
+                "Feature excluded from build"
+            }
             ffi::rocblas_status__rocblas_status_arch_mismatch => "Architecture mismatch",
             _ => "Unknown error",
         }
@@ -99,7 +121,13 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "RocBLAS error {}: {} - {}", self.code, self.name(), self.description())
+        write!(
+            f,
+            "RocBLAS error {}: {} - {}",
+            self.code,
+            self.name(),
+            self.description()
+        )
     }
 }
 

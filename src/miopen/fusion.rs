@@ -1,13 +1,13 @@
 // src/miopen/fusion.rs
 
-use std::ptr;
-use std::os::raw::c_void;
-use crate::miopen::ffi;
+use crate::miopen::activation::ActivationMode;
+use crate::miopen::convolution::{ConvFwdAlgorithm, ConvolutionDescriptor};
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
-use crate::miopen::convolution::{ConvolutionDescriptor, ConvFwdAlgorithm};
-use crate::miopen::activation::ActivationMode;
+use std::os::raw::c_void;
+use std::ptr;
 
 /// Fusion direction
 pub type FusionDirection = ffi::miopenFusionDirection_t;
@@ -44,11 +44,7 @@ impl FusionPlanDescriptor {
     pub fn new(fusion_direction: FusionDirection, input_desc: &TensorDescriptor) -> Result<Self> {
         let mut desc = ptr::null_mut();
         let status = unsafe {
-            ffi::miopenCreateFusionPlan(
-                &mut desc,
-                fusion_direction,
-                input_desc.as_raw(),
-            )
+            ffi::miopenCreateFusionPlan(&mut desc, fusion_direction, input_desc.as_raw())
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -60,12 +56,7 @@ impl FusionPlanDescriptor {
 
     /// Compile the fusion plan
     pub fn compile(&self, handle: &Handle) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenCompileFusionPlan(
-                handle.as_raw(),
-                self.desc,
-            )
-        };
+        let status = unsafe { ffi::miopenCompileFusionPlan(handle.as_raw(), self.desc) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -78,13 +69,7 @@ impl FusionPlanDescriptor {
     pub fn get_op(&self, op_idx: i32) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe {
-            ffi::miopenFusionPlanGetOp(
-                self.desc,
-                op_idx,
-                &mut op,
-            )
-        };
+        let status = unsafe { ffi::miopenFusionPlanGetOp(self.desc, op_idx, &mut op) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -114,17 +99,15 @@ impl FusionPlanDescriptor {
     }
 
     /// Create a forward convolution operator in the fusion plan
-    pub fn create_op_conv_forward(&self, conv_desc: &ConvolutionDescriptor,
-                                  w_desc: &TensorDescriptor) -> Result<FusionOpDescriptor> {
+    pub fn create_op_conv_forward(
+        &self,
+        conv_desc: &ConvolutionDescriptor,
+        w_desc: &TensorDescriptor,
+    ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
         let status = unsafe {
-            ffi::miopenCreateOpConvForward(
-                self.desc,
-                &mut op,
-                conv_desc.as_raw(),
-                w_desc.as_raw(),
-            )
+            ffi::miopenCreateOpConvForward(self.desc, &mut op, conv_desc.as_raw(), w_desc.as_raw())
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -138,13 +121,7 @@ impl FusionPlanDescriptor {
     pub fn create_op_activation_forward(&self, mode: ActivationMode) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe {
-            ffi::miopenCreateOpActivationForward(
-                self.desc,
-                &mut op,
-                mode,
-            )
-        };
+        let status = unsafe { ffi::miopenCreateOpActivationForward(self.desc, &mut op, mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -154,16 +131,13 @@ impl FusionPlanDescriptor {
     }
 
     /// Create a backward activation operator in the fusion plan
-    pub fn create_op_activation_backward(&self, mode: ActivationMode) -> Result<FusionOpDescriptor> {
+    pub fn create_op_activation_backward(
+        &self,
+        mode: ActivationMode,
+    ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe {
-            ffi::miopenCreateOpActivationBackward(
-                self.desc,
-                &mut op,
-                mode,
-            )
-        };
+        let status = unsafe { ffi::miopenCreateOpActivationBackward(self.desc, &mut op, mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -176,13 +150,7 @@ impl FusionPlanDescriptor {
     pub fn create_op_bias_forward(&self, b_desc: &TensorDescriptor) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe {
-            ffi::miopenCreateOpBiasForward(
-                self.desc,
-                &mut op,
-                b_desc.as_raw(),
-            )
-        };
+        let status = unsafe { ffi::miopenCreateOpBiasForward(self.desc, &mut op, b_desc.as_raw()) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -192,8 +160,11 @@ impl FusionPlanDescriptor {
     }
 
     /// Create a batch normalization inference operator in the fusion plan
-    pub fn create_op_batch_norm_inference(&self, bn_mode: ffi::miopenBatchNormMode_t,
-                                          bn_scale_bias_mean_var_desc: &TensorDescriptor) -> Result<FusionOpDescriptor> {
+    pub fn create_op_batch_norm_inference(
+        &self,
+        bn_mode: ffi::miopenBatchNormMode_t,
+        bn_scale_bias_mean_var_desc: &TensorDescriptor,
+    ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
         let status = unsafe {
@@ -213,17 +184,15 @@ impl FusionPlanDescriptor {
     }
 
     /// Create a batch normalization forward operator in the fusion plan
-    pub fn create_op_batch_norm_forward(&self, bn_mode: ffi::miopenBatchNormMode_t,
-                                        running_mean_variance: bool) -> Result<FusionOpDescriptor> {
+    pub fn create_op_batch_norm_forward(
+        &self,
+        bn_mode: ffi::miopenBatchNormMode_t,
+        running_mean_variance: bool,
+    ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
         let status = unsafe {
-            ffi::miopenCreateOpBatchNormForward(
-                self.desc,
-                &mut op,
-                bn_mode,
-                running_mean_variance,
-            )
+            ffi::miopenCreateOpBatchNormForward(self.desc, &mut op, bn_mode, running_mean_variance)
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -234,16 +203,13 @@ impl FusionPlanDescriptor {
     }
 
     /// Create a batch normalization backward operator in the fusion plan
-    pub fn create_op_batch_norm_backward(&self, bn_mode: ffi::miopenBatchNormMode_t) -> Result<FusionOpDescriptor> {
+    pub fn create_op_batch_norm_backward(
+        &self,
+        bn_mode: ffi::miopenBatchNormMode_t,
+    ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe {
-            ffi::miopenCreateOpBatchNormBackward(
-                self.desc,
-                &mut op,
-                bn_mode,
-            )
-        };
+        let status = unsafe { ffi::miopenCreateOpBatchNormBackward(self.desc, &mut op, bn_mode) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -253,7 +219,10 @@ impl FusionPlanDescriptor {
     }
 
     /// Get the convolution algorithms available for the fusion plan
-    pub fn get_conv_algorithms(&self, request_algo_count: i32) -> Result<(i32, Vec<ConvFwdAlgorithm>)> {
+    pub fn get_conv_algorithms(
+        &self,
+        request_algo_count: i32,
+    ) -> Result<(i32, Vec<ConvFwdAlgorithm>)> {
         let mut returned_algo_count = 0;
         let mut algos = vec![0; request_algo_count as usize];
 
@@ -276,12 +245,7 @@ impl FusionPlanDescriptor {
 
     /// Set the convolution algorithm for the fusion plan
     pub fn set_conv_algorithm(&self, algo: ConvFwdAlgorithm) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenFusionPlanConvolutionSetAlgo(
-                self.desc,
-                algo,
-            )
-        };
+        let status = unsafe { ffi::miopenFusionPlanConvolutionSetAlgo(self.desc, algo) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -291,9 +255,15 @@ impl FusionPlanDescriptor {
     }
 
     /// Execute the fusion plan
-    pub fn execute(&self, handle: &Handle, input_desc: &TensorDescriptor, input: *const c_void,
-                   output_desc: &TensorDescriptor, output: *mut c_void,
-                   args: &OperatorArgs) -> Result<()> {
+    pub unsafe fn execute(
+        &self,
+        handle: &Handle,
+        input_desc: &TensorDescriptor,
+        input: *const c_void,
+        output_desc: &TensorDescriptor,
+        output: *mut c_void,
+        args: &OperatorArgs,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenExecuteFusionPlan(
                 handle.as_raw(),
@@ -352,8 +322,13 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a forward convolution op
-    pub fn set_conv_forward(&self, conv_op: &FusionOpDescriptor,
-                            alpha: &[u8], beta: &[u8], w: *const c_void) -> Result<()> {
+    pub unsafe fn set_conv_forward(
+        &self,
+        conv_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        w: *const c_void,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsConvForward(
                 self.args,
@@ -372,9 +347,15 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a forward activation op
-    pub fn set_activation_forward(&self, activ_op: &FusionOpDescriptor,
-                                  alpha: &[u8], beta: &[u8],
-                                  activ_alpha: f64, activ_beta: f64, activ_gamma: f64) -> Result<()> {
+    pub unsafe fn set_activation_forward(
+        &self,
+        activ_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        activ_alpha: f64,
+        activ_beta: f64,
+        activ_gamma: f64,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsActivForward(
                 self.args,
@@ -395,10 +376,17 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a backward activation op
-    pub fn set_activation_backward(&self, activ_op: &FusionOpDescriptor,
-                                   alpha: &[u8], beta: &[u8],
-                                   y: *const c_void, reserved: *const c_void,
-                                   activ_alpha: f64, activ_beta: f64, activ_gamma: f64) -> Result<()> {
+    pub unsafe fn set_activation_backward(
+        &self,
+        activ_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        y: *const c_void,
+        reserved: *const c_void,
+        activ_alpha: f64,
+        activ_beta: f64,
+        activ_gamma: f64,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsActivBackward(
                 self.args,
@@ -421,11 +409,17 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a batch normalization inference op
-    pub fn set_batch_norm_inference(&self, bn_op: &FusionOpDescriptor,
-                                    alpha: &[u8], beta: &[u8],
-                                    bn_scale: *const c_void, bn_bias: *const c_void,
-                                    estimated_mean: *const c_void, estimated_variance: *const c_void,
-                                    epsilon: f64) -> Result<()> {
+    pub unsafe fn set_batch_norm_inference(
+        &self,
+        bn_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        bn_scale: *const c_void,
+        bn_bias: *const c_void,
+        estimated_mean: *const c_void,
+        estimated_variance: *const c_void,
+        epsilon: f64,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsBatchNormInference(
                 self.args,
@@ -448,12 +442,20 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a batch normalization forward op
-    pub fn set_batch_norm_forward(&self, bn_op: &FusionOpDescriptor,
-                                  alpha: &[u8], beta: &[u8],
-                                  bn_scale: *const c_void, bn_bias: *const c_void,
-                                  saved_mean: *mut c_void, saved_inv_variance: *mut c_void,
-                                  running_mean: *mut c_void, running_variance: *mut c_void,
-                                  exp_avg_factor: f64, epsilon: f64) -> Result<()> {
+    pub unsafe fn set_batch_norm_forward(
+        &self,
+        bn_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        bn_scale: *const c_void,
+        bn_bias: *const c_void,
+        saved_mean: *mut c_void,
+        saved_inv_variance: *mut c_void,
+        running_mean: *mut c_void,
+        running_variance: *mut c_void,
+        exp_avg_factor: f64,
+        epsilon: f64,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsBatchNormForward(
                 self.args,
@@ -479,11 +481,19 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a batch normalization backward op
-    pub fn set_batch_norm_backward(&self, bn_op: &FusionOpDescriptor,
-                                   alpha: &[u8], beta: &[u8],
-                                   x: *const c_void, bn_scale: *const c_void, bn_bias: *const c_void,
-                                   result_bn_scale_diff: *mut c_void, result_bn_bias_diff: *mut c_void,
-                                   saved_mean: *const c_void, saved_inv_variance: *const c_void) -> Result<()> {
+    pub unsafe fn set_batch_norm_backward(
+        &self,
+        bn_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        x: *const c_void,
+        bn_scale: *const c_void,
+        bn_bias: *const c_void,
+        result_bn_scale_diff: *mut c_void,
+        result_bn_bias_diff: *mut c_void,
+        saved_mean: *const c_void,
+        saved_inv_variance: *const c_void,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsBatchNormBackward(
                 self.args,
@@ -508,8 +518,13 @@ impl OperatorArgs {
     }
 
     /// Set arguments for a bias forward op
-    pub fn set_bias_forward(&self, bias_op: &FusionOpDescriptor,
-                            alpha: &[u8], beta: &[u8], bias: *const c_void) -> Result<()> {
+    pub unsafe fn set_bias_forward(
+        &self,
+        bias_op: &FusionOpDescriptor,
+        alpha: &[u8],
+        beta: &[u8],
+        bias: *const c_void,
+    ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetOpArgsBiasForward(
                 self.args,

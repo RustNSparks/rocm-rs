@@ -1,9 +1,9 @@
 // src/rocrand/distribution.rs
 
-use std::ptr::NonNull;
 use crate::rocrand::bindings;
 use crate::rocrand::error::{Error, Result};
 use crate::rocrand::generator::{Generator, PseudoRng, QuasiRng};
+use std::ptr::NonNull;
 
 /// Uniform distribution for generating values in range [0, 1).
 pub struct Uniform;

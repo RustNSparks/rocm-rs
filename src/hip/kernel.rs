@@ -2,12 +2,12 @@
 //
 // Kernel launching functions for HIP
 
-use std::ffi::{c_void, CString};
-use std::ptr;
+use crate::hip::Stream;
 use crate::hip::error::{Error, Result};
 use crate::hip::ffi;
 use crate::hip::utils::Dim3;
-use crate::hip::Stream;
+use std::ffi::{CString, c_void};
+use std::ptr;
 
 /// A wrapper around a HIP function (kernel)
 pub struct Function {
@@ -16,21 +16,19 @@ pub struct Function {
 
 impl Function {
     /// Create a new function from a module and function name
-    pub fn new(module: ffi::hipModule_t, name: &str) -> Result<Self> {
+    pub unsafe fn new(module: ffi::hipModule_t, name: &str) -> Result<Self> {
         let func_name = CString::new(name).unwrap();
         let mut function = ptr::null_mut();
-        
-        let error = unsafe {
-            ffi::hipModuleGetFunction(&mut function, module, func_name.as_ptr())
-        };
-        
+
+        let error = unsafe { ffi::hipModuleGetFunction(&mut function, module, func_name.as_ptr()) };
+
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
         }
-        
+
         Ok(Self { function })
     }
-    
+
     /// Launch the kernel with the given parameters
     pub fn launch(
         &self,
@@ -44,26 +42,30 @@ impl Function {
             Some(s) => s.as_raw(),
             None => ptr::null_mut(),
         };
-        
+
         let error = unsafe {
             ffi::hipModuleLaunchKernel(
                 self.function,
-                grid_dim.x, grid_dim.y, grid_dim.z,
-                block_dim.x, block_dim.y, block_dim.z,
+                grid_dim.x,
+                grid_dim.y,
+                grid_dim.z,
+                block_dim.x,
+                block_dim.y,
+                block_dim.z,
                 shared_mem_bytes,
                 stream_ptr,
                 kernel_params.as_mut_ptr(),
                 ptr::null_mut(), // extra
             )
         };
-        
+
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
         }
-        
+
         Ok(())
     }
-    
+
     /// Get the raw function handle
     pub fn as_raw(&self) -> ffi::hipFunction_t {
         self.function
@@ -101,16 +103,16 @@ macro_rules! launch_kernel {
             $(
                 args.push($arg.as_ptr() as *mut std::ffi::c_void);
             )*
-            
+
             $func.launch($grid, $block, $shared_mem, $stream, &mut args)
         }
     };
 }
 
 /// Launch a kernel via the runtime API
-/// 
+///
 /// # Safety
-/// 
+///
 /// This function is unsafe because it takes a raw function pointer and
 /// arguments that must match the function signature.
 pub unsafe fn launch_kernel(
@@ -120,16 +122,15 @@ pub unsafe fn launch_kernel(
     shared_mem_bytes: u32,
     stream: Option<&Stream>,
     args: &[*mut c_void],
-) -> Result<()>
-{
+) -> Result<()> {
     let stream_ptr = match stream {
         Some(s) => s.as_raw(),
         None => ptr::null_mut(),
     };
-    
+
     let native_grid_dim = grid_dim.to_native();
     let native_block_dim = block_dim.to_native();
-    
+
     let error = unsafe {
         ffi::hipLaunchKernel(
             kernel_func_ptr,
@@ -140,16 +141,16 @@ pub unsafe fn launch_kernel(
             stream_ptr,
         )
     };
-    
+
     if error != ffi::hipError_t_hipSuccess {
         return Err(Error::new(error));
     }
-    
+
     Ok(())
 }
 
 /// Macro to generate a kernel launcher function
-/// 
+///
 /// This macro generates a function that takes the grid dimensions, block dimensions,
 /// shared memory size, stream, and kernel arguments, and launches the kernel.
 #[macro_export]
@@ -166,7 +167,7 @@ macro_rules! kernel_launcher {
                 let args: Vec<*mut std::ffi::c_void> = vec![
                     $(&$arg as *const $arg_ty as *mut std::ffi::c_void),*
                 ];
-                
+
                 $crate::hip::kernel::launch_kernel(
                     $func,
                     grid_dim,

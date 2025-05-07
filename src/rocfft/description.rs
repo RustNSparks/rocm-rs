@@ -5,12 +5,12 @@ This module provides the PlanDescription type for configuring advanced aspects
 of FFT plans such as data layout, communication, and scaling factors.
 */
 
-use std::ptr;
-use std::marker::PhantomData;
-use crate::rocfft::error::{Error, Result, check_error};
 use crate::rocfft::bindings;
-use crate::rocfft::plan::ArrayType;
+use crate::rocfft::error::{Error, Result, check_error};
 use crate::rocfft::field::Field;
+use crate::rocfft::plan::ArrayType;
+use std::marker::PhantomData;
+use std::ptr;
 
 /// Communication library type for distributed transforms
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -55,7 +55,7 @@ impl PlanDescription {
     /// ```no_run
     ///
     /// use rocm_rs::rocfft::description::PlanDescription;
-    /// 
+    ///
     /// let description = PlanDescription::new()?;
     /// ```
     pub fn new() -> Result<Self> {
@@ -212,17 +212,15 @@ impl PlanDescription {
     /// # Example
     ///
     /// ```no_run
-    ///
-    ///
     /// use rocm_rs::rocfft::description::{CommType, PlanDescription};
     ///
     /// let mut desc = PlanDescription::new()?;
     ///
     /// // Set up for MPI distributed transforms
     /// let mpi_comm = /* get MPI communicator handle */;
-    /// desc.set_comm(CommType::MPI, mpi_comm as *mut std::ffi::c_void)?;
+    /// unsafe { desc.set_comm(CommType::MPI, mpi_comm as *mut std::ffi::c_void)?; }
     /// ```
-    pub fn set_comm(
+    pub unsafe fn set_comm(
         &mut self,
         comm_type: CommType,
         comm_handle: *mut std::ffi::c_void,

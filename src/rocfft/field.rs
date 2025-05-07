@@ -5,10 +5,10 @@ This module provides experimental support for distributed computation
 using the Field and Brick abstractions in rocFFT.
 */
 
-use std::ptr;
-use std::marker::PhantomData;
-use crate::rocfft::error::{Error, Result, check_error, check_dimensions};
 use crate::rocfft::bindings;
+use crate::rocfft::error::{Error, Result, check_dimensions, check_error};
+use std::marker::PhantomData;
+use std::ptr;
 
 /// Brick representing a portion of a data field for distributed computation
 ///

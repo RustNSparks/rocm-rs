@@ -6,15 +6,15 @@
 pub mod bindings;
 
 // Import submodules
+pub mod distribution;
 pub mod error;
 pub mod generator;
-pub mod distribution;
 pub mod utils;
 
 // Re-export public items
+pub use distribution::{Discrete, LogNormal, Normal, Poisson, Uniform};
 pub use error::{Error, Result};
 pub use generator::{Generator, PseudoRng, QuasiRng};
-pub use distribution::{Uniform, Normal, LogNormal, Poisson, Discrete};
 
 /// Convenient re-exports of random number generator types
 pub mod rng_type {
@@ -35,9 +35,11 @@ pub mod rng_type {
 
     pub const QUASI_DEFAULT: u32 = bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_DEFAULT;
     pub const SOBOL32: u32 = bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SOBOL32;
-    pub const SCRAMBLED_SOBOL32: u32 = bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SCRAMBLED_SOBOL32;
+    pub const SCRAMBLED_SOBOL32: u32 =
+        bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SCRAMBLED_SOBOL32;
     pub const SOBOL64: u32 = bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SOBOL64;
-    pub const SCRAMBLED_SOBOL64: u32 = bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SCRAMBLED_SOBOL64;
+    pub const SCRAMBLED_SOBOL64: u32 =
+        bindings::rocrand_rng_type_ROCRAND_RNG_QUASI_SCRAMBLED_SOBOL64;
 }
 
 /// Convenient re-exports of ordering constants

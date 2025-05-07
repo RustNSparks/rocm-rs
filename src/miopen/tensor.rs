@@ -1,9 +1,9 @@
 // src/miopen/tensor.rs
 
-use std::ptr;
-use crate::miopen::ffi;
 use crate::miopen::error::{Error, Result};
+use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
+use std::ptr;
 
 /// MIOpen data types
 pub type DataType = ffi::miopenDataType_t;
@@ -35,9 +35,7 @@ impl TensorDescriptor {
 
     /// Set the descriptor for a 4D tensor (NCHW format)
     pub fn set_4d(&mut self, data_type: DataType, n: i32, c: i32, h: i32, w: i32) -> Result<()> {
-        let status = unsafe {
-            ffi::miopenSet4dTensorDescriptor(self.desc, data_type, n, c, h, w)
-        };
+        let status = unsafe { ffi::miopenSet4dTensorDescriptor(self.desc, data_type, n, c, h, w) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -47,11 +45,22 @@ impl TensorDescriptor {
     }
 
     /// Set the descriptor for a 4D tensor with strides
-    pub fn set_4d_ex(&mut self, data_type: DataType, n: i32, c: i32, h: i32, w: i32,
-                     n_stride: i32, c_stride: i32, h_stride: i32, w_stride: i32) -> Result<()> {
+    pub fn set_4d_ex(
+        &mut self,
+        data_type: DataType,
+        n: i32,
+        c: i32,
+        h: i32,
+        w: i32,
+        n_stride: i32,
+        c_stride: i32,
+        h_stride: i32,
+        w_stride: i32,
+    ) -> Result<()> {
         let status = unsafe {
-            ffi::miopenSet4dTensorDescriptorEx(self.desc, data_type, n, c, h, w,
-                                               n_stride, c_stride, h_stride, w_stride)
+            ffi::miopenSet4dTensorDescriptorEx(
+                self.desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -62,13 +71,22 @@ impl TensorDescriptor {
     }
 
     /// Set the descriptor for an N-dimensional tensor with specific layout
-    pub fn set_nd_with_layout(&mut self, data_type: DataType, layout: TensorLayout,
-                              dims: &[i32]) -> Result<()> {
+    pub fn set_nd_with_layout(
+        &mut self,
+        data_type: DataType,
+        layout: TensorLayout,
+        dims: &[i32],
+    ) -> Result<()> {
         let num_dims = dims.len() as i32;
 
         let status = unsafe {
             ffi::miopenSetNdTensorDescriptorWithLayout(
-                self.desc, data_type, layout, dims.as_ptr(), num_dims)
+                self.desc,
+                data_type,
+                layout,
+                dims.as_ptr(),
+                num_dims,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -91,17 +109,27 @@ impl TensorDescriptor {
         let mut w_stride = 0;
 
         let status = unsafe {
-            ffi::miopenGet4dTensorDescriptor(self.desc, &mut data_type,
-                                             &mut n, &mut c, &mut h, &mut w,
-                                             &mut n_stride, &mut c_stride,
-                                             &mut h_stride, &mut w_stride)
+            ffi::miopenGet4dTensorDescriptor(
+                self.desc,
+                &mut data_type,
+                &mut n,
+                &mut c,
+                &mut h,
+                &mut w,
+                &mut n_stride,
+                &mut c_stride,
+                &mut h_stride,
+                &mut w_stride,
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
         }
 
-        Ok((data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride))
+        Ok((
+            data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride,
+        ))
     }
 
     /// Set the descriptor for an N-dimensional tensor
@@ -113,8 +141,13 @@ impl TensorDescriptor {
         }
 
         let status = unsafe {
-            ffi::miopenSetTensorDescriptor(self.desc, data_type, nb_dims,
-                                           dims.as_ptr(), strides.as_ptr())
+            ffi::miopenSetTensorDescriptor(
+                self.desc,
+                data_type,
+                nb_dims,
+                dims.as_ptr(),
+                strides.as_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -128,9 +161,7 @@ impl TensorDescriptor {
     pub fn get_size(&self) -> Result<i32> {
         let mut size = 0;
 
-        let status = unsafe {
-            ffi::miopenGetTensorDescriptorSize(self.desc, &mut size)
-        };
+        let status = unsafe { ffi::miopenGetTensorDescriptorSize(self.desc, &mut size) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -140,15 +171,22 @@ impl TensorDescriptor {
     }
 
     /// Get the descriptor details for an N-dimensional tensor
-    pub fn get_nd(&self, dims_capacity: usize, strides_capacity: usize)
-                  -> Result<(DataType, Vec<i32>, Vec<i32>)> {
+    pub fn get_nd(
+        &self,
+        dims_capacity: usize,
+        strides_capacity: usize,
+    ) -> Result<(DataType, Vec<i32>, Vec<i32>)> {
         let mut data_type = 0;
         let mut dims = vec![0; dims_capacity];
         let mut strides = vec![0; strides_capacity];
 
         let status = unsafe {
-            ffi::miopenGetTensorDescriptor(self.desc, &mut data_type,
-                                           dims.as_mut_ptr(), strides.as_mut_ptr())
+            ffi::miopenGetTensorDescriptor(
+                self.desc,
+                &mut data_type,
+                dims.as_mut_ptr(),
+                strides.as_mut_ptr(),
+            )
         };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
@@ -162,9 +200,7 @@ impl TensorDescriptor {
     pub fn get_num_bytes(&self) -> Result<usize> {
         let mut num_bytes = 0;
 
-        let status = unsafe {
-            ffi::miopenGetTensorNumBytes(self.desc, &mut num_bytes)
-        };
+        let status = unsafe { ffi::miopenGetTensorNumBytes(self.desc, &mut num_bytes) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -174,7 +210,7 @@ impl TensorDescriptor {
     }
 
     /// Transform tensor from one layout to another
-    pub fn transform(
+    pub unsafe fn transform(
         &self,
         handle: &Handle,
         alpha: &[u8],
@@ -203,7 +239,7 @@ impl TensorDescriptor {
     }
 
     /// Set tensor to a single value
-    pub fn set_tensor(
+    pub unsafe fn set_tensor(
         &self,
         handle: &Handle,
         y: *mut ::std::os::raw::c_void,
@@ -226,7 +262,7 @@ impl TensorDescriptor {
     }
 
     /// Scale a tensor by a single value
-    pub fn scale_tensor(
+    pub unsafe fn scale_tensor(
         &self,
         handle: &Handle,
         y: *mut ::std::os::raw::c_void,
@@ -249,7 +285,7 @@ impl TensorDescriptor {
     }
 
     /// Execute element-wise tensor operations
-    pub fn op_tensor(
+    pub unsafe fn op_tensor(
         &self,
         handle: &Handle,
         tensor_op: ffi::miopenTensorOp_t,
@@ -359,7 +395,14 @@ impl SeqTensorDescriptor {
     pub fn get_rnn_data_seq_tensor(
         &self,
         sequence_len_array_limit: i32,
-    ) -> Result<(DataType, ffi::miopenRNNBaseLayout_t, i32, i32, i32, Vec<i32>)> {
+    ) -> Result<(
+        DataType,
+        ffi::miopenRNNBaseLayout_t,
+        i32,
+        i32,
+        i32,
+        Vec<i32>,
+    )> {
         let mut data_type = 0;
         let mut layout = 0;
         let mut max_sequence_len = 0;
@@ -376,7 +419,11 @@ impl SeqTensorDescriptor {
                 &mut batch_size,
                 &mut vector_size,
                 sequence_len_array_limit,
-                if sequence_len_array_limit > 0 { sequence_len_array.as_mut_ptr() } else { ptr::null_mut() },
+                if sequence_len_array_limit > 0 {
+                    sequence_len_array.as_mut_ptr()
+                } else {
+                    ptr::null_mut()
+                },
                 ptr::null_mut(), // paddingMarker, should be NULL
             )
         };
@@ -385,7 +432,14 @@ impl SeqTensorDescriptor {
             return Err(Error::new(status));
         }
 
-        Ok((data_type, layout, max_sequence_len, batch_size, vector_size, sequence_len_array))
+        Ok((
+            data_type,
+            layout,
+            max_sequence_len,
+            batch_size,
+            vector_size,
+            sequence_len_array,
+        ))
     }
 
     /// Get the raw descriptor handle

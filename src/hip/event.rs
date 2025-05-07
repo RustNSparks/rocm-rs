@@ -1,9 +1,9 @@
 // src/hip/event.rs
 
-use std::ptr;
-use crate::hip::ffi;
-use crate::hip::error::{Error, Result};
 use crate::hip::Stream;
+use crate::hip::error::{Error, Result};
+use crate::hip::ffi;
+use std::ptr;
 
 /// Safe wrapper for HIP events
 pub struct Event {
@@ -41,9 +41,7 @@ impl Event {
 
     /// Record an event in a stream
     pub fn record(&self, stream: &Stream) -> Result<()> {
-        let error = unsafe {
-            ffi::hipEventRecord(self.event, stream.as_raw())
-        };
+        let error = unsafe { ffi::hipEventRecord(self.event, stream.as_raw()) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -80,9 +78,7 @@ impl Event {
     /// Calculate elapsed time between this event and another in milliseconds
     pub fn elapsed_time(&self, end: &Event) -> Result<f32> {
         let mut time = 0.0;
-        let error = unsafe {
-            ffi::hipEventElapsedTime(&mut time, self.event, end.event)
-        };
+        let error = unsafe { ffi::hipEventElapsedTime(&mut time, self.event, end.event) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
