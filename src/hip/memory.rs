@@ -36,6 +36,8 @@ pub struct DeviceMemory<T> {
 unsafe impl<T: Send> Send for DeviceMemory<T> {}
 unsafe impl<T: Sync> Sync for DeviceMemory<T> {}
 
+type KernelArg = *mut c_void;
+
 impl<T> DeviceMemory<T> {
     /// Allocate device memory for a number of elements
     pub fn new(count: usize) -> Result<Self> {
@@ -255,6 +257,10 @@ impl<T> DeviceMemory<T> {
         } else {
             Ok(())
         }
+    }
+
+    pub fn as_kernel_arg(&self) -> KernelArg {
+        &(self.ptr) as *const _ as KernelArg 
     }
 }
 
