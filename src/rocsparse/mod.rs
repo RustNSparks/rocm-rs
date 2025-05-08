@@ -8,6 +8,7 @@ pub mod conversion;
 pub mod matrix;
 pub mod vector;
 pub mod descriptor;
+mod pruning;
 
 // Re-export all bindings
 pub use bindings::*;
