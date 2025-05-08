@@ -21,7 +21,7 @@ pub mod ffi;
 pub use device::{Device, DeviceProperties, get_device_count, get_device_properties};
 pub use error::{Error, Result};
 pub use event::{Event, Timer, event_flags};
-pub use kernel::{Function, KernelArg, launch_kernel, stream_to_rocrand};
+pub use kernel::{Function, KernelArg, stream_to_rocrand};
 pub use memory::{DeviceMemory, MemoryInfo, PinnedMemory, memory_info};
 pub use module::{Module, compile_and_load, load_module, load_module_data};
 pub use stream::{Stream, stream_flags};
