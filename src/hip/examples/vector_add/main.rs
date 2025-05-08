@@ -36,7 +36,6 @@ fn main() -> Result<()> {
 
     // Get the function handle
     let function = unsafe { module.get_function("vector_add")? };
-
     // Create a stream for async operations
     let stream = Stream::new()?;
 

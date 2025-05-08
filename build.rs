@@ -1,7 +1,8 @@
-use bindgen::CargoCallbacks;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+
+use bindgen::CargoCallbacks;
 
 // Define module configuration with enhanced options
 struct ModuleConfig {
