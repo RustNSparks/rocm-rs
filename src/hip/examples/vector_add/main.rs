@@ -4,7 +4,7 @@ use rocm_rs::hip::{
     calculate_grid_1d, Dim3, device_synchronize, Timer
 };
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 fn main() -> Result<()> {
@@ -20,12 +20,14 @@ fn main() -> Result<()> {
     println!("Multiprocessor count: {}", props.multi_processor_count);
     
     // Load the precompiled kernel module
-    let exe_path = env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let kernel_path = exe_dir.join("vector_add.hsaco");
-    
+    let kernel_path = PathBuf::from("vector_add.hsaco");
+
     if !kernel_path.exists() {
         println!("Error: Could not find kernel file: {}", kernel_path.display());
+        println!(
+            "Error: Could not find kernel file: {}",
+            kernel_path.display()
+        );
         println!("Make sure to run the build.sh script first to compile the kernel.");
         return Ok(());
     }
@@ -34,7 +36,7 @@ fn main() -> Result<()> {
     let module = Module::load(kernel_path)?;
     
     // Get the function handle
-    let function = unsafe { module.get_function("vector_add") }?;
+    let function = unsafe { module.get_function("vector_add")? };
     
     // Create a stream for async operations
     let stream = Stream::new()?;
@@ -57,9 +59,9 @@ fn main() -> Result<()> {
     
     // Allocate device memory
     println!("Allocating device memory...");
-    let mut d_a = DeviceMemory::<f32>::new(n)?;
-    let mut d_b = DeviceMemory::<f32>::new(n)?;
-    let mut d_c = DeviceMemory::<f32>::new(n)?;
+    let d_a = DeviceMemory::<f32>::new(n)?;
+    let d_b = DeviceMemory::<f32>::new(n)?;
+    let d_c = DeviceMemory::<f32>::new(n)?;
     
     // Create a timer
     println!("Creating timer...");
@@ -81,15 +83,18 @@ fn main() -> Result<()> {
     let block_size = 256;
     let grid_dim = calculate_grid_1d(n as u32, block_size);
     let block_dim = Dim3::new_1d(block_size);
-    
-    println!("Launching kernel with grid={}, block={}", grid_dim.x, block_dim.x);
+
+    println!(
+        "Launching kernel with grid={}, block={}",
+        grid_dim.x, block_dim.x
+    );
     
     // Prepare kernel arguments
     let n_u32 = n as u32;
     let kernel_args = [
-        &d_a.as_ptr() as *const _ as *mut std::ffi::c_void,
-        &d_b.as_ptr() as *const _ as *mut std::ffi::c_void,
-        &d_c.as_ptr() as *const _ as *mut std::ffi::c_void,
+        d_a.as_kernel_arg(),
+        d_b.as_kernel_arg(),
+        d_c.as_kernel_arg(),
         &n_u32 as *const _ as *mut std::ffi::c_void,
     ];
     
@@ -137,7 +142,10 @@ fn main() -> Result<()> {
         let expected = a[i] + b[i];
         let actual = c[i];
         if (expected - actual).abs() > 1e-5 {
-            println!("Error at index {}: expected {}, got {}", i, expected, actual);
+            println!(
+                "Error at index {}: expected {}, got {}",
+                i, expected, actual
+            );
             all_correct = false;
             if i > 10 {
                 println!("Stopping verification after 10 errors...");

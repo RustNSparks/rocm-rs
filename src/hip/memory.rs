@@ -6,6 +6,8 @@ use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::{mem, ptr};
 
+type KernelArg = *mut c_void;
+
 /// Information about available and used memory on the device
 #[derive(Debug, Clone, Copy)]
 pub struct MemoryInfo {
@@ -255,6 +257,10 @@ impl<T> DeviceMemory<T> {
         } else {
             Ok(())
         }
+    }
+
+    pub fn as_kernel_arg(&self) -> KernelArg {
+        &(self.ptr) as *const _ as KernelArg
     }
 }
 

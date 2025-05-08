@@ -1,8 +1,14 @@
 //! ROCsparse library context handle
 
-use std::mem::MaybeUninit;
 use crate::rocsparse::error::{Result, status_to_result};
-use crate::rocsparse::{ihipStream_t, rocsparse_create_handle, rocsparse_destroy_handle, rocsparse_get_pointer_mode, rocsparse_get_stream, rocsparse_get_version, rocsparse_handle, rocsparse_pointer_mode_, rocsparse_pointer_mode__rocsparse_pointer_mode_device, rocsparse_pointer_mode__rocsparse_pointer_mode_host, rocsparse_set_pointer_mode, rocsparse_set_stream};
+use crate::rocsparse::{
+    ihipStream_t, rocsparse_create_handle, rocsparse_destroy_handle, rocsparse_get_pointer_mode,
+    rocsparse_get_stream, rocsparse_get_version, rocsparse_handle, rocsparse_pointer_mode_,
+    rocsparse_pointer_mode__rocsparse_pointer_mode_device,
+    rocsparse_pointer_mode__rocsparse_pointer_mode_host, rocsparse_set_pointer_mode,
+    rocsparse_set_stream,
+};
+use std::mem::MaybeUninit;
 
 /// ROCsparse library context
 pub struct Handle {

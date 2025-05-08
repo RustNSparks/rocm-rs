@@ -1,20 +1,20 @@
 //! Matrix pruning utilities
 
-use std::ffi::c_void;
 use crate::rocsparse::descriptor::MatrixDescriptor;
+use crate::rocsparse::error::{Result, status_to_result};
 use crate::rocsparse::handle::Handle;
 use crate::rocsparse::matrix::MatrixInfo;
-use crate::rocsparse::error::{Result, status_to_result};
 use crate::rocsparse::{
-    rocsparse_sprune_csr2csr_nnz_by_percentage, rocsparse_dprune_csr2csr_nnz_by_percentage,
-    rocsparse_sprune_csr2csr_by_percentage, rocsparse_dprune_csr2csr_by_percentage,
-    rocsparse_sprune_dense2csr_buffer_size, rocsparse_dprune_dense2csr_buffer_size,
-    rocsparse_sprune_dense2csr_nnz, rocsparse_dprune_dense2csr_nnz,
-    rocsparse_sprune_dense2csr, rocsparse_dprune_dense2csr,
-    rocsparse_sprune_dense2csr_by_percentage_buffer_size, rocsparse_dprune_dense2csr_by_percentage_buffer_size,
-    rocsparse_sprune_dense2csr_nnz_by_percentage, rocsparse_dprune_dense2csr_nnz_by_percentage,
-    rocsparse_sprune_dense2csr_by_percentage, rocsparse_dprune_dense2csr_by_percentage
+    rocsparse_dprune_csr2csr_by_percentage, rocsparse_dprune_csr2csr_nnz_by_percentage,
+    rocsparse_dprune_dense2csr, rocsparse_dprune_dense2csr_buffer_size,
+    rocsparse_dprune_dense2csr_by_percentage, rocsparse_dprune_dense2csr_by_percentage_buffer_size,
+    rocsparse_dprune_dense2csr_nnz, rocsparse_dprune_dense2csr_nnz_by_percentage,
+    rocsparse_sprune_csr2csr_by_percentage, rocsparse_sprune_csr2csr_nnz_by_percentage,
+    rocsparse_sprune_dense2csr, rocsparse_sprune_dense2csr_buffer_size,
+    rocsparse_sprune_dense2csr_by_percentage, rocsparse_sprune_dense2csr_by_percentage_buffer_size,
+    rocsparse_sprune_dense2csr_nnz, rocsparse_sprune_dense2csr_nnz_by_percentage,
 };
+use std::ffi::c_void;
 
 /// Computes the number of non-zero elements per row and total non-zero elements
 /// in a CSR matrix after pruning by percentage

@@ -1,8 +1,19 @@
 //! Matrix descriptor types and enums
 
-use std::mem::MaybeUninit;
-use crate::rocsparse::{rocsparse_create_mat_descr, rocsparse_destroy_mat_descr, rocsparse_direction_, rocsparse_direction__rocsparse_direction_column, rocsparse_direction__rocsparse_direction_row, rocsparse_get_mat_index_base, rocsparse_get_mat_type, rocsparse_index_base_, rocsparse_index_base__rocsparse_index_base_one, rocsparse_index_base__rocsparse_index_base_zero, rocsparse_mat_descr, rocsparse_matrix_type_, rocsparse_matrix_type__rocsparse_matrix_type_general, rocsparse_matrix_type__rocsparse_matrix_type_hermitian, rocsparse_matrix_type__rocsparse_matrix_type_symmetric, rocsparse_matrix_type__rocsparse_matrix_type_triangular, rocsparse_set_mat_index_base, rocsparse_set_mat_type};
 use crate::rocsparse::error::*;
+use crate::rocsparse::{
+    rocsparse_create_mat_descr, rocsparse_destroy_mat_descr, rocsparse_direction_,
+    rocsparse_direction__rocsparse_direction_column, rocsparse_direction__rocsparse_direction_row,
+    rocsparse_get_mat_index_base, rocsparse_get_mat_type, rocsparse_index_base_,
+    rocsparse_index_base__rocsparse_index_base_one,
+    rocsparse_index_base__rocsparse_index_base_zero, rocsparse_mat_descr, rocsparse_matrix_type_,
+    rocsparse_matrix_type__rocsparse_matrix_type_general,
+    rocsparse_matrix_type__rocsparse_matrix_type_hermitian,
+    rocsparse_matrix_type__rocsparse_matrix_type_symmetric,
+    rocsparse_matrix_type__rocsparse_matrix_type_triangular, rocsparse_set_mat_index_base,
+    rocsparse_set_mat_type,
+};
+use std::mem::MaybeUninit;
 
 /// Matrix storage format
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

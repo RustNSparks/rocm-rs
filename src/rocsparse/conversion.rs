@@ -1,11 +1,15 @@
 //! Matrix format conversion utilities
 
-use std::ffi::c_void;
 use crate::rocsparse::descriptor::{IndexBase, MatrixDescriptor};
-use crate::rocsparse::handle::Handle;
-use crate::rocsparse::{rocsparse_action__rocsparse_action_numeric, rocsparse_action__rocsparse_action_symbolic, rocsparse_create_identity_permutation, rocsparse_csr2csc_buffer_size, rocsparse_csrsort, rocsparse_csrsort_buffer_size, rocsparse_scsr2csc};
 use crate::rocsparse::error::status_to_result;
 use crate::rocsparse::error::*;
+use crate::rocsparse::handle::Handle;
+use crate::rocsparse::{
+    rocsparse_action__rocsparse_action_numeric, rocsparse_action__rocsparse_action_symbolic,
+    rocsparse_create_identity_permutation, rocsparse_csr2csc_buffer_size, rocsparse_csrsort,
+    rocsparse_csrsort_buffer_size, rocsparse_scsr2csc,
+};
+use std::ffi::c_void;
 
 /// Convert CSR to CSC (Compressed Sparse Column) format
 pub fn csr_to_csc<T: Copy + 'static>(
@@ -148,7 +152,7 @@ pub fn csr_sort(
     let mut temp_buffer = vec![0u8; buffer_size];
 
     // Perform sort
-    let status = unsafe { 
+    let status = unsafe {
         rocsparse_csrsort(
             handle.inner,
             m,

@@ -1,11 +1,14 @@
 //! Sparse vector types
 
-use std::mem::MaybeUninit;
-use std::marker::PhantomData;
-use std::ffi::c_void;
-use crate::rocsparse::error::{Result, status_to_result};
-use crate::rocsparse::{rocsparse_create_spvec_descr, rocsparse_datatype, rocsparse_destroy_spvec_descr, rocsparse_indextype, rocsparse_spvec_descr};
 use crate::rocsparse::descriptor::IndexBase;
+use crate::rocsparse::error::{Result, status_to_result};
+use crate::rocsparse::{
+    rocsparse_create_spvec_descr, rocsparse_datatype, rocsparse_destroy_spvec_descr,
+    rocsparse_indextype, rocsparse_spvec_descr,
+};
+use std::ffi::c_void;
+use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 /// Sparse vectors
 pub struct SparseVector<T> {

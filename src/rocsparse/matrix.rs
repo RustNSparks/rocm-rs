@@ -1,10 +1,17 @@
 //! Sparse matrix types and formats
 
-use std::mem::MaybeUninit;
-use std::marker::PhantomData;
-use crate::rocsparse::error::{Result, status_to_result};
 use crate::rocsparse::descriptor::IndexBase;
-use crate::rocsparse::{rocsparse_create_hyb_mat, rocsparse_create_mat_info, rocsparse_destroy_hyb_mat, rocsparse_destroy_mat_info, rocsparse_destroy_spmat_descr, rocsparse_hyb_mat, rocsparse_hyb_partition_, rocsparse_hyb_partition__rocsparse_hyb_partition_auto, rocsparse_hyb_partition__rocsparse_hyb_partition_max, rocsparse_hyb_partition__rocsparse_hyb_partition_user, rocsparse_mat_info, rocsparse_spmat_descr};
+use crate::rocsparse::error::{Result, status_to_result};
+use crate::rocsparse::{
+    rocsparse_create_hyb_mat, rocsparse_create_mat_info, rocsparse_destroy_hyb_mat,
+    rocsparse_destroy_mat_info, rocsparse_destroy_spmat_descr, rocsparse_hyb_mat,
+    rocsparse_hyb_partition_, rocsparse_hyb_partition__rocsparse_hyb_partition_auto,
+    rocsparse_hyb_partition__rocsparse_hyb_partition_max,
+    rocsparse_hyb_partition__rocsparse_hyb_partition_user, rocsparse_mat_info,
+    rocsparse_spmat_descr,
+};
+use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 /// HYB matrix partitioning type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,5 +112,5 @@ pub struct CsrMatrix<T> {
     /// Values
     pub values: Vec<T>,
     /// Index base (zero or one)
-    pub index_base: IndexBase
+    pub index_base: IndexBase,
 }

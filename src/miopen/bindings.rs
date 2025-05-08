@@ -2487,7 +2487,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Destroys a CTC loss function descriptor object\n\n @param ctcLossDesc  CTC loss function descriptor type (input)\n @return             miopenStatus_t"]
     pub fn miopenDestroyCTCLossDescriptor(ctcLossDesc: miopenCTCLossDescriptor_t)
-        -> miopenStatus_t;
+    -> miopenStatus_t;
 }
 unsafe extern "C" {
     #[doc = " @brief Set the details of a CTC loss function descriptor\n\n @param ctcLossDesc          CTC loss function descriptor type (input)\n @param dataType             Data type used in this CTC loss operation, only fp32 currently\n supported (input)\n @param blank_label_id       User defined index for blank label, default 0 (input)\n @param apply_softmax_layer  Boolean to toggle input layer property (input)\n @return             miopenStatus_t"]
@@ -2543,7 +2543,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Destroys the dropout descriptor object\n\n @param dropoutDesc Dropout descriptor type (input)\n @return            miopenStatus_t"]
     pub fn miopenDestroyDropoutDescriptor(dropoutDesc: miopenDropoutDescriptor_t)
-        -> miopenStatus_t;
+    -> miopenStatus_t;
 }
 unsafe extern "C" {
     #[doc = " @brief Query the amount of memory required to run dropout\n\n This function calculates the amount of memory required to run dropout.\n @param xDesc                    Tensor descriptor for data tensor x (input)\n @param reserveSpaceSizeInBytes  Number of bytes of reservespace required for executing dropout\n (Output)\n @return                         miopenStatus_t"]

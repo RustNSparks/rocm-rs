@@ -64,7 +64,9 @@ pub(crate) fn status_to_result(status: rocsparse_status) -> Result<()> {
         rocsparse_status__rocsparse_status_zero_pivot => Err(Error::ZeroPivot),
         rocsparse_status__rocsparse_status_not_initialized => Err(Error::NotInitialized),
         rocsparse_status__rocsparse_status_type_mismatch => Err(Error::TypeMismatch),
-        rocsparse_status__rocsparse_status_requires_sorted_storage => Err(Error::RequiresSortedStorage),
+        rocsparse_status__rocsparse_status_requires_sorted_storage => {
+            Err(Error::RequiresSortedStorage)
+        }
         rocsparse_status__rocsparse_status_thrown_exception => Err(Error::ThrownException),
         rocsparse_status__rocsparse_status_continue => Err(Error::Continue),
         _ => Err(Error::Unknown(status as i32)),
