@@ -1,18 +1,18 @@
 // src/hip/mod.rs
 
 // Private modules
-pub(crate) mod device;
-pub(crate) mod error;
-mod event;
+pub mod device;
+pub mod error;
+pub mod event;
 pub mod kernel;
 pub mod memory;
 pub mod module;
-pub(crate) mod stream;
+pub mod stream;
 pub mod utils;
 
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users
-pub(crate) mod bindings;
+pub mod bindings;
 
 // Public re-export of FFI for internal use
 pub mod ffi;

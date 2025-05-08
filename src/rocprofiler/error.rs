@@ -1,119 +1,101 @@
 // src/rocprofiler/error.rs
 
+use crate::hip;
 use std::fmt;
 use std::error::Error as StdError;
+use std::ffi::CStr;
 
-use crate::rocprofiler::bindings;
+use super::bindings;
 
 /// Error type for ROCProfiler operations
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub struct Error {
-    pub(crate) code: bindings::hsa_status_t,
+    status: u32,  // Using hsa_status_t
 }
 
 /// Result type for ROCProfiler operations
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl Error {
-    /// Create a new error from a ROCProfiler error code
-    pub fn new(code: bindings::hsa_status_t) -> Self {
-        Self { code }
-    }
-
-    /// Get the raw error code
-    pub fn code(&self) -> bindings::hsa_status_t {
-        self.code
+    /// Create a new error from an HSA status code
+    pub fn new(status: u32) -> Self {
+        Self { status }
     }
 
     /// Returns true if the error code represents success
     pub fn is_success(&self) -> bool {
-        self.code == bindings::hsa_status_t_HSA_STATUS_SUCCESS
+        self.status == bindings::hsa_status_t_HSA_STATUS_SUCCESS
     }
 
-    /// Convert a ROCProfiler error code to a Result
-    pub fn from_rocprofiler_error<T>(error: bindings::hsa_status_t) -> Result<T>
+    /// Get the raw error code
+    pub fn code(&self) -> u32 {
+        self.status
+    }
+
+    /// Convert an HSA status code to a Result
+    pub fn from_hsa_status<T>(status: u32) -> Result<T>
     where
         T: Default,
     {
-        if error == bindings::hsa_status_t_HSA_STATUS_SUCCESS {
+        if status == bindings::hsa_status_t_HSA_STATUS_SUCCESS {
             Ok(T::default())
         } else {
-            Err(Error::new(error))
+            Err(Error::new(status))
         }
     }
 
-    /// Convert a ROCProfiler error code to a Result with a specific value
-    pub fn from_rocprofiler_error_with_value<T>(
-        error: bindings::hsa_status_t,
-        value: T,
-    ) -> Result<T> {
-        if error == bindings::hsa_status_t_HSA_STATUS_SUCCESS {
+    /// Convert an HSA status code to a Result with a specific value
+    pub fn from_hsa_status_with_value<T>(status: u32, value: T) -> Result<T> {
+        if status == bindings::hsa_status_t_HSA_STATUS_SUCCESS {
             Ok(value)
         } else {
-            Err(Error::new(error))
+            Err(Error::new(status))
         }
     }
 
-    /// Get a human-readable error description
+    /// Returns the error description as a string
     pub fn description(&self) -> &'static str {
-        match self.code {
+        match self.status {
             bindings::hsa_status_t_HSA_STATUS_SUCCESS => "Success",
-            bindings::hsa_status_t_HSA_STATUS_INFO_BREAK => "Break was requested in callback",
             bindings::hsa_status_t_HSA_STATUS_ERROR => "Generic error",
             bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_ARGUMENT => "Invalid argument",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_QUEUE_CREATION => "Invalid queue creation",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_ALLOCATION => "Invalid allocation",
+            bindings::hsa_status_t_HSA_STATUS_ERROR_OUT_OF_RESOURCES => "Out of resources",
+            bindings::hsa_status_t_HSA_STATUS_ERROR_NOT_INITIALIZED => "Not initialized",
             bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_AGENT => "Invalid agent",
             bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_REGION => "Invalid region",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_SIGNAL => "Invalid signal",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_QUEUE => "Invalid queue",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_OUT_OF_RESOURCES => "Out of resources",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_PACKET_FORMAT => "Invalid packet format",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_RESOURCE_FREE => "Error freeing resources",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_NOT_INITIALIZED => "Not initialized",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_REFCOUNT_OVERFLOW => "Reference count overflow",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INCOMPATIBLE_ARGUMENTS => "Incompatible arguments",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_INDEX => "Invalid index",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_ISA => "Invalid ISA",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_ISA_NAME => "Invalid ISA name",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_CODE_OBJECT => "Invalid code object",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_EXECUTABLE => "Invalid executable",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_FROZEN_EXECUTABLE => "Executable is frozen",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_INVALID_SYMBOL_NAME => "Invalid symbol name",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_VARIABLE_ALREADY_DEFINED => "Variable already defined",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_VARIABLE_UNDEFINED => "Variable undefined",
-            bindings::hsa_status_t_HSA_STATUS_ERROR_EXCEPTION => "HSAIL operation resulted in exception",
-            _ => "Unknown error",
+            _ => unsafe {
+                // Try to get the actual error string from ROCProfiler
+                let mut error_str_ptr = std::ptr::null();
+                if bindings::rocprofiler_error_string(&mut error_str_ptr) == bindings::hsa_status_t_HSA_STATUS_SUCCESS && !error_str_ptr.is_null() {
+                    let c_str = CStr::from_ptr(error_str_ptr);
+                    match c_str.to_str() {
+                        Ok(s) => {
+                            // This is not ideal as we're returning a slice that might not live long enough,
+                            // but ROCProfiler documentation suggests the string is static
+                            s
+                        }
+                        Err(_) => "Unknown error (invalid UTF-8 in error string)",
+                    }
+                } else {
+                    "Unknown error"
+                }
+            }
         }
-    }
-
-    /// Get an error string from the ROCProfiler library
-    pub fn error_string() -> Result<String> {
-        let mut str_ptr: *const ::std::os::raw::c_char = std::ptr::null();
-        let status = unsafe { bindings::rocprofiler_error_string(&mut str_ptr) };
-
-        if status != bindings::hsa_status_t_HSA_STATUS_SUCCESS {
-            return Err(Error::new(status));
-        }
-
-        if str_ptr.is_null() {
-            return Ok("No error string available".to_string());
-        }
-
-        let c_str = unsafe { std::ffi::CStr::from_ptr(str_ptr) };
-        Ok(c_str.to_string_lossy().into_owned())
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ROCProfiler error {}: {}",
-            self.code,
-            self.description()
-        )
+        write!(f, "ROCProfiler error {}: {}", self.status, self.description())
     }
 }
 
 impl StdError for Error {}
+
+// Automatic conversion from HIP errors
+impl From<hip::Error> for Error {
+    fn from(error: hip::Error) -> Self {
+        // Map HIP errors to a generic HSA error
+        Error::new(bindings::hsa_status_t_HSA_STATUS_ERROR)
+    }
+}
