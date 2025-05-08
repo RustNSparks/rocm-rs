@@ -266,6 +266,7 @@ version = "0.1.0"
 dependencies = [
  "bindgen 0.71.1",
  "log",
+ "once_cell",
  "rocm_smi_lib",
 ]
 

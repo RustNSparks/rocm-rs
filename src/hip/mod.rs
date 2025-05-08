@@ -1,14 +1,14 @@
 // src/hip/mod.rs
 
 // Private modules
-mod device;
-mod error;
+pub(crate) mod device;
+pub(crate) mod error;
 mod event;
 pub mod kernel;
-mod memory;
+pub mod memory;
 pub mod module;
-mod stream;
-mod utils;
+pub(crate) mod stream;
+pub mod utils;
 
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users

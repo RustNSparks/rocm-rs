@@ -7,6 +7,7 @@ use crate::hip::ffi;
 use std::ptr;
 
 /// Safe wrapper for HIP streams
+#[derive(Clone, Debug)]
 pub struct Stream {
     stream: hip::ffi::hipStream_t,
 }
