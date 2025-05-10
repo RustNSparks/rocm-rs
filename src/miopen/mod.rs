@@ -18,6 +18,7 @@ pub mod tensor;
 
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users
+#[allow(warnings)]
 pub(crate) mod bindings;
 
 // Public re-export of FFI for internal use

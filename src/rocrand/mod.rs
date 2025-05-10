@@ -3,6 +3,7 @@
 // Module definition for rocrand
 
 // Re-export the raw bindings for advanced usage
+#[allow(warnings)]
 pub mod bindings;
 
 // Import submodules
