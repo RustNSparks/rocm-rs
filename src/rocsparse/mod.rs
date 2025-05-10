@@ -1,6 +1,6 @@
 //! Bindings for rocsparse
 //! Auto-generated - do not modify
-
+#[allow(warnings)]
 pub mod bindings;
 pub mod conversion;
 pub mod descriptor;

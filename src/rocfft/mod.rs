@@ -2,7 +2,7 @@
 
 //! Bindings for rocfft
 //! Auto-generated - do not modify
-
+#[allow(warnings)]
 pub mod bindings;
 pub mod cache;
 pub mod description;
