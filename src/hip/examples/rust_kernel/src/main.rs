@@ -9,10 +9,30 @@ amdgpu_kernel! {
     #[unsafe(no_mangle)]
     pub extern "gpu-kernel" fn kernel(input: *mut u8, output: *mut u8) {
         let id = unsafe { workitem_id_x() as usize };
+        let mut ops = unsafe { Ops { num: *input.add(id) } };
+
+        ops.mul(2);
+        ops.add(2);
+
+
         unsafe {
-            *output.add(id) = *input.add(id) * 2;
+            *output.add(id) = ops.num;
         }
-    }    
+    }
+
+    struct Ops {
+        num: u8 
+    }
+
+    impl Ops {   
+        fn mul(&mut self, num: u8) {
+            self.num *= num;
+        }
+        
+        fn add(&mut self, num: u8) {
+            self.num += num;
+        }
+    }
 }
 
 fn main() -> Result<()> {

@@ -93,6 +93,11 @@ cargo build
 
 - rocm_smi - enables bindings and wrappers for rocm_smi_lib
 
+## Examples
+- hip
+  - vector_add - example containing kernel written in cpp launched with rocm-rs
+  - rust_kernel - example containing kernel writtein in rust using macros 
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

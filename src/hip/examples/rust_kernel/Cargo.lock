@@ -202,9 +202,9 @@ dependencies = [
 
 [[package]]
 name = "rocm_kernel_macros"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87573588a09dab727e0635ab3473198dfe62fb7322ccfc25a0815c04d4111481"
+checksum = "329ba3144d4553ef44d341c686150b865b616cae8f782551df6bcb161185e144"
 dependencies = [
  "proc-macro2",
  "quote",
