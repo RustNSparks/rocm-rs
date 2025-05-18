@@ -1,8 +1,7 @@
 // src/rocrand/generator.rs
-
-use std::marker::PhantomData;
 use std::ptr::{self, NonNull};
 
+use crate::hip::DeviceMemory;
 use crate::rocrand::bindings;
 use crate::rocrand::error::{Error, Result};
 
@@ -118,12 +117,12 @@ impl PseudoRng {
     /// Generate uniformly distributed 32-bit integers.
     ///
     /// Generated numbers are between 0 and 2^32-1.
-    pub fn generate_u32(&mut self, output: &mut [u32]) -> Result<()> {
+    pub fn generate_u32(&mut self, output: &mut DeviceMemory<u32>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -131,12 +130,12 @@ impl PseudoRng {
     /// Generate uniformly distributed 64-bit integers.
     ///
     /// Generated numbers are between 0 and 2^64-1.
-    pub fn generate_u64(&mut self, output: &mut [u64]) -> Result<()> {
+    pub fn generate_u64(&mut self, output: &mut DeviceMemory<u64>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_long_long(
                 self.generator.as_ptr(),
-                output.as_mut_ptr() as *mut _,
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -144,12 +143,12 @@ impl PseudoRng {
     /// Generate uniformly distributed 8-bit integers.
     ///
     /// Generated numbers are between 0 and 255.
-    pub fn generate_u8(&mut self, output: &mut [u8]) -> Result<()> {
+    pub fn generate_u8(&mut self, output: &mut DeviceMemory<u8>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_char(
                 self.generator.as_ptr(),
-                output.as_mut_ptr() as *mut _,
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -157,12 +156,12 @@ impl PseudoRng {
     /// Generate uniformly distributed 16-bit integers.
     ///
     /// Generated numbers are between 0 and 65535.
-    pub fn generate_u16(&mut self, output: &mut [u16]) -> Result<()> {
+    pub fn generate_u16(&mut self, output: &mut DeviceMemory<u16>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_short(
                 self.generator.as_ptr(),
-                output.as_mut_ptr() as *mut _,
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -170,12 +169,12 @@ impl PseudoRng {
     /// Generate uniformly distributed f32 values.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_uniform(&mut self, output: &mut [f32]) -> Result<()> {
+    pub fn generate_uniform(&mut self, output: &mut DeviceMemory<f32>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_uniform(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -183,12 +182,12 @@ impl PseudoRng {
     /// Generate uniformly distributed f64 values.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_uniform_double(&mut self, output: &mut [f64]) -> Result<()> {
+    pub fn generate_uniform_double(&mut self, output: &mut DeviceMemory<f64>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_uniform_double(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -197,12 +196,12 @@ impl PseudoRng {
     ///
     /// Generated numbers follow a normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate_normal(&mut self, output: &mut [f32], mean: f32, stddev: f32) -> Result<()> {
+    pub fn generate_normal(&mut self, output: &mut DeviceMemory<f32>, mean: f32, stddev: f32) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_normal(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
                 mean,
                 stddev,
             ))
@@ -215,15 +214,15 @@ impl PseudoRng {
     /// mean and standard deviation.
     pub fn generate_normal_double(
         &mut self,
-        output: &mut [f64],
+        output: &mut DeviceMemory<f64>,
         mean: f64,
         stddev: f64,
     ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_normal_double(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
                 mean,
                 stddev,
             ))
@@ -236,15 +235,15 @@ impl PseudoRng {
     /// mean and standard deviation.
     pub fn generate_log_normal(
         &mut self,
-        output: &mut [f32],
+        output: &mut DeviceMemory<f32>,
         mean: f32,
         stddev: f32,
     ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_log_normal(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
                 mean,
                 stddev,
             ))
@@ -257,15 +256,15 @@ impl PseudoRng {
     /// mean and standard deviation.
     pub fn generate_log_normal_double(
         &mut self,
-        output: &mut [f64],
+        output: &mut DeviceMemory<f64>,
         mean: f64,
         stddev: f64,
     ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_log_normal_double(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
                 mean,
                 stddev,
             ))
@@ -275,12 +274,12 @@ impl PseudoRng {
     /// Generate Poisson-distributed 32-bit integers.
     ///
     /// Generated numbers follow a Poisson distribution with the specified lambda.
-    pub fn generate_poisson(&mut self, output: &mut [u32], lambda: f64) -> Result<()> {
+    pub fn generate_poisson(&mut self, output: &mut DeviceMemory<u32>, lambda: f64) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_poisson(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
                 lambda,
             ))
         }
@@ -348,12 +347,12 @@ impl QuasiRng {
     /// Generate uniformly distributed f32 values.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_uniform(&mut self, output: &mut [f32]) -> Result<()> {
+    pub fn generate_uniform(&mut self, output: &mut DeviceMemory<f32>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_uniform(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }
@@ -361,12 +360,12 @@ impl QuasiRng {
     /// Generate uniformly distributed f64 values.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_uniform_double(&mut self, output: &mut [f64]) -> Result<()> {
+    pub fn generate_uniform_double(&mut self, output: &mut DeviceMemory<f64>) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_uniform_double(
                 self.generator.as_ptr(),
-                output.as_mut_ptr(),
-                output.len(),
+                output.as_ptr().cast(),
+                output.count(),
             ))
         }
     }

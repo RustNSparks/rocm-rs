@@ -28,13 +28,8 @@ pub fn generate_uniform_f32(count: usize, seed: Option<u64>) -> Result<Vec<f32>>
     let mut host_output = vec![0.0f32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate uniform random numbers
-        generator.generate_uniform(slice)?;
-    }
+    generator.generate_uniform(&mut device_output)?;
+    
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -62,14 +57,8 @@ pub fn generate_uniform_f64(count: usize, seed: Option<u64>) -> Result<Vec<f64>>
     let mut host_output = vec![0.0f64; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f64;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate uniform random numbers
-        generator.generate_uniform_double(slice)?;
-    }
-
+    generator.generate_uniform_double(&mut device_output)?;
+    
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
 
@@ -96,13 +85,7 @@ pub fn generate_u32(count: usize, seed: Option<u64>) -> Result<Vec<u32>> {
     let mut host_output = vec![0u32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut u32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate random integers
-        generator.generate_u32(slice)?;
-    }
+    generator.generate_u32(&mut device_output)?;
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -138,13 +121,7 @@ pub fn generate_normal_f32(
     let mut host_output = vec![0.0f32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate normal random numbers
-        normal_dist.generate(&mut generator, slice)?;
-    }
+    normal_dist.generate(&mut generator, &mut device_output)?;
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -180,13 +157,7 @@ pub fn generate_log_normal_f32(
     let mut host_output = vec![0.0f32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate log-normal random numbers
-        log_normal_dist.generate(&mut generator, slice)?;
-    }
+    log_normal_dist.generate(&mut generator, &mut device_output)?;
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -217,13 +188,8 @@ pub fn generate_poisson(count: usize, lambda: f64, seed: Option<u64>) -> Result<
     let mut host_output = vec![0u32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut u32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
+    poisson_dist.generate(&mut generator, &mut device_output)?;
 
-        // Generate poisson random numbers
-        poisson_dist.generate(&mut generator, slice)?;
-    }
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -249,13 +215,7 @@ pub fn generate_quasi_f32(count: usize, dimensions: u32) -> Result<Vec<f32>> {
     let mut host_output = vec![0.0f32; count];
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Generate quasi-random numbers
-        Uniform::generate_quasi(&mut generator, slice)?;
-    }
+    Uniform::generate_quasi(&mut generator, &mut device_output)?;
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
