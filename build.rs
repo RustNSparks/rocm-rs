@@ -17,6 +17,11 @@ struct ModuleConfig {
 }
 
 fn main() {
+    // Skip if in docs env
+    if env::var("DOCS_RS").is_ok() {
+        return;
+    }
+    
     // Skip bindgen if requested
     if env::var("SKIP_BINDGEN").is_ok() {
         println!("cargo:warning=Skipping bindgen as SKIP_BINDGEN is set");
