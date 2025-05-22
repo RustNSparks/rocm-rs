@@ -129,7 +129,7 @@ impl Device {
     }
 
     /// Reset this device
-    pub fn reset(&self) -> Result<()> {
+    pub unsafe fn reset(&self) -> Result<()> {
         // Save current device
         let current_device = Self::current()?;
 

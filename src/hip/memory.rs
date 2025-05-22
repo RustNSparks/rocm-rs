@@ -165,7 +165,9 @@ impl<T> DeviceMemory<T> {
         Ok(())
     }
 
-    pub fn copy_from_host_async(&self, source: &[T], stream: &Stream) -> Result<()> {
+    pub fn copy_from_host_async<I: Into<Vec<T>>>(&self, source: I, stream: &Stream) -> Result<()> {
+        let source = Into::<Vec<T>>::into(source);
+
         // Check for empty source or potentially uninitialized buffer early
         if source.is_empty() {
             return Ok(());
