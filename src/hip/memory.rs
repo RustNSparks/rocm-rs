@@ -38,6 +38,53 @@ pub struct DeviceMemory<T> {
 unsafe impl<T: Send> Send for DeviceMemory<T> {}
 unsafe impl<T: Sync> Sync for DeviceMemory<T> {}
 
+#[derive(Clone)]
+pub struct PendingCopy<T> {
+    inner: Vec<T>
+}
+
+impl<T> PendingCopy<T> {
+    pub fn synchronize(self) -> Vec<T> {
+        self.inner
+    }
+}
+
+pub trait SynchronizeCopies {
+    type Output;
+
+    fn finalize(self) -> Self::Output;
+}
+
+impl<T> SynchronizeCopies for PendingCopy<T> {
+    type Output = Vec<T>;
+
+    fn finalize(self) -> Self::Output {
+        self.synchronize()
+    }
+}
+
+impl<T, Rest> SynchronizeCopies for (PendingCopy<T>, Rest)
+where
+    Rest: SynchronizeCopies,
+{
+    type Output = (Vec<T>, Rest::Output);
+
+    fn finalize(self) -> Self::Output {
+        let (pending, rest) = self;
+        let vec = pending.synchronize();
+        let rest_out = rest.finalize();
+        (vec, rest_out)
+    }
+}
+
+impl SynchronizeCopies for () {
+    type Output = ();
+
+    fn finalize(self) -> Self::Output {
+        ()
+    }
+}
+
 impl<T> DeviceMemory<T> {
     /// Allocate device memory for a number of elements
     pub fn new(count: usize) -> Result<Self> {
@@ -223,10 +270,10 @@ impl<T> DeviceMemory<T> {
     ///   (e.g., via `stream.synchronize()`) before accessing the data in the `dest`
     ///   slice on the host.
     /// - If `dest` is empty, the function returns `Ok(())` immediately.
-    pub fn copy_to_host_async(&self, dest: &mut [T], stream: &Stream) -> Result<()> {
+    pub fn copy_to_host_async<'a>(&self, mut dest: Vec<T>, stream: &Stream) -> Result<PendingCopy<T>> {
         // Check for empty destination or potentially uninitialized buffer early
         if dest.is_empty() {
-            return Ok(());
+            return Ok(PendingCopy { inner: dest });
         }
         // Check if self.ptr is null if your struct allows for uninitialized state
         // if self.ptr.is_null() { return Err(/* Appropriate error */); }
@@ -240,7 +287,7 @@ impl<T> DeviceMemory<T> {
 
         // Only proceed with copy if there are bytes to copy (handles ZSTs correctly)
         if required_bytes == 0 {
-            return Ok(());
+            return Ok(PendingCopy { inner: dest });
         }
 
         let error = unsafe {
@@ -257,7 +304,7 @@ impl<T> DeviceMemory<T> {
         if error != ffi::hipError_t_hipSuccess {
             Err(Error::new(error)) // Assumes Error::new handles hipError_t
         } else {
-            Ok(())
+            Ok(PendingCopy { inner: dest })
         }
     }
 

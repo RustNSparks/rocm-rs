@@ -72,8 +72,8 @@ fn main() -> Result<()> {
     
     // Copy data from host to device
     println!("Copying host data to device...");
-    d_a.copy_from_host_async(&a, &stream)?;
-    d_b.copy_from_host_async(&b, &stream)?;
+    d_a.copy_from_host_async(a.clone(), &stream)?;
+    d_b.copy_from_host_async(b.clone(), &stream)?;
     
     // Stop timing host-to-device transfer
     timer.stop(&stream)?;
@@ -118,10 +118,10 @@ fn main() -> Result<()> {
     timer.start(&stream)?;
     
     // Copy results back to host
-    d_c.copy_to_host_async(&mut c, &stream)?;
-    
+    let pending = d_c.copy_to_host_async(c, &stream)?;
+
     // Synchronize the stream to ensure all operations are complete
-    stream.synchronize()?;
+    let c = stream.synchronize_memory(pending)?;
     
     // Stop timing device-to-host transfer
     timer.stop(&stream)?;

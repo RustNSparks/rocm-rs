@@ -6,10 +6,12 @@ use crate::hip::event::Event;
 use crate::hip::ffi;
 use std::ptr;
 
+use super::memory::SynchronizeCopies;
+
 /// Safe wrapper for HIP streams
 #[derive(Clone, Debug)]
 pub struct Stream {
-    stream: hip::ffi::hipStream_t,
+    pub(crate) stream: hip::ffi::hipStream_t,
 }
 
 // Can't be automatically derived since we have a raw pointer
@@ -62,6 +64,15 @@ impl Stream {
         }
 
         Ok(())
+    }
+
+      pub fn synchronize_memory<T: SynchronizeCopies>(&self, copies: T) -> Result<T::Output> {
+        let error = unsafe { ffi::hipStreamSynchronize(self.stream) };
+        if error != ffi::hipError_t_hipSuccess {
+            return Err(Error::new(error));
+        }
+
+        Ok(copies.finalize())
     }
 
     /// Query if all operations in the stream have completed
