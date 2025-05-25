@@ -104,34 +104,34 @@ fn main() {
             needs_stddef_stdint: false,
             needs_cpp: true,
         },
-        ModuleConfig {
-            name: "rocprofiler".to_string(),
-            lib_name: "rocprofiler64".to_string(),
-            extra_includes: vec![
-                // Include the current directory where your headers are located
-                ".".to_string(),
-                "include".to_string(),
-            ],
-            extra_args: vec![
-                "-D__HIP_PLATFORM_AMD__=1".to_string(),  // Ensure AMD platform is defined
-            ],
-            allowlist_prefixes: vec![
-                "rocprofiler_".to_string(),
-                "ROCPROFILER_".to_string(),
-                "ROCPROFILER_VERSION_".to_string(),
-                "ROCPROFILER_FEATURE_KIND_".to_string(),
-                "ROCPROFILER_DATA_KIND_".to_string(),
-                "ROCPROFILER_MODE_".to_string(),
-                "ROCPROFILER_TIME_ID_".to_string(),
-                "ROCPROFILER_INFO_KIND_".to_string(),
-                "ROCPROFILER_HSA_CB_ID_".to_string(),
-                "HSA_EVT_".to_string(),           // Allow activity.h enum
-                "hsa_evt_".to_string(),           // Allow activity.h typedef
-            ],
-            dependencies: vec!["hip".to_string()],
-            needs_stddef_stdint: true,   // ROCProfiler header requires stddef.h and stdint.h
-            needs_cpp: true,             // C++ support needed for HSA includes
-        }
+        // ModuleConfig {
+        //     name: "rocprofiler".to_string(),
+        //     lib_name: "rocprofiler64".to_string(),
+        //     extra_includes: vec![
+        //         // Include the current directory where your headers are located
+        //         ".".to_string(),
+        //         "include".to_string(),
+        //     ],
+        //     extra_args: vec![
+        //         "-D__HIP_PLATFORM_AMD__=1".to_string(),  // Ensure AMD platform is defined
+        //     ],
+        //     allowlist_prefixes: vec![
+        //         "rocprofiler_".to_string(),
+        //         "ROCPROFILER_".to_string(),
+        //         "ROCPROFILER_VERSION_".to_string(),
+        //         "ROCPROFILER_FEATURE_KIND_".to_string(),
+        //         "ROCPROFILER_DATA_KIND_".to_string(),
+        //         "ROCPROFILER_MODE_".to_string(),
+        //         "ROCPROFILER_TIME_ID_".to_string(),
+        //         "ROCPROFILER_INFO_KIND_".to_string(),
+        //         "ROCPROFILER_HSA_CB_ID_".to_string(),
+        //         "HSA_EVT_".to_string(),           // Allow activity.h enum
+        //         "hsa_evt_".to_string(),           // Allow activity.h typedef
+        //     ],
+        //     dependencies: vec!["hip".to_string()],
+        //     needs_stddef_stdint: true,   // ROCProfiler header requires stddef.h and stdint.h
+        //     needs_cpp: true,             // C++ support needed for HSA includes
+        // }
     ];
 
     // Sort modules by dependency order
