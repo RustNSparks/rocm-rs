@@ -1,6 +1,6 @@
 // src/rocblas/handle.rs
 
-use crate::hip::{self, Stream};
+use crate::hip::Stream;
 use crate::rocblas::error::{Error, Result};
 use crate::rocblas::ffi;
 use std::ptr;

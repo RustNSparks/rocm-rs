@@ -2,6 +2,8 @@
 
 use crate::rocsparse::rocsparse_status;
 
+use super::bindings;
+
 /// Error type for ROCsparse operations
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
@@ -52,23 +54,23 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Convert low-level status to Result
 pub(crate) fn status_to_result(status: rocsparse_status) -> Result<()> {
     match status {
-        rocsparse_status__rocsparse_status_success => Ok(()),
-        rocsparse_status__rocsparse_status_invalid_handle => Err(Error::InvalidHandle),
-        rocsparse_status__rocsparse_status_not_implemented => Err(Error::NotImplemented),
-        rocsparse_status__rocsparse_status_invalid_pointer => Err(Error::InvalidPointer),
-        rocsparse_status__rocsparse_status_invalid_size => Err(Error::InvalidSize),
-        rocsparse_status__rocsparse_status_memory_error => Err(Error::MemoryError),
-        rocsparse_status__rocsparse_status_internal_error => Err(Error::InternalError),
-        rocsparse_status__rocsparse_status_invalid_value => Err(Error::InvalidValue),
-        rocsparse_status__rocsparse_status_arch_mismatch => Err(Error::ArchMismatch),
-        rocsparse_status__rocsparse_status_zero_pivot => Err(Error::ZeroPivot),
-        rocsparse_status__rocsparse_status_not_initialized => Err(Error::NotInitialized),
-        rocsparse_status__rocsparse_status_type_mismatch => Err(Error::TypeMismatch),
-        rocsparse_status__rocsparse_status_requires_sorted_storage => {
+        bindings::rocsparse_status__rocsparse_status_success => Ok(()),
+        bindings::rocsparse_status__rocsparse_status_invalid_handle => Err(Error::InvalidHandle),
+        bindings::rocsparse_status__rocsparse_status_not_implemented => Err(Error::NotImplemented),
+        bindings::rocsparse_status__rocsparse_status_invalid_pointer => Err(Error::InvalidPointer),
+        bindings::rocsparse_status__rocsparse_status_invalid_size => Err(Error::InvalidSize),
+        bindings::rocsparse_status__rocsparse_status_memory_error => Err(Error::MemoryError),
+        bindings::rocsparse_status__rocsparse_status_internal_error => Err(Error::InternalError),
+        bindings::rocsparse_status__rocsparse_status_invalid_value => Err(Error::InvalidValue),
+        bindings::rocsparse_status__rocsparse_status_arch_mismatch => Err(Error::ArchMismatch),
+        bindings::rocsparse_status__rocsparse_status_zero_pivot => Err(Error::ZeroPivot),
+        bindings::rocsparse_status__rocsparse_status_not_initialized => Err(Error::NotInitialized),
+        bindings::rocsparse_status__rocsparse_status_type_mismatch => Err(Error::TypeMismatch),
+        bindings::rocsparse_status__rocsparse_status_requires_sorted_storage => {
             Err(Error::RequiresSortedStorage)
         }
-        rocsparse_status__rocsparse_status_thrown_exception => Err(Error::ThrownException),
-        rocsparse_status__rocsparse_status_continue => Err(Error::Continue),
+        bindings::rocsparse_status__rocsparse_status_thrown_exception => Err(Error::ThrownException),
+        bindings::rocsparse_status__rocsparse_status_continue => Err(Error::Continue),
         _ => Err(Error::Unknown(status as i32)),
     }
 }

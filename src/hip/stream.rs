@@ -118,7 +118,7 @@ impl Stream {
             user_data: *mut std::ffi::c_void,
         ) {
             // Convert the pointer back to a Box and then to our closure
-            let callback_box = Box::from_raw(user_data as *mut Box<dyn FnOnce()>);
+            let callback_box = unsafe { Box::from_raw(user_data as *mut Box<dyn FnOnce()>) };
 
             // Call the closure
             (*callback_box)();

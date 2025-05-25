@@ -75,8 +75,8 @@ impl Module {
     }
 
     /// Get a function from the module
-    pub unsafe fn get_function(&self, name: &str) -> Result<Function> {
-        Function::new(self.module, name)
+    pub fn get_function(&self, name: &str) -> Result<Function> {
+        unsafe { Function::new(self.module, name) }
     }
 
     /// Get a global variable from the module

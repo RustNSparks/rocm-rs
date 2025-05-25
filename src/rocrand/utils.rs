@@ -2,7 +2,7 @@
 //
 // Utility functions for easier use of the rocrand library
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::hip::{DeviceMemory, Stream};
 use crate::rocrand::{
     Generator, LogNormal, Normal, Poisson, PseudoRng, QuasiRng, Uniform, rng_type,
@@ -243,7 +243,7 @@ where
     generator.initialize()?;
 
     // Allocate device memory
-    let mut device_output = DeviceMemory::<f32>::new(count)?;
+    let device_output = DeviceMemory::<f32>::new(count)?;
 
     // Create host output buffer
     let mut host_output = vec![0.0f32; count];
@@ -278,10 +278,9 @@ where
     }
 
     // Generate the random numbers
-    unsafe {
-        let device_ptr = device_memory.as_ptr() as *mut T;
-        generator_fn(device_ptr, device_memory.count())?;
-    }
+    let device_ptr = device_memory.as_ptr() as *mut T;
+    generator_fn(device_ptr, device_memory.count())?;
+    
 
     Ok(())
 }

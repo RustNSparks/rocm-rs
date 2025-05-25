@@ -1,16 +1,14 @@
 // src/rocfft/utils.rs
 
 use crate::error::Error::RocFFT;
-use crate::error::{Error, Result};
-use crate::hip::{Device, DeviceMemory, Stream};
+use crate::error::Result;
+use crate::hip::{DeviceMemory, Stream};
 use crate::rocfft::{
     description::PlanDescription,
     error,
     execution::ExecutionInfo,
     plan::{ArrayType, PlacementType, Plan, Precision, TransformType},
 };
-use log::error;
-use std::mem;
 
 /// Determines the size of the output for a real-to-complex transform
 ///
@@ -76,7 +74,7 @@ pub unsafe fn complex_forward_transform<T>(
     let mut exec_info = match stream {
         Some(s) => {
             let mut info = ExecutionInfo::new()?;
-            info.set_stream(s.as_raw() as *mut std::ffi::c_void)?;
+            unsafe { info.set_stream(s.as_raw() as *mut std::ffi::c_void) }?;
             Some(info)
         }
         None => None,
@@ -134,7 +132,7 @@ pub fn complex_inverse_transform<T>(
     };
 
     // Create plan description if we need scaling
-    let mut description = if scale {
+    let description = if scale {
         let mut desc = PlanDescription::new()?;
         desc.set_scale_factor(scale_factor)?;
         Some(desc)
@@ -264,16 +262,13 @@ pub fn complex_to_real_transform<T, U>(
     };
 
     // Create plan description if we need scaling
-    let mut description = if scale {
+    let description = if scale {
         let mut desc = PlanDescription::new()?;
         desc.set_scale_factor(scale_factor)?;
         Some(desc)
     } else {
         None
     };
-
-    // Input lengths for hermitian data
-    let input_lengths = get_real_forward_output_length(lengths);
 
     // Create plan
     let mut plan = Plan::new(
@@ -339,7 +334,6 @@ pub fn create_2d_fft_plan_with_strides(
     let in_strides = vec![in_row_stride, in_col_stride];
 
     // If real-to-complex transform, output size is different
-    let is_real_forward = transform_type == TransformType::RealForward;
     let (in_array_type, out_array_type) = match transform_type {
         TransformType::RealForward => (ArrayType::Real, ArrayType::ComplexInterleaved),
         TransformType::RealInverse => (ArrayType::ComplexInterleaved, ArrayType::Real),
@@ -399,7 +393,7 @@ pub fn fft_convolution_1d<T>(
     stream: Option<&Stream>,
 ) -> Result<()>
 where
-    T: Copy + Default,
+    T: Copy + Default + std::ops::Mul<Output = T> + std::ops::Neg<Output = T> + std::ops::Add<Output = T>,
 {
     // Create work buffers for FFT
     let signal_size = signal.count();
@@ -522,7 +516,7 @@ where
     fft_result.copy_from_host(&host_mult_result)?;
 
     // Create a buffer for the inverse FFT result
-    let mut ifft_result = DeviceMemory::<T>::new(padded_size * 2)?;
+    let ifft_result = DeviceMemory::<T>::new(padded_size * 2)?;
     let ifft_ptr = [ifft_result.as_ptr()];
 
     // Perform inverse FFT
@@ -547,18 +541,14 @@ where
 // These helper functions would need proper implementations for the generic type T
 // Here we just use placeholders
 
-fn multiply<T>(a: T, b: T) -> T {
-    // This would need to be implemented for the specific type T
-    // For example, for f32 it would be a * b
-    todo!("Implement multiply for type T")
+fn multiply<T: std::ops::Mul<Output = T>>(a: T, b: T) -> T {
+    a*b
 }
 
-fn multiply_neg<T>(a: T, b: T) -> T {
-    // This would be -(a * b) for the specific type T
-    todo!("Implement multiply_neg for type T")
+fn multiply_neg<T: std::ops::Mul<Output = T> + std::ops::Neg<Output = T>>(a: T, b: T) -> T {
+    -multiply(a, b)
 }
 
-fn multiply_add<T>(a: T, b: T, c: T) -> T {
-    // This would be a * b + c for the specific type T
-    todo!("Implement multiply_add for type T")
+fn multiply_add<T: std::ops::Mul<Output = T> + std::ops::Add<Output = T>>(a: T, b: T, c: T) -> T {
+    multiply(a, b) + c
 }

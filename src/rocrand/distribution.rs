@@ -3,7 +3,7 @@
 use crate::hip::DeviceMemory;
 use crate::rocrand::bindings;
 use crate::rocrand::error::{Error, Result};
-use crate::rocrand::generator::{Generator, PseudoRng, QuasiRng};
+use crate::rocrand::generator::{PseudoRng, QuasiRng};
 use std::ptr::NonNull;
 
 /// Uniform distribution for generating values in range [0, 1).

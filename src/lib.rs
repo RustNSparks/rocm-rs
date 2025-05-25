@@ -6,7 +6,6 @@ pub mod rocblas;
 pub mod rocfft;
 pub mod rocrand;
 pub mod rocsolver;
-use crate::rocfft::examples;
 
 #[cfg(feature = "rocm_smi")]
 pub mod rocmsmi;
@@ -16,12 +15,9 @@ pub mod rocsparse;
 #[cfg(test)]
 mod tests {
     use crate::hip;
-    use crate::hip::{Device, DeviceMemory, device_synchronize, get_device_count};
-    use crate::rocfft::examples::run_1d_complex_example;
-    use crate::rocprofiler::context::Properties;
-    use crate::rocprofiler::profiler::{Profiler, get_metrics, version_string};
-    use crate::rocprofiler::types::{Feature, InfoData, Parameter, ParameterName, ProfilerMode};
-    use crate::rocrand::utils::{generate_normal_f32, generate_uniform_f64};
+    use crate::hip::Device;
+    use crate::rocprofiler::profiler::Profiler;
+    use crate::rocprofiler::types::{Feature, Parameter, ParameterName, ProfilerMode};
 
     #[test]
     fn test_rocprofiler_simple() {
@@ -55,7 +51,7 @@ mod tests {
         )];
 
         println!("Creating profiler...");
-        let profiler = match Profiler::new(
+        let _profiler = match Profiler::new(
             device,
             features,
             &[ProfilerMode::Standalone, ProfilerMode::SingleGroup],
@@ -70,5 +66,6 @@ mod tests {
                 return;
             }
         };
+
     }
 }

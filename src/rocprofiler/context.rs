@@ -125,7 +125,7 @@ impl Context {
         };
 
         // Create the context
-        let mut context = ptr::null_mut();
+        let mut context = unsafe { std::mem::zeroed() };
 
         // Create the HSA agent handle
         let agent = bindings::hsa_agent_t {
