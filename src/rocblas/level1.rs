@@ -1,5 +1,7 @@
 // src/rocblas/level1.rs
 
+use crate::hip::DeviceMemory;
+use crate::rocblas::bindings::_rocblas_handle;
 use crate::rocblas::error::{Error, Result};
 use crate::rocblas::ffi;
 use crate::rocblas::handle::Handle;
@@ -18,11 +20,11 @@ use crate::rocblas::handle::Handle;
 /// * `alpha` - Scalar
 /// * `x` - Device pointer to vector x
 /// * `incx` - Stride between consecutive elements of x
-pub unsafe fn scal<T>(handle: &Handle, n: i32, alpha: &T, x: *mut T, incx: i32) -> Result<()>
+pub fn scal<T>(handle: &Handle, n: i32, alpha: &T, x: &DeviceMemory<T>, incx: i32) -> Result<()>
 where
     T: ScalType,
 {
-    T::rocblas_scal(handle, n, alpha, x, incx)
+    unsafe { T::rocblas_scal(handle, n, alpha, x.as_ptr().cast(), incx) }
 }
 
 /// Scale vectors in a batch by a scalar
@@ -36,7 +38,7 @@ where
 /// * `x` - Device array of device pointers to each vector x_i
 /// * `incx` - Stride between consecutive elements of each x_i
 /// * `batch_count` - Number of instances in the batch
-pub unsafe fn scal_batched<T>(
+pub fn scal_batched<T>(
     handle: &Handle,
     n: i32,
     alpha: &T,
@@ -47,7 +49,7 @@ pub unsafe fn scal_batched<T>(
 where
     T: ScalBatchedType,
 {
-    T::rocblas_scal_batched(handle, n, alpha, x, incx, batch_count)
+    unsafe { T::rocblas_scal_batched(handle, n, alpha, x, incx, batch_count) }
 }
 
 /// Scale vectors in a strided batch by a scalar
@@ -251,22 +253,28 @@ where
     unsafe { T::rocblas_dotc(handle, n, x, incx, y, incy, result) }
 }
 
+/// impl helper macro for rocblas functions
+macro_rules! impl_rocblas_func {
+    ($trait_name:ident, $fn_type:ident, {$( $t:ty => $func:path ),* $(,)?}) => {
+        $(
+            impl $trait_name for $t {
+                fn func() -> $fn_type<Self> {
+                    $func
+                }
+            }
+        )*
+    };
+}
+
 //==============================================================================
 // Type traits for implementation
 //==============================================================================
 
 /// Trait for types that can be used with scal
+type ScalTypeFn<T> = unsafe extern "C" fn(*mut _rocblas_handle, i32, *const T, *mut T, i32) -> u32;
 pub trait ScalType {
-    unsafe fn rocblas_scal(
-        handle: &Handle,
-        n: i32,
-        alpha: &Self,
-        x: *mut Self,
-        incx: i32,
-    ) -> Result<()>;
-}
+    fn func() -> ScalTypeFn<Self>;
 
-impl ScalType for f32 {
     unsafe fn rocblas_scal(
         handle: &Handle,
         n: i32,
@@ -274,7 +282,7 @@ impl ScalType for f32 {
         x: *mut Self,
         incx: i32,
     ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_sscal(handle.as_raw(), n, alpha, x, incx) };
+        let status = unsafe { Self::func()(handle.as_raw(), n, alpha, x, incx) };
         if status != ffi::rocblas_status__rocblas_status_success {
             return Err(Error::new(status));
         }
@@ -282,53 +290,12 @@ impl ScalType for f32 {
     }
 }
 
-impl ScalType for f64 {
-    unsafe fn rocblas_scal(
-        handle: &Handle,
-        n: i32,
-        alpha: &Self,
-        x: *mut Self,
-        incx: i32,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_dscal(handle.as_raw(), n, alpha, x, incx) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
-
-impl ScalType for ffi::rocblas_float_complex {
-    unsafe fn rocblas_scal(
-        handle: &Handle,
-        n: i32,
-        alpha: &Self,
-        x: *mut Self,
-        incx: i32,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_cscal(handle.as_raw(), n, alpha, x, incx) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
-
-impl ScalType for ffi::rocblas_double_complex {
-    unsafe fn rocblas_scal(
-        handle: &Handle,
-        n: i32,
-        alpha: &Self,
-        x: *mut Self,
-        incx: i32,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_zscal(handle.as_raw(), n, alpha, x, incx) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
+impl_rocblas_func!(ScalType, ScalTypeFn, {
+    f32 => ffi::rocblas_sscal,
+    f64 => ffi::rocblas_dscal,
+    ffi::rocblas_float_complex => ffi::rocblas_cscal,
+    ffi::rocblas_double_complex => ffi::rocblas_zscal,
+});
 
 /// Trait for types that can be used with scal_batched
 pub trait ScalBatchedType {

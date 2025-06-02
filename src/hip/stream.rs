@@ -66,12 +66,8 @@ impl Stream {
         Ok(())
     }
 
-      pub fn synchronize_memory<T: SynchronizeCopies>(&self, copies: T) -> Result<T::Output> {
-        let error = unsafe { ffi::hipStreamSynchronize(self.stream) };
-        if error != ffi::hipError_t_hipSuccess {
-            return Err(Error::new(error));
-        }
-
+    pub fn synchronize_memory<T: SynchronizeCopies>(&self, copies: T) -> Result<T::Output> {
+        Self::synchronize(&self)?;
         Ok(copies.finalize())
     }
 
