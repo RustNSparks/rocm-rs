@@ -139,11 +139,11 @@ where
 }
 pub const HIP_VERSION_MAJOR: u32 = 6;
 pub const HIP_VERSION_MINOR: u32 = 4;
-pub const HIP_VERSION_PATCH: u32 = 43482;
-pub const HIP_VERSION_GITHASH: &[u8; 10] = b"0f2d60242\0";
+pub const HIP_VERSION_PATCH: u32 = 43483;
+pub const HIP_VERSION_GITHASH: &[u8; 10] = b"a187df25c\0";
 pub const HIP_VERSION_BUILD_ID: u32 = 0;
 pub const HIP_VERSION_BUILD_NAME: &[u8; 1] = b"\0";
-pub const HIP_VERSION: u32 = 60443482;
+pub const HIP_VERSION: u32 = 60443483;
 pub const HIP_TRSA_OVERRIDE_FORMAT: u32 = 1;
 pub const HIP_TRSF_READ_AS_INTEGER: u32 = 1;
 pub const HIP_TRSF_NORMALIZED_COORDINATES: u32 = 2;

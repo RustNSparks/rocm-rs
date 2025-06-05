@@ -11,6 +11,7 @@ pub mod rocsolver;
 pub mod rocmsmi;
 // mod rocprofiler;
 pub mod rocsparse;
+pub mod rocarray;
 
 #[cfg(test)]
 mod tests {
