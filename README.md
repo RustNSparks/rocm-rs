@@ -14,6 +14,7 @@ Currently implemented:
 - ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
 - ✅ rocSOLVER - Linear system solvers (raw bindings only)
 - ✅ rocSPARSE - Sparse linear algebra (raw bindings only)
+- ✅ ROCArray - GPU array struct with api similar to Vec
 - ✅ rocmsmi - system managment interface (refer to [rocm_smi_lib](https://github.com/PTFOPlayer/rocm_smi_lib_rs))
 
 The project currently focuses on providing raw FFI bindings for most libraries, with safe Rust wrappers available for rocFFT. Additional safe wrappers for other libraries are planned for future development.
