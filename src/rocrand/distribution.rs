@@ -20,7 +20,10 @@ impl Uniform {
     /// Generate uniformly distributed f64 values using a pseudo-random generator.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_double(generator: &mut PseudoRng, output: &mut DeviceMemory<f64>) -> Result<()> {
+    pub fn generate_double(
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<f64>,
+    ) -> Result<()> {
         generator.generate_uniform_double(output)
     }
 
@@ -34,7 +37,10 @@ impl Uniform {
     /// Generate uniformly distributed f64 values using a quasi-random generator.
     ///
     /// Generated numbers are between 0.0 and 1.0.
-    pub fn generate_quasi_double(generator: &mut QuasiRng, output: &mut DeviceMemory<f64>) -> Result<()> {
+    pub fn generate_quasi_double(
+        generator: &mut QuasiRng,
+        output: &mut DeviceMemory<f64>,
+    ) -> Result<()> {
         generator.generate_uniform_double(output)
     }
 }
@@ -55,7 +61,11 @@ impl Normal {
     ///
     /// Generated numbers follow a normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate(&self, generator: &mut PseudoRng, output: &mut DeviceMemory<f32>) -> Result<()> {
+    pub fn generate(
+        &self,
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<f32>,
+    ) -> Result<()> {
         generator.generate_normal(output, self.mean, self.stddev)
     }
 }
@@ -76,7 +86,11 @@ impl NormalDouble {
     ///
     /// Generated numbers follow a normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate(&self, generator: &mut PseudoRng, output: &mut DeviceMemory<f64>) -> Result<()> {
+    pub fn generate(
+        &self,
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<f64>,
+    ) -> Result<()> {
         generator.generate_normal_double(output, self.mean, self.stddev)
     }
 }
@@ -94,7 +108,11 @@ impl LogNormal {
     }
 
     /// Generate log-normally distributed f32 values.
-    pub fn generate(&self, generator: &mut PseudoRng, output: &mut DeviceMemory<f32>) -> Result<()> {
+    pub fn generate(
+        &self,
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<f32>,
+    ) -> Result<()> {
         generator.generate_log_normal(output, self.mean, self.stddev)
     }
 }
@@ -112,7 +130,11 @@ impl LogNormalDouble {
     }
 
     /// Generate log-normally distributed f64 values.
-    pub fn generate(&self, generator: &mut PseudoRng, output: &mut DeviceMemory<f64>) -> Result<()> {
+    pub fn generate(
+        &self,
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<f64>,
+    ) -> Result<()> {
         generator.generate_log_normal_double(output, self.mean, self.stddev)
     }
 }
@@ -129,7 +151,11 @@ impl Poisson {
     }
 
     /// Generate Poisson-distributed integers.
-    pub fn generate(&self, generator: &mut PseudoRng, output: &mut DeviceMemory<u32>) -> Result<()> {
+    pub fn generate(
+        &self,
+        generator: &mut PseudoRng,
+        output: &mut DeviceMemory<u32>,
+    ) -> Result<()> {
         generator.generate_poisson(output, self.lambda)
     }
 }

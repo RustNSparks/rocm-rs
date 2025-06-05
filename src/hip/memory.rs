@@ -40,7 +40,7 @@ unsafe impl<T: Sync> Sync for DeviceMemory<T> {}
 
 #[derive(Clone)]
 pub struct PendingCopy<T> {
-    inner: Vec<T>
+    inner: Vec<T>,
 }
 
 impl<T> PendingCopy<T> {
@@ -270,7 +270,11 @@ impl<T> DeviceMemory<T> {
     ///   (e.g., via `stream.synchronize()`) before accessing the data in the `dest`
     ///   slice on the host.
     /// - If `dest` is empty, the function returns `Ok(())` immediately.
-    pub fn copy_to_host_async<'a>(&self, mut dest: Vec<T>, stream: &Stream) -> Result<PendingCopy<T>> {
+    pub fn copy_to_host_async<'a>(
+        &self,
+        mut dest: Vec<T>,
+        stream: &Stream,
+    ) -> Result<PendingCopy<T>> {
         // Check for empty destination or potentially uninitialized buffer early
         if dest.is_empty() {
             return Ok(PendingCopy { inner: dest });

@@ -10,8 +10,8 @@ pub mod rocsolver;
 #[cfg(feature = "rocm_smi")]
 pub mod rocmsmi;
 // mod rocprofiler;
-pub mod rocsparse;
 pub mod rocarray;
+pub mod rocsparse;
 
 #[cfg(test)]
 mod tests {
@@ -22,7 +22,7 @@ mod tests {
     // use crate::rocprofiler::profiler::{Profiler, get_metrics, version_string};
     // use crate::rocprofiler::types::{Feature, InfoData, Parameter, ParameterName, ProfilerMode};
     // use crate::rocrand::utils::{generate_normal_f32, generate_uniform_f64};
-    // 
+    //
     // #[test]
     // fn test_rocprofiler_simple() {
     //     // Check device availability first
@@ -33,7 +33,7 @@ mod tests {
     //             return;
     //         }
     //     }
-    // 
+    //
     //     let device = match Device::new(0) {
     //         Ok(dev) => {
     //             let props = dev
@@ -47,13 +47,13 @@ mod tests {
     //             return;
     //         }
     //     };
-    // 
+    //
     //     // Try with a single widely-supported metric
     //     let features = vec![Feature::new_metric(
     //         "GRBM_COUNT",
     //         vec![Parameter::new(ParameterName::SeMask, 0xffffffff)],
     //     )];
-    // 
+    //
     //     println!("Creating profiler...");
     //     let profiler = match Profiler::new(
     //         device,

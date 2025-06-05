@@ -1,39 +1,70 @@
 // src/rocarray/sorting_kernels.hip
 #include <hip/hip_runtime.h>
 
-// Bitonic sort for small arrays (power of 2 sizes up to 1024)
-#define DEFINE_BITONIC_SORT(type, type_suffix, ascending) \
-extern "C" __global__ void bitonic_sort_##ascending##_##type_suffix( \
+#define ASCENDING 1
+#define DESCENDING 0
+
+// Simple bubble sort kernel for debugging
+extern "C" __global__ void simple_sort_int(int* data, unsigned int n) {
+    int tid = threadIdx.x;
+    int bid = blockIdx.x;
+
+    // Only use thread 0 for simplicity
+    if (tid == 0 && bid == 0) {
+        // Simple bubble sort
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (data[j] > data[j + 1]) {
+                    int temp = data[j];
+                    data[j] = data[j + 1];
+                    data[j + 1] = temp;
+                }
+            }
+        }
+    }
+}
+
+// Bitonic sort with fixed shared memory
+#define DEFINE_BITONIC_SORT(type, type_suffix, is_ascending) \
+extern "C" __global__ void bitonic_sort_##is_ascending##_##type_suffix( \
     type* data, unsigned int n, unsigned int padded_n) { \
     int tid = threadIdx.x; \
     int bid = blockIdx.x; \
     int idx = bid * blockDim.x + tid; \
     \
-    __shared__ type shared_data[1024]; \
+    __shared__ type sdata[512]; /* Fixed smaller size */ \
+    \
+    /* Bounds check */ \
+    if (tid >= 512 || blockDim.x > 512) return; \
     \
     /* Load data into shared memory */ \
     if (idx < n) { \
-        shared_data[tid] = data[idx]; \
-    } else if (idx < padded_n) { \
-        shared_data[tid] = ascending ? (type)INFINITY : (type)-INFINITY; \
+        sdata[tid] = data[idx]; \
+    } else { \
+        /* Use simple sentinel values */ \
+        if (is_ascending) { \
+            sdata[tid] = (type)999999; /* Large value for ascending */ \
+        } else { \
+            sdata[tid] = (type)-999999; /* Small value for descending */ \
+        } \
     } \
     __syncthreads(); \
     \
     /* Bitonic sort */ \
     for (int size = 2; size <= blockDim.x; size <<= 1) { \
         for (int stride = size >> 1; stride > 0; stride >>= 1) { \
-            int pos = 2 * tid - (tid & (stride - 1)); \
-            bool should_swap; \
-            if (ascending) { \
-                should_swap = shared_data[pos] > shared_data[pos + stride]; \
-            } else { \
-                should_swap = shared_data[pos] < shared_data[pos + stride]; \
-            } \
-            \
-            if (should_swap) { \
-                type temp = shared_data[pos]; \
-                shared_data[pos] = shared_data[pos + stride]; \
-                shared_data[pos + stride] = temp; \
+            int partner = tid ^ stride; \
+            if (partner < blockDim.x && partner < 512) { \
+                bool ascending_block = ((tid & size) == 0) == is_ascending; \
+                bool should_swap = ascending_block ? \
+                    (sdata[tid] > sdata[partner]) : \
+                    (sdata[tid] < sdata[partner]); \
+                \
+                if (should_swap) { \
+                    type temp = sdata[tid]; \
+                    sdata[tid] = sdata[partner]; \
+                    sdata[partner] = temp; \
+                } \
             } \
             __syncthreads(); \
         } \
@@ -41,19 +72,19 @@ extern "C" __global__ void bitonic_sort_##ascending##_##type_suffix( \
     \
     /* Write back to global memory */ \
     if (idx < n) { \
-        data[idx] = shared_data[tid]; \
+        data[idx] = sdata[tid]; \
     } \
 }
 
-// Radix sort implementation (simplified)
-#define DEFINE_RADIX_SORT(type, type_suffix) \
+// Simple radix sort fallback
+#define DEFINE_SIMPLE_RADIX_SORT(type, type_suffix) \
 extern "C" __global__ void radix_sort_ascending_##type_suffix( \
     type* data, type* temp_buffer, unsigned int n) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    /* This is a simplified radix sort - real implementation would be more complex */ \
-    /* For now, we'll use a simple bubble sort approach for demonstration */ \
-    if (idx == 0) { \
+    /* Use simple bubble sort for now */ \
+    if (tid == 0 && bid == 0) { \
         for (int i = 0; i < n - 1; i++) { \
             for (int j = 0; j < n - i - 1; j++) { \
                 if (data[j] > data[j + 1]) { \
@@ -69,19 +100,21 @@ extern "C" __global__ void radix_sort_ascending_##type_suffix( \
 // Initialize indices for argsort
 extern "C" __global__ void init_indices(unsigned int* indices, unsigned int n) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
     if (idx < n) {
         indices[idx] = idx;
     }
 }
 
-// Argsort implementation
+// Simple argsort
 #define DEFINE_ARGSORT(type, type_suffix) \
 extern "C" __global__ void argsort_##type_suffix( \
     const type* data, unsigned int* indices, unsigned int n) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    /* Simple bubble sort on indices based on data values */ \
-    if (idx == 0) { \
+    /* Use simple bubble sort on indices */ \
+    if (tid == 0 && bid == 0) { \
         for (int i = 0; i < n - 1; i++) { \
             for (int j = 0; j < n - i - 1; j++) { \
                 if (data[indices[j]] > data[indices[j + 1]]) { \
@@ -98,41 +131,29 @@ extern "C" __global__ void argsort_##type_suffix( \
 #define DEFINE_IS_SORTED(type, type_suffix) \
 extern "C" __global__ void is_sorted_##type_suffix( \
     const type* data, unsigned int n, unsigned int* result) { \
-    __shared__ unsigned int block_result[256]; \
     int tid = threadIdx.x; \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    block_result[tid] = 1; /* Assume sorted */ \
-    \
-    if (idx < n - 1) { \
-        if (data[idx] > data[idx + 1]) { \
-            block_result[tid] = 0; /* Not sorted */ \
+    if (tid == 0 && bid == 0) { \
+        *result = 1; /* Assume sorted */ \
+        for (int i = 0; i < n - 1; i++) { \
+            if (data[i] > data[i + 1]) { \
+                *result = 0; \
+                break; \
+            } \
         } \
-    } \
-    \
-    __syncthreads(); \
-    \
-    /* Reduce within block */ \
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) { \
-        if (tid < s) { \
-            block_result[tid] = block_result[tid] && block_result[tid + s]; \
-        } \
-        __syncthreads(); \
-    } \
-    \
-    if (tid == 0) { \
-        atomicAnd(result, block_result[0]); \
     } \
 }
 
-// Partial sort (sort first k elements)
+// Simple partial sort
 #define DEFINE_PARTIAL_SORT(type, type_suffix) \
 extern "C" __global__ void partial_sort_##type_suffix( \
     type* data, unsigned int n, unsigned int k) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    /* Simple selection sort for first k elements */ \
-    if (idx == 0) { \
+    if (tid == 0 && bid == 0) { \
+        /* Selection sort for first k elements */ \
         for (int i = 0; i < k && i < n; i++) { \
             int min_idx = i; \
             for (int j = i + 1; j < n; j++) { \
@@ -149,14 +170,15 @@ extern "C" __global__ void partial_sort_##type_suffix( \
     } \
 }
 
-// Nth element (quickselect)
+// Simple nth element
 #define DEFINE_NTH_ELEMENT(type, type_suffix) \
 extern "C" __global__ void nth_element_##type_suffix( \
     type* data, unsigned int n, unsigned int nth, type* result) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    if (idx == 0) { \
-        /* Simple approach: sort and take nth element */ \
+    if (tid == 0 && bid == 0 && nth < n) { \
+        /* Simple approach: sort and take nth */ \
         for (int i = 0; i < n - 1; i++) { \
             for (int j = 0; j < n - i - 1; j++) { \
                 if (data[j] > data[j + 1]) { \
@@ -166,99 +188,74 @@ extern "C" __global__ void nth_element_##type_suffix( \
                 } \
             } \
         } \
-        if (nth < n) { \
-            *result = data[nth]; \
-        } \
+        *result = data[nth]; \
     } \
 }
 
-// Merge two sorted arrays
+// Simple merge
 #define DEFINE_MERGE_SORTED(type, type_suffix) \
 extern "C" __global__ void merge_sorted_##type_suffix( \
     const type* left, unsigned int left_len, \
     const type* right, unsigned int right_len, \
     type* output) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
-    int total_len = left_len + right_len; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    if (idx < total_len) { \
-        /* Binary search approach for parallel merge */ \
-        int left_idx = 0; \
-        int right_idx = 0; \
-        \
-        /* Find position in merged array */ \
-        for (int i = 0; i < idx; i++) { \
-            if (left_idx >= left_len) { \
-                right_idx++; \
-            } else if (right_idx >= right_len) { \
-                left_idx++; \
-            } else if (left[left_idx] <= right[right_idx]) { \
-                left_idx++; \
+    if (tid == 0 && bid == 0) { \
+        int i = 0, j = 0, k = 0; \
+        while (i < left_len && j < right_len) { \
+            if (left[i] <= right[j]) { \
+                output[k++] = left[i++]; \
             } else { \
-                right_idx++; \
+                output[k++] = right[j++]; \
             } \
         } \
-        \
-        /* Assign value */ \
-        if (left_idx >= left_len) { \
-            output[idx] = right[right_idx]; \
-        } else if (right_idx >= right_len) { \
-            output[idx] = left[left_idx]; \
-        } else if (left[left_idx] <= right[right_idx]) { \
-            output[idx] = left[left_idx]; \
-        } else { \
-            output[idx] = right[right_idx]; \
+        while (i < left_len) { \
+            output[k++] = left[i++]; \
+        } \
+        while (j < right_len) { \
+            output[k++] = right[j++]; \
         } \
     } \
 }
 
-// Stable sort (merge sort)
+// Simple stable sort
 #define DEFINE_STABLE_SORT(type, type_suffix) \
 extern "C" __global__ void stable_sort_##type_suffix( \
     type* data, type* temp_buffer, unsigned int n) { \
-    int idx = blockDim.x * blockIdx.x + threadIdx.x; \
+    int tid = threadIdx.x; \
+    int bid = blockIdx.x; \
     \
-    /* Simplified stable sort - real implementation would use proper merge sort */ \
-    if (idx == 0) { \
-        /* Copy to temp buffer */ \
-        for (int i = 0; i < n; i++) { \
-            temp_buffer[i] = data[i]; \
-        } \
-        \
-        /* Simple stable sort (insertion sort) */ \
+    if (tid == 0 && bid == 0) { \
+        /* Insertion sort (stable) */ \
         for (int i = 1; i < n; i++) { \
-            type key = temp_buffer[i]; \
+            type key = data[i]; \
             int j = i - 1; \
-            while (j >= 0 && temp_buffer[j] > key) { \
-                temp_buffer[j + 1] = temp_buffer[j]; \
+            while (j >= 0 && data[j] > key) { \
+                data[j + 1] = data[j]; \
                 j--; \
             } \
-            temp_buffer[j + 1] = key; \
-        } \
-        \
-        /* Copy back */ \
-        for (int i = 0; i < n; i++) { \
-            data[i] = temp_buffer[i]; \
+            data[j + 1] = key; \
         } \
     } \
 }
 
 // Generate kernels for all supported types
-DEFINE_BITONIC_SORT(float, float, ascending)
-DEFINE_BITONIC_SORT(float, float, descending)
-DEFINE_BITONIC_SORT(double, double, ascending)
-DEFINE_BITONIC_SORT(double, double, descending)
-DEFINE_BITONIC_SORT(int, int, ascending)
-DEFINE_BITONIC_SORT(int, int, descending)
-DEFINE_BITONIC_SORT(unsigned int, uint, ascending)
-DEFINE_BITONIC_SORT(unsigned int, uint, descending)
+DEFINE_BITONIC_SORT(float, float, ASCENDING)
+DEFINE_BITONIC_SORT(float, float, DESCENDING)
+DEFINE_BITONIC_SORT(double, double, ASCENDING)
+DEFINE_BITONIC_SORT(double, double, DESCENDING)
+DEFINE_BITONIC_SORT(int, int, ASCENDING)
+DEFINE_BITONIC_SORT(int, int, DESCENDING)
+DEFINE_BITONIC_SORT(unsigned int, uint, ASCENDING)
+DEFINE_BITONIC_SORT(unsigned int, uint, DESCENDING)
 
-DEFINE_RADIX_SORT(float, float)
-DEFINE_RADIX_SORT(double, double)
-DEFINE_RADIX_SORT(int, int)
-DEFINE_RADIX_SORT(unsigned int, uint)
-DEFINE_RADIX_SORT(long long, long)
-DEFINE_RADIX_SORT(unsigned long long, ulong)
+DEFINE_SIMPLE_RADIX_SORT(float, float)
+DEFINE_SIMPLE_RADIX_SORT(double, double)
+DEFINE_SIMPLE_RADIX_SORT(int, int)
+DEFINE_SIMPLE_RADIX_SORT(unsigned int, uint)
+DEFINE_SIMPLE_RADIX_SORT(long long, long)
+DEFINE_SIMPLE_RADIX_SORT(unsigned long long, ulong)
 
 DEFINE_ARGSORT(float, float)
 DEFINE_ARGSORT(double, double)
@@ -293,3 +290,16 @@ DEFINE_STABLE_SORT(float, float)
 DEFINE_STABLE_SORT(double, double)
 DEFINE_STABLE_SORT(int, int)
 DEFINE_STABLE_SORT(unsigned int, uint)
+
+
+// Add this simple test kernel to your sorting_kernels.hip
+extern "C" __global__ void test_simple_kernel(int* data, unsigned int n) {
+    // Do absolutely nothing - just test if kernel can be called
+    int tid = threadIdx.x;
+    if (tid == 0) {
+        // Just touch the first element
+        if (n > 0) {
+            data[0] = data[0];
+        }
+    }
+}

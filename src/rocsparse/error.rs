@@ -69,7 +69,9 @@ pub(crate) fn status_to_result(status: rocsparse_status) -> Result<()> {
         bindings::rocsparse_status__rocsparse_status_requires_sorted_storage => {
             Err(Error::RequiresSortedStorage)
         }
-        bindings::rocsparse_status__rocsparse_status_thrown_exception => Err(Error::ThrownException),
+        bindings::rocsparse_status__rocsparse_status_thrown_exception => {
+            Err(Error::ThrownException)
+        }
         bindings::rocsparse_status__rocsparse_status_continue => Err(Error::Continue),
         _ => Err(Error::Unknown(status as i32)),
     }
