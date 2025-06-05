@@ -3,6 +3,7 @@ use crate::error::Result;
 use crate::hip::{DeviceMemory, Stream, Module, Function, calculate_grid_1d, Dim3};
 use std::ffi::c_void;
 use std::sync::Once;
+use crate::rocarray::{kernels, Shape};
 
 static INIT: Once = Once::new();
 static mut KERNELS_MODULE: Option<Module> = None;
@@ -107,7 +108,7 @@ fn init_kernels() -> Result<()> {
     Ok(())
 }
 
-fn get_kernel_function(name: &str) -> Result<Function> {
+fn get_kernel_function(name: &str) -> crate::hip::error::Result<Function> {
     init_kernels()?;
 
     unsafe {

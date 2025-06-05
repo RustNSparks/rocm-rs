@@ -3,6 +3,7 @@ use crate::error::Result;
 use crate::hip::{DeviceMemory, Stream, Module, Function, calculate_grid_1d, Dim3};
 use std::ffi::c_void;
 use std::sync::Once;
+use crate::error::Error::InvalidOperation;
 
 static INIT_SORT: Once = Once::new();
 static mut SORT_MODULE: Option<Module> = None;
@@ -76,7 +77,7 @@ fn get_sort_kernel_function(name: &str) -> Result<Function> {
 
     unsafe {
         if let Some(ref module) = SORT_MODULE {
-            module.get_function(name)
+            Ok(module.get_function(name)?)
         } else {
             Err(crate::error::Error::InvalidOperation(
                 "Sort kernels not initialized".to_string()

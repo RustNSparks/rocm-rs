@@ -21,8 +21,9 @@ pub enum Error {
 
     /// Custom error with a message
     Custom(String),
+    
+    InvalidOperation(String),
 }
-
 // Automatic conversion from HIP errors
 impl From<crate::hip::Error> for Error {
     fn from(error: crate::hip::Error) -> Self {

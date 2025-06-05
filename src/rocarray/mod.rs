@@ -1,7 +1,8 @@
 // src/rocarray/mod.rs - Enhanced ROCArray with multidimensional support
 
 use crate::error::Result;
-use crate::hip::{DeviceMemory, Stream, Event, Timer, calculate_grid_1d, Dim3};
+use crate::hip::{DeviceMemory, Stream, Event, Timer};
+use crate::hip::utils::{calculate_grid_1d, Dim3};
 use crate::rocrand::{PseudoRng, rng_type, Uniform, Normal, LogNormal, Poisson};
 use std::marker::PhantomData;
 use std::fmt;
@@ -63,11 +64,11 @@ impl Shape {
     /// Check if shapes are compatible for broadcasting
     pub fn can_broadcast_with(&self, other: &Shape) -> bool {
         let max_ndim = self.ndim().max(other.ndim());
-        
+
         for i in 0..max_ndim {
             let dim1 = self.dims.get(self.ndim().saturating_sub(i + 1)).copied().unwrap_or(1);
             let dim2 = other.dims.get(other.ndim().saturating_sub(i + 1)).copied().unwrap_or(1);
-            
+
             if dim1 != dim2 && dim1 != 1 && dim2 != 1 {
                 return false;
             }
@@ -197,7 +198,7 @@ where
         let shape = Shape::new_1d(vec.len());
         let mut data = DeviceMemory::new(capacity)?;
         data.copy_from_host(&vec)?;
-        
+
         Ok(Self {
             data,
             shape,
@@ -209,14 +210,14 @@ where
     /// Create a new ROCArray from host data with specific shape
     pub fn from_vec_with_shape(vec: Vec<T>, shape: Shape) -> Result<Self> {
         if vec.len() != shape.size() {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 format!("Vector length {} doesn't match shape size {}", vec.len(), shape.size())
             ));
         }
 
         let mut data = DeviceMemory::new(vec.len())?;
         data.copy_from_host(&vec)?;
-        
+
         Ok(Self {
             data,
             shape,
@@ -233,8 +234,8 @@ where
     }
 
     /// Create a new ROCArray filled with ones
-    pub fn ones(shape: Shape) -> Result<Self> 
-    where 
+    pub fn ones(shape: Shape) -> Result<Self>
+    where
         T: From<u8>,
     {
         let one = T::from(1u8);
@@ -243,8 +244,8 @@ where
     }
 
     /// Create a new ROCArray filled with a specific value
-    pub fn filled(shape: Shape, value: T) -> Result<Self> 
-    where 
+    pub fn filled(shape: Shape, value: T) -> Result<Self>
+    where
         T: Clone,
     {
         let host_data = vec![value; shape.size()];
@@ -252,7 +253,7 @@ where
     }
 
     // Shape and dimension methods
-    
+
     /// Get the shape of the array
     pub fn shape(&self) -> &Shape {
         &self.shape
@@ -287,7 +288,7 @@ where
     pub fn reshape(&mut self, new_dims: Vec<usize>) -> Result<()> {
         let new_size: usize = new_dims.iter().product();
         if new_size != self.len() {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "New shape must have the same total size".to_string()
             ));
         }
@@ -299,7 +300,7 @@ where
     pub fn reshaped(&self, new_dims: Vec<usize>) -> Result<ROCArray<T>> {
         let new_size: usize = new_dims.iter().product();
         if new_size != self.len() {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "New shape must have the same total size".to_string()
             ));
         }
@@ -312,14 +313,14 @@ where
     }
 
     /// Transpose the array (reverse all dimensions)
-    pub fn transpose(&self) -> Result<ROCArray<T>> 
-    where 
+    pub fn transpose(&self) -> Result<ROCArray<T>>
+    where
         T: kernels::TransposableOps,
     {
         let mut new_dims = self.shape.dims().to_vec();
         new_dims.reverse();
         let new_shape = Shape::new(new_dims);
-        
+
         let mut result = ROCArray::new(new_shape)?;
         kernels::transpose(&self.data, &result.data, &self.shape, &result.shape)?;
         Ok(result)
@@ -331,13 +332,13 @@ where
             .copied()
             .filter(|&d| d != 1)
             .collect();
-        
+
         let new_dims = if squeezed_dims.is_empty() {
             vec![1]
         } else {
             squeezed_dims
         };
-        
+
         self.shape = Shape::new(new_dims);
     }
 
@@ -346,7 +347,7 @@ where
     /// Get element at specified indices
     pub fn get(&self, indices: &[usize]) -> Result<T> {
         let flat_index = self.shape.ravel_index(indices)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Invalid indices for array shape".to_string()
             ))?;
 
@@ -356,7 +357,7 @@ where
     /// Set element at specified indices
     pub fn set(&mut self, indices: &[usize], value: T) -> Result<()> {
         let flat_index = self.shape.ravel_index(indices)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Invalid indices for array shape".to_string()
             ))?;
 
@@ -366,14 +367,14 @@ where
     /// Get a slice along the first dimension
     pub fn slice(&self, start: usize, end: usize) -> Result<ROCArray<T>> {
         if self.ndim() == 0 {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Cannot slice 0-dimensional array".to_string()
             ));
         }
 
         let first_dim = self.shape.dims()[0];
         if start >= first_dim || end > first_dim || start >= end {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Invalid slice indices".to_string()
             ));
         }
@@ -390,7 +391,7 @@ where
     /// Get row (for 2D arrays)
     pub fn row(&self, index: usize) -> Result<ROCArray<T>> {
         if self.ndim() != 2 {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Row access requires 2D array".to_string()
             ));
         }
@@ -404,7 +405,7 @@ where
     /// Get column (for 2D arrays)
     pub fn col(&self, index: usize) -> Result<ROCArray<T>> {
         if self.ndim() != 2 {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Column access requires 2D array".to_string()
             ));
         }
@@ -424,7 +425,7 @@ where
     }
 
     /// Copy data to host asynchronously
-    pub fn to_vec_async(&self, stream: &Stream) -> crate::hip::Result<PendingCopy<T>> {
+    pub fn to_vec_async(&self, stream: &Stream) -> crate::hip::error::Result<PendingCopy<T>> {
         let host_data = vec![T::default(); self.len()];
         self.data.copy_to_host_async(host_data, stream)
     }
@@ -442,7 +443,7 @@ where
     /// Copy from another ROCArray
     pub fn copy_from(&mut self, other: &ROCArray<T>) -> Result<()> {
         if other.len() > self.capacity {
-            return Err(error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Source array is larger than destination capacity".to_string()
             ));
         }
@@ -468,78 +469,78 @@ where
     /// Element-wise addition with broadcasting
     pub fn add(&self, other: &ROCArray<T>) -> Result<ROCArray<T>> {
         let result_shape = self.shape.broadcast_with(&other.shape)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Shapes are not compatible for broadcasting".to_string()
             ))?;
 
         let mut result = ROCArray::new(result_shape)?;
-        
+
         if self.shape == other.shape {
             // Simple element-wise addition
             kernels::elementwise_add(&self.data, &other.data, &result.data, self.len())?;
         } else {
             // Addition with broadcasting
-            kernels::elementwise_add_broadcast(&self.data, &other.data, &result.data, 
+            kernels::elementwise_add_broadcast(&self.data, &other.data, &result.data,
                                               &self.shape, &other.shape, &result.shape)?;
         }
-        
+
         Ok(result)
     }
 
     /// Element-wise subtraction with broadcasting
     pub fn sub(&self, other: &ROCArray<T>) -> Result<ROCArray<T>> {
         let result_shape = self.shape.broadcast_with(&other.shape)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Shapes are not compatible for broadcasting".to_string()
             ))?;
 
         let mut result = ROCArray::new(result_shape)?;
-        
+
         if self.shape == other.shape {
             kernels::elementwise_sub(&self.data, &other.data, &result.data, self.len())?;
         } else {
-            kernels::elementwise_sub_broadcast(&self.data, &other.data, &result.data, 
+            kernels::elementwise_sub_broadcast(&self.data, &other.data, &result.data,
                                               &self.shape, &other.shape, &result.shape)?;
         }
-        
+
         Ok(result)
     }
 
     /// Element-wise multiplication with broadcasting
     pub fn mul(&self, other: &ROCArray<T>) -> Result<ROCArray<T>> {
         let result_shape = self.shape.broadcast_with(&other.shape)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Shapes are not compatible for broadcasting".to_string()
             ))?;
 
         let mut result = ROCArray::new(result_shape)?;
-        
+
         if self.shape == other.shape {
             kernels::elementwise_mul(&self.data, &other.data, &result.data, self.len())?;
         } else {
-            kernels::elementwise_mul_broadcast(&self.data, &other.data, &result.data, 
+            kernels::elementwise_mul_broadcast(&self.data, &other.data, &result.data,
                                               &self.shape, &other.shape, &result.shape)?;
         }
-        
+
         Ok(result)
     }
 
     /// Element-wise division with broadcasting
     pub fn div(&self, other: &ROCArray<T>) -> Result<ROCArray<T>> {
         let result_shape = self.shape.broadcast_with(&other.shape)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Shapes are not compatible for broadcasting".to_string()
             ))?;
 
         let mut result = ROCArray::new(result_shape)?;
-        
+
         if self.shape == other.shape {
             kernels::elementwise_div(&self.data, &other.data, &result.data, self.len())?;
         } else {
-            kernels::elementwise_div_broadcast(&self.data, &other.data, &result.data, 
+            kernels::elementwise_div_broadcast(&self.data, &other.data, &result.data,
                                               &self.shape, &other.shape, &result.shape)?;
         }
-        
+
         Ok(result)
     }
 
@@ -560,7 +561,7 @@ where
     /// Matrix multiplication (only for 2D arrays)
     pub fn matmul(&self, other: &ROCArray<T>) -> Result<ROCArray<T>> {
         if self.ndim() != 2 || other.ndim() != 2 {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Matrix multiplication requires 2D arrays".to_string()
             ));
         }
@@ -569,7 +570,7 @@ where
         let [k2, n] = [other.shape.dims()[0], other.shape.dims()[1]];
 
         if k != k2 {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Inner dimensions must match for matrix multiplication".to_string()
             ));
         }
@@ -589,7 +590,7 @@ where
     /// Sum along specified axis
     pub fn sum_axis(&self, axis: usize) -> Result<ROCArray<T>> {
         if axis >= self.ndim() {
-            return Err(crate::error::Error::InvalidOperation(
+            return Err(crate::error::custom_error(
                 "Axis out of bounds".to_string()
             ));
         }
@@ -608,24 +609,24 @@ where
     }
 
     /// Find maximum element
-    pub fn max(&self) -> Result<T> 
-    where 
+    pub fn max(&self) -> Result<T>
+    where
         T: PartialOrd,
     {
         kernels::reduce_max(&self.data, self.len())
     }
 
     /// Find minimum element
-    pub fn min(&self) -> Result<T> 
-    where 
+    pub fn min(&self) -> Result<T>
+    where
         T: PartialOrd,
     {
         kernels::reduce_min(&self.data, self.len())
     }
 
     /// Calculate mean
-    pub fn mean(&self) -> Result<f64> 
-    where 
+    pub fn mean(&self) -> Result<f64>
+    where
         T: Into<f64>,
     {
         let sum: T = self.sum()?;
@@ -633,19 +634,19 @@ where
     }
 
     /// Mean along specified axis
-    pub fn mean_axis(&self, axis: usize) -> Result<ROCArray<f64>> 
-    where 
+    pub fn mean_axis(&self, axis: usize) -> Result<ROCArray<f64>>
+    where
         T: Into<f64>,
     {
         let sum_result = self.sum_axis(axis)?;
         let axis_size = self.shape.dims()[axis] as f64;
-        
+
         // Convert sum result to f64 and divide by axis size
         let sum_vec = sum_result.to_vec()?;
         let mean_vec: Vec<f64> = sum_vec.into_iter()
             .map(|x| x.into() / axis_size)
             .collect();
-        
+
         ROCArray::from_vec_with_shape(mean_vec, sum_result.shape)
     }
 }
@@ -656,8 +657,8 @@ where
     T: Copy + Default + 'static,
 {
     /// Create ROCArray with random uniform values
-    pub fn random_uniform(shape: Shape, seed: Option<u64>) -> Result<Self> 
-    where 
+    pub fn random_uniform(shape: Shape, seed: Option<u64>) -> Result<Self>
+    where
         T: random::UniformRandom,
     {
         let mut array = Self::new(shape)?;
@@ -666,8 +667,8 @@ where
     }
 
     /// Create ROCArray with random normal values
-    pub fn random_normal(shape: Shape, mean: f32, stddev: f32, seed: Option<u64>) -> Result<Self> 
-    where 
+    pub fn random_normal(shape: Shape, mean: f32, stddev: f32, seed: Option<u64>) -> Result<Self>
+    where
         T: random::NormalRandom,
     {
         let mut array = Self::new(shape)?;
@@ -684,11 +685,39 @@ where
     }
 
     /// Fill with normally distributed random values
-    pub fn fill_random_normal(&mut self, mean: f32, stddev: f32, seed: Option<u64>) -> Result<()> 
-    where 
+    pub fn fill_random_normal(&mut self, mean: f32, stddev: f32, seed: Option<u64>) -> Result<()>
+    where
         T: random::NormalRandom,
     {
         random::fill_normal(&mut self.data, self.len(), mean, stddev, seed)
+    }
+}
+
+// Sorting operations
+impl<T> ROCArray<T>
+where
+    T: Copy + Default + 'static + sorting::Sortable,
+{
+    /// Sort array in ascending order
+    pub fn sort(&mut self) -> Result<()> {
+        sorting::sort_ascending(&mut self.data, self.len())
+    }
+
+    /// Sort array in descending order
+    pub fn sort_descending(&mut self) -> Result<()> {
+        sorting::sort_descending(&mut self.data, self.len())
+    }
+
+    /// Check if array is sorted
+    pub fn is_sorted(&self) -> Result<bool> {
+        sorting::is_sorted(&self.data, self.len())
+    }
+
+    /// Get indices that would sort the array (argsort)
+    pub fn argsort(&self) -> Result<ROCArray<u32>> {
+        let mut indices = ROCArray::<u32>::new_1d(self.len())?;
+        sorting::argsort(&self.data, &indices.data, self.len())?;
+        Ok(indices)
     }
 }
 
@@ -700,19 +729,19 @@ where
     /// Asynchronously add two arrays
     pub fn add_async(&self, other: &ROCArray<T>, stream: &Stream) -> Result<ROCArray<T>> {
         let result_shape = self.shape.broadcast_with(&other.shape)
-            .ok_or_else(|| crate::error::Error::InvalidOperation(
+            .ok_or_else(|| crate::error::custom_error(
                 "Shapes are not compatible for broadcasting".to_string()
             ))?;
 
         let mut result = ROCArray::new(result_shape)?;
-        
+
         if self.shape == other.shape {
             kernels::elementwise_add_async(&self.data, &other.data, &result.data, self.len(), stream)?;
         } else {
-            kernels::elementwise_add_broadcast_async(&self.data, &other.data, &result.data, 
+            kernels::elementwise_add_broadcast_async(&self.data, &other.data, &result.data,
                                                     &self.shape, &other.shape, &result.shape, stream)?;
         }
-        
+
         Ok(result)
     }
 }
