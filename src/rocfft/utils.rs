@@ -393,7 +393,11 @@ pub fn fft_convolution_1d<T>(
     stream: Option<&Stream>,
 ) -> Result<()>
 where
-    T: Copy + Default + std::ops::Mul<Output = T> + std::ops::Neg<Output = T> + std::ops::Add<Output = T>,
+    T: Copy
+        + Default
+        + std::ops::Mul<Output = T>
+        + std::ops::Neg<Output = T>
+        + std::ops::Add<Output = T>,
 {
     // Create work buffers for FFT
     let signal_size = signal.count();
@@ -542,7 +546,7 @@ where
 // Here we just use placeholders
 
 fn multiply<T: std::ops::Mul<Output = T>>(a: T, b: T) -> T {
-    a*b
+    a * b
 }
 
 fn multiply_neg<T: std::ops::Mul<Output = T> + std::ops::Neg<Output = T>>(a: T, b: T) -> T {

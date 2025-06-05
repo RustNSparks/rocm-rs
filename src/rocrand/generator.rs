@@ -196,7 +196,12 @@ impl PseudoRng {
     ///
     /// Generated numbers follow a normal distribution with the specified
     /// mean and standard deviation.
-    pub fn generate_normal(&mut self, output: &mut DeviceMemory<f32>, mean: f32, stddev: f32) -> Result<()> {
+    pub fn generate_normal(
+        &mut self,
+        output: &mut DeviceMemory<f32>,
+        mean: f32,
+        stddev: f32,
+    ) -> Result<()> {
         unsafe {
             Error::from_status(bindings::rocrand_generate_normal(
                 self.generator.as_ptr(),

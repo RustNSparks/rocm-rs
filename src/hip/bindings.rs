@@ -47,11 +47,7 @@ where
             index % 8
         };
         let mask = 1 << bit_index;
-        if val {
-            byte | mask
-        } else {
-            byte & !mask
-        }
+        if val { byte | mask } else { byte & !mask }
     }
     #[inline]
     pub fn set_bit(&mut self, index: usize, val: bool) {
@@ -139,11 +135,11 @@ where
 }
 pub const HIP_VERSION_MAJOR: u32 = 6;
 pub const HIP_VERSION_MINOR: u32 = 4;
-pub const HIP_VERSION_PATCH: u32 = 43482;
-pub const HIP_VERSION_GITHASH: &[u8; 10] = b"0f2d60242\0";
+pub const HIP_VERSION_PATCH: u32 = 43483;
+pub const HIP_VERSION_GITHASH: &[u8; 10] = b"a187df25c\0";
 pub const HIP_VERSION_BUILD_ID: u32 = 0;
 pub const HIP_VERSION_BUILD_NAME: &[u8; 1] = b"\0";
-pub const HIP_VERSION: u32 = 60443482;
+pub const HIP_VERSION: u32 = 60443483;
 pub const HIP_TRSA_OVERRIDE_FORMAT: u32 = 1;
 pub const HIP_TRSF_READ_AS_INTEGER: u32 = 1;
 pub const HIP_TRSF_NORMALIZED_COORDINATES: u32 = 2;
@@ -3628,7 +3624,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Sets the current memory pool of a device\n\n The memory pool must be local to the specified device.\n @p hipMallocAsync allocates from the current mempool of the provided stream's device.\n By default, a device's current memory pool is its default memory pool.\n\n @note Use @p hipMallocFromPoolAsync for asynchronous memory allocations from a device\n different than the one the stream runs on.\n\n @param [in] device   Device index for the update\n @param [in] mem_pool Memory pool for update as the current on the specified device\n\n @returns #hipSuccess, #hipErrorInvalidValue, #hipErrorInvalidDevice, #hipErrorNotSupported\n\n @see hipDeviceGetDefaultMemPool, hipMallocAsync, hipMemPoolTrimTo, hipMemPoolGetAttribute,\n hipDeviceSetMemPool, hipMemPoolSetAttribute, hipMemPoolSetAccess, hipMemPoolGetAccess\n\n @warning This API is marked as Beta. While this feature is complete, it can\n          change and might have outstanding issues."]
     pub fn hipDeviceSetMemPool(device: ::std::os::raw::c_int, mem_pool: hipMemPool_t)
-        -> hipError_t;
+    -> hipError_t;
 }
 unsafe extern "C" {
     #[doc = " @brief Gets the current memory pool for the specified device\n\n Returns the last pool provided to @p hipDeviceSetMemPool for this device\n or the device's default memory pool if @p hipDeviceSetMemPool has never been called.\n By default the current mempool is the default mempool for a device,\n otherwise the returned pool must have been set with @p hipDeviceSetMemPool.\n\n @param [out] mem_pool Current memory pool on the specified device\n @param [in] device    Device index to query the current memory pool\n\n @returns #hipSuccess, #hipErrorInvalidValue, #hipErrorNotSupported\n\n @see hipDeviceGetDefaultMemPool, hipMallocAsync, hipMemPoolTrimTo, hipMemPoolGetAttribute,\n hipDeviceSetMemPool, hipMemPoolSetAttribute, hipMemPoolSetAccess, hipMemPoolGetAccess\n\n @warning This API is marked as Beta. While this feature is complete, it can\n          change and might have outstanding issues."]
@@ -3725,7 +3721,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Opens an interprocess event handle.\n\n Opens an interprocess event handle exported from another process with ::hipIpcGetEventHandle.\n The returned #hipEvent_t behaves like a locally created event with the #hipEventDisableTiming\n flag specified. This event needs be freed with ::hipEventDestroy. After the exported event\n has been freed with ::hipEventDestroy, operations on the imported event will result in\n undefined behavior. If the input handle is from the same process, it will return\n #hipErrorInvalidContext.\n\n @param[out]  event  Pointer to hipEvent_t to return the imported event\n @param[in]   handle The opaque interprocess handle to open\n\n @returns #hipSuccess, #hipErrorInvalidValue, #hipErrorInvalidContext\n\n @note This IPC event related feature API is currently applicable on Linux.\n"]
     pub fn hipIpcOpenEventHandle(event: *mut hipEvent_t, handle: hipIpcEventHandle_t)
-        -> hipError_t;
+    -> hipError_t;
 }
 unsafe extern "C" {
     #[doc = " @}\n/\n/**\n\n  @defgroup Execution Execution Control\n  @{\n  This section describes the execution control functions of HIP runtime API.\n\n/\n/**\n @brief Set attribute for a specific function\n\n @param [in] func Pointer of the function\n @param [in] attr Attribute to set\n @param [in] value Value to set\n\n @returns #hipSuccess, #hipErrorInvalidDeviceFunction, #hipErrorInvalidValue\n\n Note: AMD devices and some Nvidia GPUS do not support shared cache banking, and the hint is\n ignored on those architectures.\n"]
@@ -3832,7 +3828,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Return flags associated with this stream.\n\n @param[in] stream stream to be queried\n @param[in,out] flags Pointer to an unsigned integer in which the stream's flags are returned\n @returns #hipSuccess, #hipErrorInvalidValue, #hipErrorInvalidHandle\n\n @returns #hipSuccess #hipErrorInvalidValue #hipErrorInvalidHandle\n\n Return flags associated with this stream in *@p flags.\n\n @see hipStreamCreateWithFlags"]
     pub fn hipStreamGetFlags(stream: hipStream_t, flags: *mut ::std::os::raw::c_uint)
-        -> hipError_t;
+    -> hipError_t;
 }
 unsafe extern "C" {
     #[doc = " @brief Query the priority of a stream.\n\n @param[in] stream stream to be queried\n @param[in,out] priority Pointer to an unsigned integer in which the stream's priority is returned\n @returns #hipSuccess, #hipErrorInvalidValue, #hipErrorInvalidHandle\n\n @returns #hipSuccess #hipErrorInvalidValue #hipErrorInvalidHandle\n\n Query the priority of a stream. The priority is returned in in priority.\n\n @see hipStreamCreateWithFlags"]
@@ -4952,7 +4948,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     #[doc = " @brief Returns the approximate HIP api version.\n\n @param [in]  ctx Context to check [Deprecated]\n @param [out] apiVersion API version to get\n\n @returns #hipSuccess\n\n @warning The HIP feature set does not correspond to an exact CUDA SDK api revision.\n This function always set *apiVersion to 4 as an approximation though HIP supports\n some features which were introduced in later CUDA SDK revisions.\n HIP apps code should not rely on the api revision number here and should\n use arch feature flags to test device capabilities or conditional compilation.\n\n @see hipCtxCreate, hipCtxDestroy, hipCtxGetDevice, hipCtxGetFlags, hipCtxPopCurrent,\n hipCtxPushCurrent, hipCtxSetCacheConfig, hipCtxSynchronize, hipCtxGetDevice\n\n @warning  This API is deprecated on the AMD platform, only for equivalent cuCtx driver API on the\n NVIDIA platform."]
     pub fn hipCtxGetApiVersion(ctx: hipCtx_t, apiVersion: *mut ::std::os::raw::c_int)
-        -> hipError_t;
+    -> hipError_t;
 }
 unsafe extern "C" {
     #[doc = " @brief Get Cache configuration for a specific function [Deprecated]\n\n @param [out] cacheConfig  Cache configuration\n\n @returns #hipSuccess\n\n @warning AMD devices and some Nvidia GPUS do not support reconfigurable cache.  This hint is\n ignored on those architectures.\n\n @see hipCtxCreate, hipCtxDestroy, hipCtxGetFlags, hipCtxPopCurrent, hipCtxGetCurrent,\n hipCtxSetCurrent, hipCtxPushCurrent, hipCtxSetCacheConfig, hipCtxSynchronize, hipCtxGetDevice\n\n @warning  This API is deprecated on the AMD platform, only for equivalent cuCtx driver API on the\n NVIDIA platform."]
@@ -6930,7 +6926,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn hipStreamBeginCapture_spt(stream: hipStream_t, mode: hipStreamCaptureMode)
-        -> hipError_t;
+    -> hipError_t;
 }
 unsafe extern "C" {
     pub fn hipStreamEndCapture_spt(stream: hipStream_t, pGraph: *mut hipGraph_t) -> hipError_t;

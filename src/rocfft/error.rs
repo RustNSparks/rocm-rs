@@ -204,3 +204,27 @@ pub(crate) fn check_compatible_types(
         _ => Err(Error::InvalidArgValue),
     }
 }
+
+impl From<crate::error::Error> for Error {
+    // Convert a generic error to a rocFFT error
+    fn from(err: crate::error::Error) -> Self {
+        match err {
+            crate::error::Error::InvalidArgument(msg) => Error::InvalidArgValue,
+            crate::error::Error::OutOfMemory(msg) => Error::OutOfMemory,
+            _ => Error::Failure, // Map other errors to a generic failure
+        }
+    }
+}
+
+impl From<Error> for crate::error::Error {
+    // Convert a rocFFT error to a generic error
+    fn from(err: Error) -> Self {
+        match err {
+            Error::InvalidArgValue => {
+                crate::error::Error::InvalidArgument("Invalid argument".into())
+            }
+            Error::OutOfMemory => crate::error::Error::OutOfMemory("Out of memory".into()),
+            _ => crate::error::Error::Custom(err.to_string()), // Map other errors to custom error
+        }
+    }
+}

@@ -4,7 +4,7 @@ use crate::miopen::error::{Error, Result};
 use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use crate::miopen::tensor::TensorDescriptor;
-use std::os::raw::{c_void};
+use std::os::raw::c_void;
 use std::ptr;
 
 /// CTC Loss algorithm

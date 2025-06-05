@@ -29,7 +29,6 @@ pub fn generate_uniform_f32(count: usize, seed: Option<u64>) -> Result<Vec<f32>>
 
     // Generate the random numbers
     generator.generate_uniform(&mut device_output)?;
-    
 
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
@@ -58,7 +57,7 @@ pub fn generate_uniform_f64(count: usize, seed: Option<u64>) -> Result<Vec<f64>>
 
     // Generate the random numbers
     generator.generate_uniform_double(&mut device_output)?;
-    
+
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
 
@@ -190,7 +189,6 @@ pub fn generate_poisson(count: usize, lambda: f64, seed: Option<u64>) -> Result<
     // Generate the random numbers
     poisson_dist.generate(&mut generator, &mut device_output)?;
 
-
     // Copy results back to host
     device_output.copy_to_host(&mut host_output)?;
 
@@ -280,7 +278,6 @@ where
     // Generate the random numbers
     let device_ptr = device_memory.as_ptr() as *mut T;
     generator_fn(device_ptr, device_memory.count())?;
-    
 
     Ok(())
 }
