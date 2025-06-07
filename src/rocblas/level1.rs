@@ -1,6 +1,7 @@
 // src/rocblas/level1.rs
 
 use crate::hip::DeviceMemory;
+use crate::*;
 use crate::rocblas::bindings::_rocblas_handle;
 use crate::rocblas::error::{Error, Result};
 use crate::rocblas::ffi;
@@ -253,58 +254,6 @@ where
     unsafe { T::rocblas_dotc(handle, n, x, incx, y, incy, result) }
 }
 
-/// impl helper macro for rocblas functions
-macro_rules! impl_rocblas_func {
-    ($trait_name:ident, $fn_type:ident, {$( $t:ty => $func:path ),* $(,)?}) => {
-        $(
-            impl $trait_name for $t {
-                fn func() -> $fn_type<Self> {
-                    $func
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! impl_rocblas_func_inner {
-    ($func:expr, $($arg:expr),+ $(,)?) => {{
-        let status = unsafe { $func($($arg),+) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }};
-}
-
-macro_rules! impl_rocblas_traits {
-    (
-        $trait_name:ident,
-        $fn_type:ident,
-        $ffi_map:tt,
-        $method_name:ident,
-        ($($arg:ident : $arg_ty:ty),+ $(,)?),
-        ($($fn_arg:ty),+ $(,)?),
-        ($($call_arg:expr),+ $(,)?)
-    ) => {
-        type $fn_type<T> = unsafe extern "C" fn($($fn_arg),+) -> u32;
-
-        pub trait $trait_name {
-            fn func() -> $fn_type<Self>;
-
-            unsafe fn $method_name(
-                $($arg: $arg_ty),+
-            ) -> Result<()> {
-                impl_rocblas_func_inner!(
-                    Self::func(),
-                    $($call_arg),+
-                )
-            }
-        }
-
-        impl_rocblas_func!($trait_name, $fn_type, $ffi_map);
-    };
-}
-
 //==============================================================================
 // Type traits for implementation
 //==============================================================================
@@ -384,177 +333,61 @@ impl_rocblas_traits!(
     (handle.as_raw(), n, x, incx, y, incy, batch_count)
 );
 
-/// Trait for types that can be used with copy_strided_batched
-type CopyStridedBatchedTypeFn<T> = unsafe extern "C" fn(
-    *mut _rocblas_handle,
-    i32,
-    *const T,
-    i32,
-    i64,
-    *mut T,
-    i32,
-    i64,
-    i32,
-) -> u32;
-pub trait CopyStridedBatchedType {
-    fn func() -> CopyStridedBatchedTypeFn<Self>;
+impl_rocblas_traits!(
+    CopyStridedBatchedType,
+    CopyStridedBatchedTypeFn,
+    {
+        f32 => ffi::rocblas_scopy_strided_batched,
+        f64 => ffi::rocblas_dcopy_strided_batched,
+        ffi::rocblas_float_complex => ffi::rocblas_ccopy_strided_batched,
+        ffi::rocblas_double_complex => ffi::rocblas_zcopy_strided_batched,
+    },
+    rocblas_copy_strided_batched,
+    (handle: &Handle, n: i32, x: *const Self, incx: i32, stridex: i64, y: *mut Self, incy: i32, stridey: i64, batch_count: i32),
+    (*mut _rocblas_handle, i32, *const T, i32, i64, *mut T, i32, i64, i32),
+    (handle.as_raw(), n, x, incx, stridex, y, incy, stridey, batch_count)
+);
 
-    unsafe fn rocblas_copy_strided_batched(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        stridex: i64,
-        y: *mut Self,
-        incy: i32,
-        stridey: i64,
-        batch_count: i32,
-    ) -> Result<()> {
-        impl_rocblas_func_inner!(
-            Self::func(),
-            handle.as_raw(),
-            n,
-            x,
-            incx,
-            stridex,
-            y,
-            incy,
-            stridey,
-            batch_count,
-        )
-    }
-}
+impl_rocblas_traits!(
+    DotType,
+    DotTypeFn,
+    {
+        f32 => ffi::rocblas_sdot,
+        f64 => ffi::rocblas_ddot,
+        ffi::rocblas_half => ffi::rocblas_hdot,
+        ffi::rocblas_bfloat16 => ffi::rocblas_bfdot,
+    },
+    rocblas_dot,
+    (handle: &Handle, n: i32, x: *const Self, incx: i32, y: *const Self, incy: i32, result: *mut Self),
+    (*mut _rocblas_handle, i32, *const T, i32, *const T, i32, *mut T),
+    (handle.as_raw(), n, x, incx, y, incy, result)
+);
 
-impl_rocblas_func!(CopyStridedBatchedType, CopyStridedBatchedTypeFn, {
-    f32 => ffi::rocblas_scopy_strided_batched,
-    f64 => ffi::rocblas_dcopy_strided_batched,
-    ffi::rocblas_float_complex => ffi::rocblas_ccopy_strided_batched,
-    ffi::rocblas_double_complex => ffi::rocblas_zcopy_strided_batched,
-});
+impl_rocblas_traits!(
+    DotuType,
+    DotuTypeFn,
+    {
+        ffi::rocblas_float_complex => ffi::rocblas_cdotu,
+        ffi::rocblas_double_complex => ffi::rocblas_zdotu,
+    },
+    rocblas_dotu,
+    (handle: &Handle, n: i32, x: *const Self, incx: i32, y: *const Self, incy: i32, result: *mut Self),
+    (*mut _rocblas_handle, i32, *const T, i32, *const T, i32, *mut T),
+    (handle.as_raw(), n, x, incx, y, incy, result)
+);
 
-/// Trait for types that can be used with dot
-type DotTypeFn<T> =
-    unsafe extern "C" fn(*mut _rocblas_handle, i32, *const T, i32, *const T, i32, *mut T) -> u32;
-pub trait DotType {
-    fn func() -> DotTypeFn<Self>;
-
-    unsafe fn rocblas_dot(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()> {
-        impl_rocblas_func_inner!(Self::func(), handle.as_raw(), n, x, incx, y, incy, result)
-    }
-}
-
-impl_rocblas_func!(DotType, DotTypeFn, {
-    f32 => ffi::rocblas_sdot,
-    f64 => ffi::rocblas_ddot,
-    ffi::rocblas_half => ffi::rocblas_hdot,
-    ffi::rocblas_bfloat16 => ffi::rocblas_bfdot,
-});
-
-/// Trait for types that can be used with dotu
-pub trait DotuType {
-    unsafe fn rocblas_dotu(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()>;
-}
-
-impl DotuType for ffi::rocblas_float_complex {
-    unsafe fn rocblas_dotu(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_cdotu(handle.as_raw(), n, x, incx, y, incy, result) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
-
-impl DotuType for ffi::rocblas_double_complex {
-    unsafe fn rocblas_dotu(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_zdotu(handle.as_raw(), n, x, incx, y, incy, result) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
-
-/// Trait for types that can be used with dotc
-pub trait DotcType {
-    unsafe fn rocblas_dotc(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()>;
-}
-
-impl DotcType for ffi::rocblas_float_complex {
-    unsafe fn rocblas_dotc(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_cdotc(handle.as_raw(), n, x, incx, y, incy, result) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
-
-impl DotcType for ffi::rocblas_double_complex {
-    unsafe fn rocblas_dotc(
-        handle: &Handle,
-        n: i32,
-        x: *const Self,
-        incx: i32,
-        y: *const Self,
-        incy: i32,
-        result: *mut Self,
-    ) -> Result<()> {
-        let status = unsafe { ffi::rocblas_zdotc(handle.as_raw(), n, x, incx, y, incy, result) };
-        if status != ffi::rocblas_status__rocblas_status_success {
-            return Err(Error::new(status));
-        }
-        Ok(())
-    }
-}
+impl_rocblas_traits!(
+    DotcType,
+    DotcTypeFn,
+    {
+        ffi::rocblas_float_complex => ffi::rocblas_cdotc,
+        ffi::rocblas_double_complex => ffi::rocblas_zdotc,
+    },
+    rocblas_dotc,
+    (handle: &Handle, n: i32, x: *const Self, incx: i32, y: *const Self, incy: i32, result: *mut Self),
+    (*mut _rocblas_handle, i32, *const T, i32, *const T, i32, *mut T),
+    (handle.as_raw(), n, x, incx, y, incy, result)
+);
 
 // Add a placeholder declaration for the remaining functions
 // that we haven't fully implemented yet

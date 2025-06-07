@@ -1,6 +1,6 @@
 [package]
 name = "rocm-rs"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
 description = "Rust bindings for AMD ROCm libraries"
 license = "MIT"

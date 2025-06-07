@@ -8,7 +8,7 @@ pub mod level2;
 pub mod level3;
 pub mod types;
 pub mod utils;
-
+pub(crate) mod macros;
 // We need to make this public for the rest of the crate
 // but don't necessarily want to expose it to users
 #[allow(warnings)]
