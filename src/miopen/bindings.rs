@@ -44,8 +44,8 @@ pub const MIOPEN_ROCBLAS_VERSION_PATCH: u32 = 0;
 pub const MIOPEN_ROCBLAS_VERSION_FLAT: u32 = 4004000;
 pub const MIOPEN_HIPBLASLT_VERSION_MAJOR: u32 = 0;
 pub const MIOPEN_HIPBLASLT_VERSION_MINOR: u32 = 12;
-pub const MIOPEN_HIPBLASLT_VERSION_PATCH: u32 = 1;
-pub const MIOPEN_HIPBLASLT_VERSION_FLAT: u32 = 12001;
+pub const MIOPEN_HIPBLASLT_VERSION_PATCH: u32 = 0;
+pub const MIOPEN_HIPBLASLT_VERSION_FLAT: u32 = 12000;
 pub const MIOPEN_GOLDEN_DB_VERSION: u32 = 21;
 pub const MIOPEN_API_VERSION_REDUCE_TENSOR: u32 = 1;
 #[repr(C)]
@@ -55,13 +55,11 @@ pub struct ihipStream_t {
 }
 pub type hipStream_t = *mut ihipStream_t;
 pub type miopenAcceleratorQueue_t = hipStream_t;
-#[doc = " @ingroup handle\n @brief Creates the miopenHandle_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenHandle {
     pub _address: u8,
 }
-#[doc = " @ingroup handle\n @brief Creates the miopenHandle_t type"]
 pub type miopenHandle_t = *mut miopenHandle;
 #[doc = "< No errors"]
 pub const miopenStatus_t_miopenStatusSuccess: miopenStatus_t = 0;
@@ -156,109 +154,83 @@ unsafe extern "C" {
     #[doc = " @brief Enable profiling to retrieve kernel time\n\n Enable or disable kernel profiling. This profiling is only for kernel time.\n @param handle     MIOpen handle (input)\n @param enable     Boolean to toggle profiling (input)\n @return           miopenStatus_t"]
     pub fn miopenEnableProfiling(handle: miopenHandle_t, enable: bool) -> miopenStatus_t;
 }
-#[doc = " @ingroup fusion\n @brief Creates the miopenFusionOpDescriptor_t type\n\n Fusion Operator Descriptor contains the meta-data associated with an operator\n to be fused in a compute graph\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenFusionOpDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup fusion\n @brief Creates the miopenFusionOpDescriptor_t type\n\n Fusion Operator Descriptor contains the meta-data associated with an operator\n to be fused in a compute graph\n"]
 pub type miopenFusionOpDescriptor_t = *mut miopenFusionOpDescriptor;
-#[doc = " @ingroup tensor\n @brief Creates the miopenTensorDescriptor_t type\n\n Tensor descriptor is an object that allows the user to specify a layer's size for each\n dimension and dimension strides.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenTensorDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup tensor\n @brief Creates the miopenTensorDescriptor_t type\n\n Tensor descriptor is an object that allows the user to specify a layer's size for each\n dimension and dimension strides.\n"]
 pub type miopenTensorDescriptor_t = *mut miopenTensorDescriptor;
-#[doc = " @ingroup tensor\n @brief Creates the miopenSeqTensorDescriptor_t type\n\n SeqTensor descriptor is an object that allows the user to specify tensor with sequence dimension.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenSeqTensorDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup tensor\n @brief Creates the miopenSeqTensorDescriptor_t type\n\n SeqTensor descriptor is an object that allows the user to specify tensor with sequence dimension.\n"]
 pub type miopenSeqTensorDescriptor_t = *mut miopenSeqTensorDescriptor;
-#[doc = " @ingroup convolutions\n @brief Creates the miopenConvolutionDescriptor_t type\n\n Convolution descriptor is an object that allows the user to specify a layer's padding, stride,\n and dilation of the convolutional filter. Parameters must all be non-negative.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenConvolutionDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup convolutions\n @brief Creates the miopenConvolutionDescriptor_t type\n\n Convolution descriptor is an object that allows the user to specify a layer's padding, stride,\n and dilation of the convolutional filter. Parameters must all be non-negative.\n"]
 pub type miopenConvolutionDescriptor_t = *mut miopenConvolutionDescriptor;
-#[doc = " @ingroup pooling\n @brief Creates the miopenPoolingDescriptor_t type\n\n Pooling descriptor is an object that allows the user to specify the dimension sizes of the\n pooling windows, paddings, strides, and pooling mode.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenPoolingDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup pooling\n @brief Creates the miopenPoolingDescriptor_t type\n\n Pooling descriptor is an object that allows the user to specify the dimension sizes of the\n pooling windows, paddings, strides, and pooling mode.\n"]
 pub type miopenPoolingDescriptor_t = *mut miopenPoolingDescriptor;
-#[doc = " @ingroup LRN\n  @brief Creates the miopenLRNDescriptor_t type\n\n LRN descriptor is an object that allows the user to specify the LRN mode, the number of elements\n in the normalization window, and the LRN k-parameter.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenLRNDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup LRN\n  @brief Creates the miopenLRNDescriptor_t type\n\n LRN descriptor is an object that allows the user to specify the LRN mode, the number of elements\n in the normalization window, and the LRN k-parameter.\n"]
 pub type miopenLRNDescriptor_t = *mut miopenLRNDescriptor;
-#[doc = " @ingroup activation\n @brief Creates the miopenActivationDescriptor_t type\n\n Activation descriptor is an object that allows the user to specify the activation mode.\n"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenActivationDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup activation\n @brief Creates the miopenActivationDescriptor_t type\n\n Activation descriptor is an object that allows the user to specify the activation mode.\n"]
 pub type miopenActivationDescriptor_t = *mut miopenActivationDescriptor;
-#[doc = " @ingroup RNN\n @brief Creates the miopenRNNDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenRNNDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup RNN\n @brief Creates the miopenRNNDescriptor_t type"]
 pub type miopenRNNDescriptor_t = *mut miopenRNNDescriptor;
-#[doc = " @ingroup LossFunction\n @brief Creates the miopenCTCLossDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenCTCLossDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup LossFunction\n @brief Creates the miopenCTCLossDescriptor_t type"]
 pub type miopenCTCLossDescriptor_t = *mut miopenCTCLossDescriptor;
-#[doc = " @ingroup Dropout\n @brief Creates the miopenDropoutDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenDropoutDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup Dropout\n @brief Creates the miopenDropoutDescriptor_t type"]
 pub type miopenDropoutDescriptor_t = *mut miopenDropoutDescriptor;
-#[doc = " @ingroup TensorReduce\n @brief Creates the miopenReduceTensorDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenReduceTensorDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup TensorReduce\n @brief Creates the miopenReduceTensorDescriptor_t type"]
 pub type miopenReduceTensorDescriptor_t = *mut miopenReduceTensorDescriptor;
-#[doc = " @ingroup mha\n @brief Creates the miopenMhaDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenMhaDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup mha\n @brief Creates the miopenMhaDescriptor_t type"]
 pub type miopenMhaDescriptor_t = *mut miopenMhaDescriptor;
-#[doc = " @ingroup softmax\n @brief Creates the miopenSoftmaxDescriptor_t type"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenSoftmaxDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup softmax\n @brief Creates the miopenSoftmaxDescriptor_t type"]
 pub type miopenSoftmaxDescriptor_t = *mut miopenSoftmaxDescriptor;
 #[doc = "< 16-bit floating point (Fully supported)"]
 pub const miopenDataType_t_miopenHalf: miopenDataType_t = 0;
@@ -1688,13 +1660,11 @@ unsafe extern "C" {
         mode: miopenSoftmaxMode_t,
     ) -> miopenStatus_t;
 }
-#[doc = " @ingroup FUSION\n @brief MIOpen fusion interface"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenFusionPlanDescriptor {
     pub _address: u8,
 }
-#[doc = " @ingroup FUSION\n @brief MIOpen fusion interface"]
 pub type miopenFusionPlanDescriptor_t = *mut miopenFusionPlanDescriptor;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2699,13 +2669,11 @@ unsafe extern "C" {
         C: *mut ::std::os::raw::c_void,
     ) -> miopenStatus_t;
 }
-#[doc = " @brief Describes a problem for different miopen operations.\n\n For now, this is only used for convolution, but could be used for other\n operators in the future(such as GEMM, Pooling, etc)"]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenProblem {
     pub _address: u8,
 }
-#[doc = " @brief Describes a problem for different miopen operations.\n\n For now, this is only used for convolution, but could be used for other\n operators in the future(such as GEMM, Pooling, etc)"]
 pub type miopenProblem_t = *mut miopenProblem;
 pub const miopenProblemDirection_t_miopenProblemDirectionForward: miopenProblemDirection_t = 0;
 pub const miopenProblemDirection_t_miopenProblemDirectionBackward: miopenProblemDirection_t = 1;
@@ -2832,13 +2800,11 @@ unsafe extern "C" {
         descriptor: miopenTensorDescriptor_t,
     ) -> miopenStatus_t;
 }
-#[doc = " @brief The miopenFindOptions allows the user to configure how find will be used."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenFindOptions {
     pub _address: u8,
 }
-#[doc = " @brief The miopenFindOptions allows the user to configure how find will be used."]
 pub type miopenFindOptions_t = *mut miopenFindOptions;
 unsafe extern "C" {
     #[doc = " @brief Initializes miopenFindOptions object.\n\n @param options    Pointer to options object to initialze\n @return           miopenStatus_t"]
@@ -2892,13 +2858,11 @@ unsafe extern "C" {
         attach: ::std::os::raw::c_uint,
     ) -> miopenStatus_t;
 }
-#[doc = " @brief The miopenSolution object describes a prepared solution."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct miopenSolution {
     pub _address: u8,
 }
-#[doc = " @brief The miopenSolution object describes a prepared solution."]
 pub type miopenSolution_t = *mut miopenSolution;
 unsafe extern "C" {
     #[doc = " @brief Finds solutions to a problem by running different applicable solutions. Memory is\n automatically allocated.\n\n @param handle       Handle to execute the kernels\n @param problem      Problem to solve\n @param options      Find options. When null default values would be used\n @param solutions    Pointer to the first result. Must not be null\n @param numSolutions Pointer to the amount of results. Ignored if null\n @param maxSolutions Limits the amount of results\n @return             miopenStatus_t"]
