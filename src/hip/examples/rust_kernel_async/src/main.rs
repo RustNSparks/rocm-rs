@@ -26,6 +26,9 @@ fn main() -> Result<()> {
     let device = Device::new(0)?;
     device.set_current()?;
 
+    // Create a stream for async operations
+    let stream = Stream::new()?;
+
     // loading gpu kerenel (runs in runtime!)
     let kernel_path = PathBuf::from(AMDGPU_KERNEL_BINARY_PATH);
     assert!(kernel_path.exists());
@@ -37,17 +40,18 @@ fn main() -> Result<()> {
 
     // preparing host side buffers
     let mut in_host: Vec<u32> = vec![0; LEN];
-    let mut out_host: Vec<u32> = vec![0; LEN];
+    let out_host: Vec<u32> = vec![0; LEN];
 
     for i in 0..LEN {
         in_host[i] = i as u32;
     }
 
     // preparing gpu side buffers
-    let mut input = DeviceMemory::<u32>::new(LEN)?;
+    let input = DeviceMemory::<u32>::new(LEN)?;
     let output = DeviceMemory::<u32>::new(LEN)?;
 
-    input.copy_from_host(&in_host)?;
+    // Copy data from host to device
+    input.copy_from_host_async(in_host, &stream)?;
 
     // providing arguments for kernel
     let kernel_args = [input.as_kernel_arg(), output.as_kernel_arg()];
@@ -60,11 +64,13 @@ fn main() -> Result<()> {
         z: 1,
     };
 
-    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args.clone())?;
+    function.launch(grid_dim, block_dim, 0, Some(&stream), &mut kernel_args.clone())?;
 
     // retriving computed data
-    output.copy_to_host(&mut out_host)?;
+    let pending = output.copy_to_host_async(out_host, &stream)?;
 
+    // synchronizing memory (awaiting for copy to finish)
+    let out_host = stream.synchronize_memory(pending)?;
     println!("Output: {:?}", &out_host[..256]);
 
     Ok(())

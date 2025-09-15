@@ -1,0 +1,8 @@
+[package]
+name = "rust_kernel_async"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rocm_kernel_macros = "0.3.0"
+rocm-rs = { path = "../../../.." }

@@ -56,8 +56,8 @@ amdgpu_kernel_init!();
 #[amdgpu_kernel_attr]
 fn kernel(input: *const u32, output: *mut u32) {
     // retriving data from buffere by workitem
-    let mut num = read_by_workitem_id_x(input);
-    
+    let num = read_by_workitem_id_x(input);
+
     // writing data back
     write_by_workitem_id_x(output, num * 3);
 }
@@ -76,8 +76,8 @@ fn main() -> Result<()> {
 
     let module = Module::load(kernel_path)?;
 
-    // acquiring function handle from gpu kernel 
-    let function = unsafe { module.get_function("kernel")? };
+    // acquiring function handle from gpu kernel
+    let function = module.get_function("kernel")?;
 
     // preparing host side buffers
     let mut in_host: Vec<u32> = vec![0; LEN];
@@ -113,6 +113,7 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
 
 ```
 
@@ -174,7 +175,8 @@ cargo build
 ## Examples
 - hip
   - vector_add - example containing kernel written in cpp launched with rocm-rs
-  - rust_kernel - example containing kernel writtein in rust using macros 
+  - rust_kernel - example containing kernel written in in rust using macros 
+  - rust_kernel_async - example containing kernel written in in rust, using stream to manage memory asynchronously 
 - rand
   - normal - generating random numbers with normal distribution 
 
