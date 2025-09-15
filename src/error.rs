@@ -10,10 +10,11 @@ use std::fmt;
 pub enum Error {
     /// HIP-related error
     Hip(crate::hip::Error),
-
+    
     /// rocRAND-related error
     RocRand(crate::rocrand::Error),
 
+    #[cfg(feature = "miopen")]
     /// MIOpen-related error (if you have this module)
     MIOpen(crate::miopen::Error),
 
@@ -79,7 +80,6 @@ impl From<crate::miopen::Error> for Error {
 }
 
 // Automatic conversion from rocFFT errors (if feature is enabled)
-#[cfg(feature = "rocfft")]
 impl From<crate::rocfft::error::Error> for Error {
     fn from(error: crate::rocfft::error::Error) -> Self {
         Error::RocFFT(error)
@@ -99,6 +99,7 @@ impl fmt::Display for Error {
         match self {
             Error::Hip(e) => write!(f, "HIP error: {}", e),
             Error::RocRand(e) => write!(f, "rocRAND error: {}", e),
+            #[cfg(feature = "miopen")]
             Error::MIOpen(e) => write!(f, "MIOpen error: {}", e),
             Error::RocFFT(e) => write!(f, "rocFFT error: {}", e),
             Error::RocBLAS(e) => write!(f, "rocBLAS error: {}", e),
@@ -123,6 +124,7 @@ impl std::error::Error for Error {
         match self {
             Error::Hip(e) => Some(e),
             Error::RocRand(e) => Some(e),
+            #[cfg(feature = "miopen")]
             Error::MIOpen(e) => Some(e),
             Error::RocFFT(e) => Some(e),
             Error::Io(e) => Some(e),
