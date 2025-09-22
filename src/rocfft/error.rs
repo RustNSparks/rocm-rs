@@ -1,3 +1,4 @@
+use crate::error;
 use crate::rocfft::bindings;
 use std::error::Error as StdError;
 use std::ffi::NulError;
@@ -212,19 +213,6 @@ impl From<crate::error::Error> for Error {
             crate::error::Error::InvalidArgument(msg) => Error::InvalidArgValue,
             crate::error::Error::OutOfMemory(msg) => Error::OutOfMemory,
             _ => Error::Failure, // Map other errors to a generic failure
-        }
-    }
-}
-
-impl From<Error> for crate::error::Error {
-    // Convert a rocFFT error to a generic error
-    fn from(err: Error) -> Self {
-        match err {
-            Error::InvalidArgValue => {
-                crate::error::Error::InvalidArgument("Invalid argument".into())
-            }
-            Error::OutOfMemory => crate::error::Error::OutOfMemory("Out of memory".into()),
-            _ => crate::error::Error::Custom(err.to_string()), // Map other errors to custom error
         }
     }
 }

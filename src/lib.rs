@@ -14,3 +14,6 @@ pub mod rocmsmi;
 // mod rocprofiler;
 pub mod rocarray;
 pub mod rocsparse;
+
+#[cfg(feature = "macros")]
+pub use rocm_kernel_macros;
