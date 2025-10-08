@@ -22,7 +22,7 @@ pub mod ffi;
 pub use device::{Device, DeviceProperties, get_device_count, get_device_properties};
 pub use error::{Error, Result};
 pub use event::{Event, Timer, event_flags};
-pub use kernel::{Function, KernelArg, stream_to_rocrand};
+pub use kernel::{Function, stream_to_rocrand};
 pub use memory::{DeviceMemory, MemoryInfo, PinnedMemory, memory_info};
 pub use module::{Module, compile_and_load, load_module, load_module_data};
 pub use stream::{Stream, stream_flags};
@@ -30,9 +30,6 @@ pub use utils::{
     DeviceGuard, Dim3, Version, calculate_grid_1d, calculate_grid_2d, calculate_grid_3d, copy_kind,
     host_mem_flags, is_hip_available, print_devices_info, run_on_device,
 };
-
-// Re-export macros
-pub use crate::{kernel_launcher, launch_kernel};
 
 /// Get the number of devices
 pub fn device_count() -> Result<i32> {

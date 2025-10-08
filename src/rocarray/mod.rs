@@ -2,9 +2,7 @@
 
 use crate::error::Result;
 use crate::hip::memory::PendingCopy;
-use crate::hip::utils::{Dim3, calculate_grid_1d};
-use crate::hip::{DeviceMemory, Event, Stream, Timer};
-use crate::rocrand::{LogNormal, Normal, Poisson, PseudoRng, Uniform, rng_type};
+use crate::hip::{DeviceMemory, Stream};
 use std::fmt;
 use std::marker::PhantomData;
 

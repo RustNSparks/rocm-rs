@@ -2,6 +2,7 @@
 //
 // Kernel launching functions for HIP
 
+use crate::hip::memory::KernelArg;
 use crate::hip::Stream;
 use crate::hip::error::{Error, Result};
 use crate::hip::ffi;
@@ -73,39 +74,31 @@ impl Function {
 }
 
 /// A trait for types that can be passed as kernel arguments
-pub trait KernelArg {
+pub trait AsKernelArg {
     /// Get a pointer to the argument value
-    fn as_ptr(&self) -> *const c_void;
+    fn as_kernel_arg(&self) -> KernelArg;
 }
+
 
 // Implement KernelArg for common types
 macro_rules! impl_kernel_arg {
     ($($t:ty),*) => {
         $(
-            impl KernelArg for $t {
-                fn as_ptr(&self) -> *const c_void {
-                    self as *const $t as *const c_void
+            impl AsKernelArg for $t {
+                fn as_kernel_arg(&self) -> KernelArg {
+                    self as *const $t as *mut c_void
                 }
             }
         )*
     };
 }
 
-impl_kernel_arg!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_kernel_arg!(usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
-// Helper for safe kernel launches via the hipLaunchKernel API
-/// Launch a HIP kernel using the driver API
 #[macro_export]
-macro_rules! launch_kernel {
-    ($func:expr, $grid:expr, $block:expr, $shared_mem:expr, $stream:expr, $($arg:expr),*) => {
-        {
-            let mut args = vec![];
-            $(
-                args.push($arg.as_ptr() as *mut std::ffi::c_void);
-            )*
-
-            $func.launch($grid, $block, $shared_mem, $stream, &mut args)
-        }
+macro_rules! kernel_args {
+    ($($i:expr),*) => {
+        &mut [$($i.as_kernel_arg()),*]
     };
 }
 
@@ -147,38 +140,6 @@ pub unsafe fn launch_kernel(
     }
 
     Ok(())
-}
-
-/// Macro to generate a kernel launcher function
-///
-/// This macro generates a function that takes the grid dimensions, block dimensions,
-/// shared memory size, stream, and kernel arguments, and launches the kernel.
-#[macro_export]
-macro_rules! kernel_launcher {
-    ($name:ident, $func:path, $($arg_ty:ty),*) => {
-        pub fn $name(
-            grid_dim: $crate::hip::utils::Dim3,
-            block_dim: $crate::hip::utils::Dim3,
-            shared_mem_bytes: u32,
-            stream: Option<&$crate::hip::Stream>,
-            $($arg:$arg_ty),*
-        ) -> $crate::hip::error::Result<()> {
-            unsafe {
-                let args: Vec<*mut std::ffi::c_void> = vec![
-                    $(&$arg as *const $arg_ty as *mut std::ffi::c_void),*
-                ];
-
-                $crate::hip::kernel::launch_kernel(
-                    $func,
-                    grid_dim,
-                    block_dim,
-                    shared_mem_bytes,
-                    stream,
-                    &args,
-                )
-            }
-        }
-    };
 }
 
 /// Helper function to convert a Stream reference to the rocrand stream type

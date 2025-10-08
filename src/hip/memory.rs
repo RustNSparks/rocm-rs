@@ -1,12 +1,13 @@
 // src/hip/memory.rs
 
 use crate::hip::error::{Error, Result};
+use crate::hip::kernel::AsKernelArg;
 use crate::hip::{Stream, ffi};
 use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::{mem, ptr};
 
-type KernelArg = *mut c_void;
+pub type KernelArg = *mut c_void;
 
 /// Information about available and used memory on the device
 #[derive(Debug, Clone, Copy)]
@@ -311,8 +312,10 @@ impl<T> DeviceMemory<T> {
             Ok(PendingCopy { inner: dest })
         }
     }
+}
 
-    pub fn as_kernel_arg(&self) -> KernelArg {
+impl<T> AsKernelArg for DeviceMemory<T> {
+    fn as_kernel_arg(&self) -> KernelArg {
         &(self.ptr) as *const _ as KernelArg
     }
 }
