@@ -1,6 +1,6 @@
 [package]
 name = "rocm-rs"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 description = "Rust bindings for AMD ROCm libraries"
 license = "MIT"
@@ -13,7 +13,7 @@ categories = ["api-bindings", "external-ffi-bindings"]
 [dependencies]
 log = "0.4.27"
 rocm_smi_lib = { version = "0.3.1", optional = true }
-rocm_kernel_macros = {version = "0.3.1", optional = true}
+rocm_kernel_macros = {version = "0.4.1", optional = true}
 once_cell = "1.21.3"
 
 [build-dependencies]

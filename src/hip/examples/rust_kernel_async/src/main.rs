@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-use rocm_kernel_macros::{amdgpu_kernel_attr, amdgpu_kernel_finalize, amdgpu_kernel_init};
-use rocm_rs::hip::*;
+use rocm_rs::{hip::{kernel::AsKernelArg, *}, rocm_kernel_macros::*};
 
 const LEN: usize = 1024;
 
@@ -9,7 +8,7 @@ const LEN: usize = 1024;
 amdgpu_kernel_init!();
 
 // marking code that will be coppied to gpu kernel
-#[amdgpu_kernel_attr]
+#[amdgpu_global]
 fn kernel(input: *const u32, output: *mut u32) {
     // retriving data from buffere by workitem
     let num = read_by_workitem_id_x(input);
@@ -23,11 +22,10 @@ const AMDGPU_KERNEL_BINARY_PATH: &str = amdgpu_kernel_finalize!();
 
 fn main() -> Result<()> {
     // setting up device
-    let device = Device::new(0)?;
-    device.set_current()?;
-
+    let device = Device::current()?;
+    
     // Create a stream for async operations
-    let stream = Stream::new()?;
+    let stream = device.get_stream()?;
 
     // loading gpu kerenel (runs in runtime!)
     let kernel_path = PathBuf::from(AMDGPU_KERNEL_BINARY_PATH);
@@ -67,6 +65,7 @@ fn main() -> Result<()> {
     function.launch(grid_dim, block_dim, 0, Some(&stream), &mut kernel_args.clone())?;
 
     // retriving computed data
+
     let pending = output.copy_to_host_async(out_host, &stream)?;
 
     // synchronizing memory (awaiting for copy to finish)

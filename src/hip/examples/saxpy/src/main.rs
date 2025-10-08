@@ -9,7 +9,7 @@ amdgpu_kernel_init!();
 
 // saxpy
 // x = ax+y
-#[amdgpu_kernel_attr]
+#[amdgpu_global]
 fn saxpy(a: u32, x_arr: *mut u32, y_arr: *const u32) {
     // retriving data from buffere by workitem
     let x = read_by_workgroup_id_x(x_arr);

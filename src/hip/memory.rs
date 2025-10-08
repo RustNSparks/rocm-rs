@@ -31,7 +31,6 @@ pub fn memory_info() -> Result<MemoryInfo> {
 pub struct DeviceMemory<T> {
     ptr: *mut c_void,
     size: usize,
-    count: usize,
     phantom: PhantomData<T>,
 }
 
@@ -52,14 +51,14 @@ impl<T> PendingCopy<T> {
 
 pub trait SynchronizeCopies {
     type Output;
-
-    fn finalize(self) -> Self::Output;
+    /// unwraps PendingCopy<T>, use only if synchronize was called manually before
+    unsafe fn finalize(self) -> Self::Output;
 }
 
 impl<T> SynchronizeCopies for PendingCopy<T> {
     type Output = Vec<T>;
 
-    fn finalize(self) -> Self::Output {
+    unsafe fn finalize(self) -> Self::Output {
         self.synchronize()
     }
 }
@@ -70,10 +69,10 @@ where
 {
     type Output = (Vec<T>, Rest::Output);
 
-    fn finalize(self) -> Self::Output {
+    unsafe fn finalize(self) -> Self::Output {
         let (pending, rest) = self;
         let vec = pending.synchronize();
-        let rest_out = rest.finalize();
+        let rest_out = unsafe { rest.finalize() };
         (vec, rest_out)
     }
 }
@@ -81,7 +80,7 @@ where
 impl SynchronizeCopies for () {
     type Output = ();
 
-    fn finalize(self) -> Self::Output {
+    unsafe fn finalize(self) -> Self::Output {
         ()
     }
 }
@@ -93,7 +92,6 @@ impl<T> DeviceMemory<T> {
             return Ok(Self {
                 ptr: ptr::null_mut(),
                 size: 0,
-                count: 0,
                 phantom: PhantomData,
             });
         }
@@ -109,7 +107,6 @@ impl<T> DeviceMemory<T> {
         Ok(Self {
             ptr,
             size,
-            count,
             phantom: PhantomData,
         })
     }
@@ -126,7 +123,7 @@ impl<T> DeviceMemory<T> {
 
     /// Get the number of elements
     pub fn count(&self) -> usize {
-        self.count
+        self.size / size_of::<T>()
     }
 
     /// Copy data from host to device

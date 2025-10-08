@@ -1,7 +1,7 @@
 // src/hip/device.rs
 
 use crate::hip::error::{Error, Result};
-use crate::hip::ffi;
+use crate::hip::{Stream, ffi};
 use std::ffi::CStr;
 
 /// Get the number of available devices
@@ -148,5 +148,15 @@ impl Device {
     /// Get the properties of this device
     pub fn properties(&self) -> Result<DeviceProperties> {
         get_device_properties(self.id)
+    }
+
+    pub fn get_stream(&self) -> Result<Stream> {
+        Stream::new()
+    }
+    pub fn get_stream_with_flags(&self, flags: u32) -> Result<Stream> {
+        Stream::with_flags(flags)
+    }
+    pub fn get_stream_with_priority(&self, flags: u32, priority: i32) -> Result<Stream> {
+        Stream::with_priority(flags, priority)
     }
 }

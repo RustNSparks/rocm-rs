@@ -20,7 +20,7 @@ unsafe impl Sync for Stream {}
 
 impl Stream {
     /// Create a new stream
-    pub fn new() -> Result<Self> {
+    pub(crate) fn new() -> Result<Self> {
         let mut stream = ptr::null_mut();
         let error = unsafe { ffi::hipStreamCreate(&mut stream) };
 
@@ -32,7 +32,7 @@ impl Stream {
     }
 
     /// Create a new stream with specific flags
-    pub fn with_flags(flags: u32) -> Result<Self> {
+    pub(crate) fn with_flags(flags: u32) -> Result<Self> {
         let mut stream = ptr::null_mut();
         let error = unsafe { ffi::hipStreamCreateWithFlags(&mut stream, flags) };
 
@@ -44,7 +44,7 @@ impl Stream {
     }
 
     /// Create a new stream with priority
-    pub fn with_priority(flags: u32, priority: i32) -> Result<Self> {
+    pub(crate) fn with_priority(flags: u32, priority: i32) -> Result<Self> {
         let mut stream = ptr::null_mut();
         let error = unsafe { ffi::hipStreamCreateWithPriority(&mut stream, flags, priority) };
 
@@ -68,7 +68,7 @@ impl Stream {
 
     pub fn synchronize_memory<T: SynchronizeCopies>(&self, copies: T) -> Result<T::Output> {
         Self::synchronize(&self)?;
-        Ok(copies.finalize())
+        Ok(unsafe { copies.finalize() })
     }
 
     /// Query if all operations in the stream have completed
