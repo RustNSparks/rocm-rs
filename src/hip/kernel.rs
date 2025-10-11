@@ -2,10 +2,10 @@
 //
 // Kernel launching functions for HIP
 
-use crate::hip::memory::KernelArg;
 use crate::hip::Stream;
 use crate::hip::error::{Error, Result};
 use crate::hip::ffi;
+use crate::hip::memory::KernelArg;
 use crate::hip::utils::Dim3;
 use std::ffi::{CString, c_void};
 use std::ptr;
@@ -71,6 +71,11 @@ impl Function {
     pub fn as_raw(&self) -> ffi::hipFunction_t {
         self.function
     }
+
+    // Creates Function from raw function ponter
+    pub unsafe fn from_raw(function: ffi::hipFunction_t) -> Self {
+        Self { function }
+    }
 }
 
 /// A trait for types that can be passed as kernel arguments
@@ -78,7 +83,6 @@ pub trait AsKernelArg {
     /// Get a pointer to the argument value
     fn as_kernel_arg(&self) -> KernelArg;
 }
-
 
 // Implement KernelArg for common types
 macro_rules! impl_kernel_arg {
@@ -93,53 +97,15 @@ macro_rules! impl_kernel_arg {
     };
 }
 
-impl_kernel_arg!(usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+impl_kernel_arg!(
+    usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, bool
+);
 
 #[macro_export]
 macro_rules! kernel_args {
     ($($i:expr),*) => {
         &mut [$($i.as_kernel_arg()),*]
     };
-}
-
-/// Launch a kernel via the runtime API
-///
-/// # Safety
-///
-/// This function is unsafe because it takes a raw function pointer and
-/// arguments that must match the function signature.
-pub unsafe fn launch_kernel(
-    kernel_func_ptr: *const c_void,
-    grid_dim: Dim3,
-    block_dim: Dim3,
-    shared_mem_bytes: u32,
-    stream: Option<&Stream>,
-    args: &[*mut c_void],
-) -> Result<()> {
-    let stream_ptr = match stream {
-        Some(s) => s.as_raw(),
-        None => ptr::null_mut(),
-    };
-
-    let native_grid_dim = grid_dim.to_native();
-    let native_block_dim = block_dim.to_native();
-
-    let error = unsafe {
-        ffi::hipLaunchKernel(
-            kernel_func_ptr,
-            native_grid_dim,
-            native_block_dim,
-            args.as_ptr() as *mut *mut c_void,
-            shared_mem_bytes.try_into().unwrap(),
-            stream_ptr,
-        )
-    };
-
-    if error != ffi::hipError_t_hipSuccess {
-        return Err(Error::new(error));
-    }
-
-    Ok(())
 }
 
 /// Helper function to convert a Stream reference to the rocrand stream type

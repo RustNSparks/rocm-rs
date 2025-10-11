@@ -31,13 +31,11 @@ impl Module {
         Ok(Self { module })
     }
 
-    /// Load a module from a string containing PTX code
-    pub fn load_data(data: &str) -> Result<Self> {
-        let data_cstr = CString::new(data).unwrap();
-
+    /// Load a module from a code object containing PTX code
+    pub fn load_data(data: impl AsRef<[u8]>) -> Result<Self> {
         let mut module = ptr::null_mut();
         let error =
-            unsafe { ffi::hipModuleLoadData(&mut module, data_cstr.as_ptr() as *const c_void) };
+            unsafe { ffi::hipModuleLoadData(&mut module, data.as_ref().as_ptr() as *const c_void) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -46,21 +44,18 @@ impl Module {
         Ok(Self { module })
     }
 
-    /// Load a module from a file with options
-    pub unsafe fn load_with_options<P: AsRef<Path>>(
-        path: P,
+    /// Load a module from a code object containing PTX code  with options
+    pub unsafe fn load_with_options(
+        data: impl AsRef<[u8]>,
         num_options: u32,
         options: *mut ffi::hipJitOption,
         option_values: *mut *mut c_void,
     ) -> Result<Self> {
-        let path_str = path.as_ref().to_string_lossy();
-        let path_cstr = CString::new(path_str.as_bytes()).unwrap();
-
         let mut module = ptr::null_mut();
         let error = unsafe {
             ffi::hipModuleLoadDataEx(
                 &mut module,
-                path_cstr.as_ptr() as *const c_void,
+                data.as_ref().as_ptr() as *const c_void,
                 num_options,
                 options,
                 option_values,

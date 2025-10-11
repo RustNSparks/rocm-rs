@@ -1,6 +1,8 @@
-use std::path::PathBuf;
-
-use rocm_rs::{hip::{kernel::AsKernelArg, *}, kernel_args, rocm_kernel_macros::*};
+use rocm_rs::{
+    hip::{kernel::AsKernelArg, *},
+    kernel_args,
+    rocm_kernel_macros::*,
+};
 
 const LEN: usize = 1024;
 
@@ -19,8 +21,8 @@ fn saxpy(a: u32, x_arr: *mut u32, y_arr: *const u32) {
     write_by_workitem_id_x(x_arr, a * x + y);
 }
 
-// compiling gpu kernel
-const AMDGPU_KERNEL_BINARY_PATH: &str = amdgpu_kernel_finalize!();
+// compiling gpu kernel and embedding kernel code inside host executable
+const KERNEL: &[u8] = include_bytes!(amdgpu_kernel_finalize!());
 
 fn main() -> Result<()> {
     // setting up device
@@ -28,10 +30,8 @@ fn main() -> Result<()> {
     device.set_current()?;
 
     // loading gpu kerenel (runs in runtime!)
-    let kernel_path = PathBuf::from(AMDGPU_KERNEL_BINARY_PATH);
-    assert!(kernel_path.exists());
 
-    let module = Module::load(kernel_path)?;
+    let module = Module::load_data(KERNEL)?;
 
     // acquiring function handle from gpu kernel
     let function = module.get_function("saxpy")?;
@@ -57,7 +57,7 @@ fn main() -> Result<()> {
 
     // providing arguments for kernel
     let kernel_args = kernel_args!(a, x, y);
-    
+
     // setting up launch args
     let grid_dim = Dim3 { x: 2, y: 1, z: 1 };
     let block_dim = Dim3 {
@@ -66,7 +66,7 @@ fn main() -> Result<()> {
         z: 1,
     };
 
-    function.launch(grid_dim, block_dim, 0, None,  kernel_args)?;
+    function.launch(grid_dim, block_dim, 0, None, kernel_args)?;
 
     // retriving computed data
     x.copy_to_host(&mut x_host)?;
