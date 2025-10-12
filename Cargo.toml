@@ -4,7 +4,7 @@ version = "0.4.2"
 edition = "2024"
 description = "Rust bindings for AMD ROCm libraries"
 license = "MIT"
-repository = "https://github.com/radudiaconu0/rocm-rs"
+repository = "https://github.com/RustNSparks/rocm-rs"
 documentation = "https://docs.rs/rocm-rs"
 readme = "README.md"
 keywords = ["gpu", "rocm", "amd", "hpc", "bindings"]
@@ -20,7 +20,7 @@ once_cell = "1.21.3"
 bindgen = "0.71.1"
 
 [features]
-default = []
+default = ["macros"]
 rocm_smi = ["dep:rocm_smi_lib"]
 miopen = []
 rocprofiler = []

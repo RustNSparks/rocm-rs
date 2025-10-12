@@ -1,9 +1,9 @@
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 
 use bindgen::CargoCallbacks;
-
 
 // Define module configuration with enhanced options
 struct ModuleConfig {
@@ -147,9 +147,6 @@ fn main() {
         generate_bindings(module, &rocm_path, preserve_fp_constants);
     }
 
-    // Generate module imports for dependencies
-    generate_mod_imports(&modules);
-
     // Print success message
     println!("cargo:warning=ROCm bindings generated successfully");
 }
@@ -157,15 +154,15 @@ fn main() {
 // Sort modules so dependencies are processed first
 fn sort_modules_by_dependencies(modules: &[ModuleConfig]) -> Vec<String> {
     let mut result = Vec::new();
-    let mut visited = std::collections::HashSet::new();
+    let mut visited = HashSet::new();
 
     // Recursive function to add a module and its dependencies
     fn visit(
         module_name: &str,
         modules: &[ModuleConfig],
         result: &mut Vec<String>,
-        visited: &mut std::collections::HashSet<String>,
-        visiting: &mut std::collections::HashSet<String>,
+        visited: &mut HashSet<String>,
+        visiting: &mut HashSet<String>,
     ) {
         if visited.contains(module_name) {
             return;
@@ -193,7 +190,7 @@ fn sort_modules_by_dependencies(modules: &[ModuleConfig]) -> Vec<String> {
     }
 
     // Process all modules
-    let mut visiting = std::collections::HashSet::new();
+    let mut visiting = HashSet::new();
     for module in modules {
         visit(
             &module.name,
@@ -321,32 +318,4 @@ fn generate_bindings(module: &ModuleConfig, rocm_path: &str, preserve_fp_constan
         .unwrap_or_else(|e| panic!("Couldn't write bindings for {}: {:?}", module.name, e));
 
     println!("cargo:warning=Generated bindings for {}", module.name);
-}
-
-// Generate mod.rs files with proper imports for dependencies
-fn generate_mod_imports(modules: &[ModuleConfig]) {
-    for module in modules {
-        let out_dir = PathBuf::from("src").join(&module.name);
-
-        // Basic content for all mod.rs files
-        let mut mod_content = format!(
-            "//! Bindings for {}\n//! Auto-generated - do not modify\n\n\
-             pub mod bindings;\n\n\
-             // Re-export all bindings\n\
-             pub use bindings::*;\n",
-            module.name
-        );
-
-        // Add imports for dependencies
-        if !module.dependencies.is_empty() {
-            mod_content.push_str("\n// Import dependencies\n");
-            for dep in &module.dependencies {
-                mod_content.push_str(&format!("pub use crate::{}::*;\n", dep));
-            }
-        }
-
-        // Write the mod.rs file
-        // fs::write(out_dir.join("mod.rs"), mod_content)
-        //     .unwrap_or_else(|e| panic!("Couldn't write mod.rs for {}: {:?}", module.name, e));
-    }
 }

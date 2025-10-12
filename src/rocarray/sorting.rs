@@ -2,7 +2,6 @@
 use crate::error::Result;
 use crate::hip::kernel::AsKernelArg;
 use crate::hip::{DeviceMemory, Dim3, Function, Module, Stream, calculate_grid_1d};
-use std::ffi::c_void;
 use std::sync::Once;
 
 static INIT_SORT: Once = Once::new();

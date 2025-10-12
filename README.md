@@ -14,7 +14,7 @@ Currently implemented:
 - ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
 - ✅ rocSOLVER - Linear system solvers (raw bindings only)
 - ✅ rocSPARSE - Sparse linear algebra (raw bindings only)
-- ✅ ROCArray - GPU array struct with api similar to Vec
+- ✅ ROCArray - GPU array struct with api similar to Vec (to be deprecated in favor of DeviceMemoryExt)
 - ✅ rocmsmi - system managment interface (refer to [rocm_smi_lib](https://github.com/PTFOPlayer/rocm_smi_lib_rs))
 - ✅ rocm_kernel_macros - macros for writing gpu kernels in rust(refer to [rocm_kernel_macros](https://github.com/RustNSparks/rocm_kernel_macros))
 
@@ -23,7 +23,7 @@ The project currently focuses on providing raw FFI bindings for most libraries, 
 ## Prerequisites
 
 - AMD ROCm installed (version 6.3 or later recommended.It may work on older versions, but I did not test that)
-- Ubuntu 24.04 (it works on WSL too)
+- Ubuntu 24.04 / Fedora 42
 - Rust toolchain (1.65.0 or later recommended)
 - A compatible AMD GPU
 
@@ -33,7 +33,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rocm-rs = "0.1.0"
+rocm-rs = "4.2"
 ```
 
 ## Usage
@@ -159,7 +159,7 @@ fn main() {
 
 ```bash
 # Clone the repository
-git clone https://github.com/radudiaconu0/rocm-rs.git
+git clone https://github.com/RustNSparks/rocm-rs
 cd rocm-rs
 
 # Set the ROCm path if not in the default location
@@ -178,6 +178,7 @@ cargo build
   - vector_add - example containing kernel written in cpp launched with rocm-rs
   - rust_kernel - example containing kernel written in in rust using macros 
   - rust_kernel_async - example containing kernel written in in rust, using stream to manage memory asynchronously 
+  - saxpy - X = aX+Y
 - rand
   - normal - generating random numbers with normal distribution 
 
