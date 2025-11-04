@@ -2,3 +2,4 @@
 **/target
 **/kernel_sources
 **/bindings.rs
+*.code-workspace

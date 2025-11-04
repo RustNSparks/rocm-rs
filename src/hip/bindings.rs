@@ -138,12 +138,12 @@ where
     }
 }
 pub const HIP_VERSION_MAJOR: u32 = 6;
-pub const HIP_VERSION_MINOR: u32 = 3;
-pub const HIP_VERSION_PATCH: u32 = 42133;
+pub const HIP_VERSION_MINOR: u32 = 4;
+pub const HIP_VERSION_PATCH: u32 = 43484;
 pub const HIP_VERSION_GITHASH: &[u8; 1] = b"\0";
 pub const HIP_VERSION_BUILD_ID: u32 = 0;
 pub const HIP_VERSION_BUILD_NAME: &[u8; 1] = b"\0";
-pub const HIP_VERSION: u32 = 60342133;
+pub const HIP_VERSION: u32 = 60443484;
 pub const HIP_TRSA_OVERRIDE_FORMAT: u32 = 1;
 pub const HIP_TRSF_READ_AS_INTEGER: u32 = 1;
 pub const HIP_TRSF_NORMALIZED_COORDINATES: u32 = 2;
@@ -168,17 +168,21 @@ pub const hipEventDefault: u32 = 0;
 pub const hipEventBlockingSync: u32 = 1;
 pub const hipEventDisableTiming: u32 = 2;
 pub const hipEventInterprocess: u32 = 4;
+pub const hipEventRecordDefault: u32 = 0;
+pub const hipEventRecordExternal: u32 = 1;
+pub const hipEventWaitDefault: u32 = 0;
+pub const hipEventWaitExternal: u32 = 1;
 pub const hipEventDisableSystemFence: u32 = 536870912;
 pub const hipEventReleaseToDevice: u32 = 1073741824;
 pub const hipEventReleaseToSystem: u32 = 2147483648;
-pub const hipHostMallocDefault: u32 = 0;
 pub const hipHostAllocDefault: u32 = 0;
-pub const hipHostMallocPortable: u32 = 1;
+pub const hipHostMallocDefault: u32 = 0;
 pub const hipHostAllocPortable: u32 = 1;
-pub const hipHostMallocMapped: u32 = 2;
+pub const hipHostMallocPortable: u32 = 1;
 pub const hipHostAllocMapped: u32 = 2;
-pub const hipHostMallocWriteCombined: u32 = 4;
+pub const hipHostMallocMapped: u32 = 2;
 pub const hipHostAllocWriteCombined: u32 = 4;
+pub const hipHostMallocWriteCombined: u32 = 4;
 pub const hipHostMallocNumaUser: u32 = 536870912;
 pub const hipHostMallocCoherent: u32 = 1073741824;
 pub const hipHostMallocNonCoherent: u32 = 2147483648;
@@ -221,6 +225,59 @@ pub const hipExternalMemoryDedicated: u32 = 1;
 pub const hipGraphKernelNodePortDefault: u32 = 0;
 pub const hipGraphKernelNodePortLaunchCompletion: u32 = 2;
 pub const hipGraphKernelNodePortProgrammatic: u32 = 1;
+pub const hipJitOption_hipJitOptionMaxRegisters: hipJitOption = 0;
+pub const hipJitOption_hipJitOptionThreadsPerBlock: hipJitOption = 1;
+pub const hipJitOption_hipJitOptionWallTime: hipJitOption = 2;
+pub const hipJitOption_hipJitOptionInfoLogBuffer: hipJitOption = 3;
+pub const hipJitOption_hipJitOptionInfoLogBufferSizeBytes: hipJitOption = 4;
+pub const hipJitOption_hipJitOptionErrorLogBuffer: hipJitOption = 5;
+pub const hipJitOption_hipJitOptionErrorLogBufferSizeBytes: hipJitOption = 6;
+pub const hipJitOption_hipJitOptionOptimizationLevel: hipJitOption = 7;
+pub const hipJitOption_hipJitOptionTargetFromContext: hipJitOption = 8;
+pub const hipJitOption_hipJitOptionTarget: hipJitOption = 9;
+pub const hipJitOption_hipJitOptionFallbackStrategy: hipJitOption = 10;
+pub const hipJitOption_hipJitOptionGenerateDebugInfo: hipJitOption = 11;
+pub const hipJitOption_hipJitOptionLogVerbose: hipJitOption = 12;
+pub const hipJitOption_hipJitOptionGenerateLineInfo: hipJitOption = 13;
+pub const hipJitOption_hipJitOptionCacheMode: hipJitOption = 14;
+pub const hipJitOption_hipJitOptionSm3xOpt: hipJitOption = 15;
+pub const hipJitOption_hipJitOptionFastCompile: hipJitOption = 16;
+pub const hipJitOption_hipJitOptionGlobalSymbolNames: hipJitOption = 17;
+pub const hipJitOption_hipJitOptionGlobalSymbolAddresses: hipJitOption = 18;
+pub const hipJitOption_hipJitOptionGlobalSymbolCount: hipJitOption = 19;
+pub const hipJitOption_hipJitOptionLto: hipJitOption = 20;
+pub const hipJitOption_hipJitOptionFtz: hipJitOption = 21;
+pub const hipJitOption_hipJitOptionPrecDiv: hipJitOption = 22;
+pub const hipJitOption_hipJitOptionPrecSqrt: hipJitOption = 23;
+pub const hipJitOption_hipJitOptionFma: hipJitOption = 24;
+pub const hipJitOption_hipJitOptionPositionIndependentCode: hipJitOption = 25;
+pub const hipJitOption_hipJitOptionMinCTAPerSM: hipJitOption = 26;
+pub const hipJitOption_hipJitOptionMaxThreadsPerBlock: hipJitOption = 27;
+pub const hipJitOption_hipJitOptionOverrideDirectiveValues: hipJitOption = 28;
+pub const hipJitOption_hipJitOptionNumOptions: hipJitOption = 29;
+pub const hipJitOption_hipJitOptionIRtoISAOptExt: hipJitOption = 10000;
+pub const hipJitOption_hipJitOptionIRtoISAOptCountExt: hipJitOption = 10001;
+pub type hipJitOption = ::std::os::raw::c_uint;
+pub const hipJitInputType_hipJitInputCubin: hipJitInputType = 0;
+pub const hipJitInputType_hipJitInputPtx: hipJitInputType = 1;
+pub const hipJitInputType_hipJitInputFatBinary: hipJitInputType = 2;
+pub const hipJitInputType_hipJitInputObject: hipJitInputType = 3;
+pub const hipJitInputType_hipJitInputLibrary: hipJitInputType = 4;
+pub const hipJitInputType_hipJitInputNvvm: hipJitInputType = 5;
+pub const hipJitInputType_hipJitNumLegacyInputTypes: hipJitInputType = 6;
+pub const hipJitInputType_hipJitInputLLVMBitcode: hipJitInputType = 100;
+pub const hipJitInputType_hipJitInputLLVMBundledBitcode: hipJitInputType = 101;
+pub const hipJitInputType_hipJitInputLLVMArchivesOfBundledBitcode: hipJitInputType = 102;
+pub const hipJitInputType_hipJitInputSpirv: hipJitInputType = 103;
+pub const hipJitInputType_hipJitNumInputTypes: hipJitInputType = 10;
+pub type hipJitInputType = ::std::os::raw::c_uint;
+pub const hipJitCacheMode_hipJitCacheOptionNone: hipJitCacheMode = 0;
+pub const hipJitCacheMode_hipJitCacheOptionCG: hipJitCacheMode = 1;
+pub const hipJitCacheMode_hipJitCacheOptionCA: hipJitCacheMode = 2;
+pub type hipJitCacheMode = ::std::os::raw::c_uint;
+pub const hipJitFallback_hipJitPreferPTX: hipJitFallback = 0;
+pub const hipJitFallback_hipJitPreferBinary: hipJitFallback = 1;
+pub type hipJitFallback = ::std::os::raw::c_uint;
 pub const HIP_SUCCESS: _bindgen_ty_1 = 0;
 pub const HIP_ERROR_INVALID_VALUE: _bindgen_ty_1 = 1;
 pub const HIP_ERROR_NOT_INITIALIZED: _bindgen_ty_1 = 2;
@@ -1103,6 +1160,8 @@ pub const hipError_t_hipErrorStreamCaptureImplicit: hipError_t = 906;
 pub const hipError_t_hipErrorCapturedEvent: hipError_t = 907;
 pub const hipError_t_hipErrorStreamCaptureWrongThread: hipError_t = 908;
 pub const hipError_t_hipErrorGraphExecUpdateFailure: hipError_t = 910;
+pub const hipError_t_hipErrorInvalidChannelDescriptor: hipError_t = 911;
+pub const hipError_t_hipErrorInvalidTexture: hipError_t = 912;
 pub const hipError_t_hipErrorUnknown: hipError_t = 999;
 pub const hipError_t_hipErrorRuntimeMemory: hipError_t = 1052;
 pub const hipError_t_hipErrorRuntimeOther: hipError_t = 1053;
@@ -1831,6 +1890,12 @@ pub struct ihipModuleSymbol_t {
 pub type hipFunction_t = *mut ihipModuleSymbol_t;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ihipLinkState_t {
+    _unused: [u8; 0],
+}
+pub type hipLinkState_t = *mut ihipLinkState_t;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ihipMemPoolHandle_t {
     _unused: [u8; 0],
 }
@@ -1860,6 +1925,76 @@ pub const hipLimit_t_hipLimitPrintfFifoSize: hipLimit_t = 1;
 pub const hipLimit_t_hipLimitMallocHeapSize: hipLimit_t = 2;
 pub const hipLimit_t_hipLimitRange: hipLimit_t = 3;
 pub type hipLimit_t = ::std::os::raw::c_uint;
+pub const hipStreamBatchMemOpType_hipStreamMemOpWaitValue32: hipStreamBatchMemOpType = 1;
+pub const hipStreamBatchMemOpType_hipStreamMemOpWriteValue32: hipStreamBatchMemOpType = 2;
+pub const hipStreamBatchMemOpType_hipStreamMemOpWaitValue64: hipStreamBatchMemOpType = 4;
+pub const hipStreamBatchMemOpType_hipStreamMemOpWriteValue64: hipStreamBatchMemOpType = 5;
+pub const hipStreamBatchMemOpType_hipStreamMemOpBarrier: hipStreamBatchMemOpType = 6;
+pub const hipStreamBatchMemOpType_hipStreamMemOpFlushRemoteWrites: hipStreamBatchMemOpType = 3;
+pub type hipStreamBatchMemOpType = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipStreamBatchMemOpParams_union {
+    pub operation: hipStreamBatchMemOpType,
+    pub waitValue: hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t,
+    pub writeValue: hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t,
+    pub flushRemoteWrites: hipStreamBatchMemOpParams_union_hipStreamMemOpFlushRemoteWritesParams_t,
+    pub memoryBarrier: hipStreamBatchMemOpParams_union_hipStreamMemOpMemoryBarrierParams_t,
+    pub pad: [u64; 6usize],
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t {
+    pub operation: hipStreamBatchMemOpType,
+    pub address: hipDeviceptr_t,
+    pub __bindgen_anon_1:
+        hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t__bindgen_ty_1,
+    pub flags: ::std::os::raw::c_uint,
+    pub alias: hipDeviceptr_t,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipStreamBatchMemOpParams_union_hipStreamMemOpWaitValueParams_t__bindgen_ty_1 {
+    pub value: u32,
+    pub value64: u64,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t {
+    pub operation: hipStreamBatchMemOpType,
+    pub address: hipDeviceptr_t,
+    pub __bindgen_anon_1:
+        hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t__bindgen_ty_1,
+    pub flags: ::std::os::raw::c_uint,
+    pub alias: hipDeviceptr_t,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipStreamBatchMemOpParams_union_hipStreamMemOpWriteValueParams_t__bindgen_ty_1 {
+    pub value: u32,
+    pub value64: u64,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpFlushRemoteWritesParams_t {
+    pub operation: hipStreamBatchMemOpType,
+    pub flags: ::std::os::raw::c_uint,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipStreamBatchMemOpParams_union_hipStreamMemOpMemoryBarrierParams_t {
+    pub operation: hipStreamBatchMemOpType,
+    pub flags: ::std::os::raw::c_uint,
+}
+pub type hipStreamBatchMemOpParams = hipStreamBatchMemOpParams_union;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipBatchMemOpNodeParams {
+    pub ctx: hipCtx_t,
+    pub count: ::std::os::raw::c_uint,
+    pub paramArray: *mut hipStreamBatchMemOpParams,
+    pub flags: ::std::os::raw::c_uint,
+}
 pub const hipMemoryAdvise_hipMemAdviseSetReadMostly: hipMemoryAdvise = 1;
 pub const hipMemoryAdvise_hipMemAdviseUnsetReadMostly: hipMemoryAdvise = 2;
 pub const hipMemoryAdvise_hipMemAdviseSetPreferredLocation: hipMemoryAdvise = 3;
@@ -1934,25 +2069,6 @@ pub struct hipMemPoolProps {
 pub struct hipMemPoolPtrExportData {
     pub reserved: [::std::os::raw::c_uchar; 64usize],
 }
-pub const hipJitOption_hipJitOptionMaxRegisters: hipJitOption = 0;
-pub const hipJitOption_hipJitOptionThreadsPerBlock: hipJitOption = 1;
-pub const hipJitOption_hipJitOptionWallTime: hipJitOption = 2;
-pub const hipJitOption_hipJitOptionInfoLogBuffer: hipJitOption = 3;
-pub const hipJitOption_hipJitOptionInfoLogBufferSizeBytes: hipJitOption = 4;
-pub const hipJitOption_hipJitOptionErrorLogBuffer: hipJitOption = 5;
-pub const hipJitOption_hipJitOptionErrorLogBufferSizeBytes: hipJitOption = 6;
-pub const hipJitOption_hipJitOptionOptimizationLevel: hipJitOption = 7;
-pub const hipJitOption_hipJitOptionTargetFromContext: hipJitOption = 8;
-pub const hipJitOption_hipJitOptionTarget: hipJitOption = 9;
-pub const hipJitOption_hipJitOptionFallbackStrategy: hipJitOption = 10;
-pub const hipJitOption_hipJitOptionGenerateDebugInfo: hipJitOption = 11;
-pub const hipJitOption_hipJitOptionLogVerbose: hipJitOption = 12;
-pub const hipJitOption_hipJitOptionGenerateLineInfo: hipJitOption = 13;
-pub const hipJitOption_hipJitOptionCacheMode: hipJitOption = 14;
-pub const hipJitOption_hipJitOptionSm3xOpt: hipJitOption = 15;
-pub const hipJitOption_hipJitOptionFastCompile: hipJitOption = 16;
-pub const hipJitOption_hipJitOptionNumOptions: hipJitOption = 17;
-pub type hipJitOption = ::std::os::raw::c_uint;
 pub const hipFuncAttribute_hipFuncAttributeMaxDynamicSharedMemorySize: hipFuncAttribute = 8;
 pub const hipFuncAttribute_hipFuncAttributePreferredSharedMemoryCarveout: hipFuncAttribute = 9;
 pub const hipFuncAttribute_hipFuncAttributeMax: hipFuncAttribute = 10;
@@ -2223,7 +2339,8 @@ pub const hipGraphNodeType_hipGraphNodeTypeMemAlloc: hipGraphNodeType = 10;
 pub const hipGraphNodeType_hipGraphNodeTypeMemFree: hipGraphNodeType = 11;
 pub const hipGraphNodeType_hipGraphNodeTypeMemcpyFromSymbol: hipGraphNodeType = 12;
 pub const hipGraphNodeType_hipGraphNodeTypeMemcpyToSymbol: hipGraphNodeType = 13;
-pub const hipGraphNodeType_hipGraphNodeTypeCount: hipGraphNodeType = 14;
+pub const hipGraphNodeType_hipGraphNodeTypeBatchMemOp: hipGraphNodeType = 14;
+pub const hipGraphNodeType_hipGraphNodeTypeCount: hipGraphNodeType = 15;
 pub type hipGraphNodeType = ::std::os::raw::c_uint;
 pub type hipHostFn_t =
     ::std::option::Option<unsafe extern "C" fn(userData: *mut ::std::os::raw::c_void)>;
@@ -2640,6 +2757,12 @@ unsafe extern "C" {
     ) -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipDeviceGetTexture1DLinearMaxWidth(
+        mem_pool: *mut hipMemPool_t,
+        device: ::std::os::raw::c_int,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipDeviceSetCacheConfig(cacheConfig: hipFuncCache_t) -> hipError_t;
 }
 unsafe extern "C" {
@@ -2861,6 +2984,42 @@ unsafe extern "C" {
     ) -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipStreamBatchMemOp(
+        stream: hipStream_t,
+        count: ::std::os::raw::c_uint,
+        paramArray: *mut hipStreamBatchMemOpParams,
+        flags: ::std::os::raw::c_uint,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGraphAddBatchMemOpNode(
+        phGraphNode: *mut hipGraphNode_t,
+        hGraph: hipGraph_t,
+        dependencies: *const hipGraphNode_t,
+        numDependencies: usize,
+        nodeParams: *const hipBatchMemOpNodeParams,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGraphBatchMemOpNodeGetParams(
+        hNode: hipGraphNode_t,
+        nodeParams_out: *mut hipBatchMemOpNodeParams,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGraphBatchMemOpNodeSetParams(
+        hNode: hipGraphNode_t,
+        nodeParams: *mut hipBatchMemOpNodeParams,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGraphExecBatchMemOpNodeSetParams(
+        hGraphExec: hipGraphExec_t,
+        hNode: hipGraphNode_t,
+        nodeParams: *const hipBatchMemOpNodeParams,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipEventCreateWithFlags(
         event: *mut hipEvent_t,
         flags: ::std::os::raw::c_uint,
@@ -2868,6 +3027,13 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn hipEventCreate(event: *mut hipEvent_t) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipEventRecordWithFlags(
+        event: hipEvent_t,
+        stream: hipStream_t,
+        flags: ::std::os::raw::c_uint,
+    ) -> hipError_t;
 }
 unsafe extern "C" {
     pub fn hipEventRecord(event: hipEvent_t, stream: hipStream_t) -> hipError_t;
@@ -3821,6 +3987,46 @@ unsafe extern "C" {
         options: *mut hipJitOption,
         optionValues: *mut *mut ::std::os::raw::c_void,
     ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLinkAddData(
+        state: hipLinkState_t,
+        type_: hipJitInputType,
+        data: *mut ::std::os::raw::c_void,
+        size: usize,
+        name: *const ::std::os::raw::c_char,
+        numOptions: ::std::os::raw::c_uint,
+        options: *mut hipJitOption,
+        optionValues: *mut *mut ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLinkAddFile(
+        state: hipLinkState_t,
+        type_: hipJitInputType,
+        path: *const ::std::os::raw::c_char,
+        numOptions: ::std::os::raw::c_uint,
+        options: *mut hipJitOption,
+        optionValues: *mut *mut ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLinkComplete(
+        state: hipLinkState_t,
+        hipBinOut: *mut *mut ::std::os::raw::c_void,
+        sizeOut: *mut usize,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLinkCreate(
+        numOptions: ::std::os::raw::c_uint,
+        options: *mut hipJitOption,
+        optionValues: *mut *mut ::std::os::raw::c_void,
+        stateOut: *mut hipLinkState_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLinkDestroy(state: hipLinkState_t) -> hipError_t;
 }
 unsafe extern "C" {
     pub fn hipModuleLaunchKernel(

@@ -57,6 +57,20 @@ pub const rocsolver_rfinfo_mode__rocsolver_rfinfo_mode_lu: rocsolver_rfinfo_mode
 pub const rocsolver_rfinfo_mode__rocsolver_rfinfo_mode_cholesky: rocsolver_rfinfo_mode_ = 272;
 pub type rocsolver_rfinfo_mode_ = ::std::os::raw::c_uint;
 pub use self::rocsolver_rfinfo_mode_ as rocsolver_rfinfo_mode;
+pub const rocblas_pivot__rocblas_pivot_variable: rocblas_pivot_ = 281;
+pub const rocblas_pivot__rocblas_pivot_top: rocblas_pivot_ = 282;
+pub const rocblas_pivot__rocblas_pivot_bottom: rocblas_pivot_ = 283;
+pub type rocblas_pivot_ = ::std::os::raw::c_uint;
+pub use self::rocblas_pivot_ as rocblas_pivot;
+pub const rocsolver_alg_mode__rocsolver_alg_mode_gpu: rocsolver_alg_mode_ = 291;
+pub const rocsolver_alg_mode__rocsolver_alg_mode_hybrid: rocsolver_alg_mode_ = 292;
+pub type rocsolver_alg_mode_ = ::std::os::raw::c_uint;
+pub use self::rocsolver_alg_mode_ as rocsolver_alg_mode;
+pub const rocsolver_function__rocsolver_function_bdsqr: rocsolver_function_ = 401;
+pub const rocsolver_function__rocsolver_function_gesvd: rocsolver_function_ = 402;
+pub const rocsolver_function__rocsolver_function_sterf: rocsolver_function_ = 403;
+pub type rocsolver_function_ = ::std::os::raw::c_uint;
+pub use self::rocsolver_function_ as rocsolver_function;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct _rocblas_handle {
@@ -231,6 +245,20 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn rocsolver_log_flush_profile() -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_set_alg_mode(
+        handle: rocblas_handle,
+        func: rocsolver_function,
+        mode: rocsolver_alg_mode,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_get_alg_mode(
+        handle: rocblas_handle,
+        func: rocsolver_function,
+        mode: *mut rocsolver_alg_mode,
+    ) -> rocblas_status;
 }
 unsafe extern "C" {
     pub fn rocsolver_clacgv(
@@ -620,6 +648,62 @@ unsafe extern "C" {
         ldv: rocblas_int,
         T: *mut rocblas_double_complex,
         ldt: rocblas_int,
+        A: *mut rocblas_double_complex,
+        lda: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_slasr(
+        handle: rocblas_handle,
+        side: rocblas_side,
+        pivot: rocblas_pivot,
+        direct: rocblas_direct,
+        m: rocblas_int,
+        n: rocblas_int,
+        C: *mut f32,
+        S: *mut f32,
+        A: *mut f32,
+        lda: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_dlasr(
+        handle: rocblas_handle,
+        side: rocblas_side,
+        pivot: rocblas_pivot,
+        direct: rocblas_direct,
+        m: rocblas_int,
+        n: rocblas_int,
+        C: *mut f64,
+        S: *mut f64,
+        A: *mut f64,
+        lda: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_clasr(
+        handle: rocblas_handle,
+        side: rocblas_side,
+        pivot: rocblas_pivot,
+        direct: rocblas_direct,
+        m: rocblas_int,
+        n: rocblas_int,
+        C: *mut f32,
+        S: *mut f32,
+        A: *mut rocblas_float_complex,
+        lda: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_zlasr(
+        handle: rocblas_handle,
+        side: rocblas_side,
+        pivot: rocblas_pivot,
+        direct: rocblas_direct,
+        m: rocblas_int,
+        n: rocblas_int,
+        C: *mut f64,
+        S: *mut f64,
         A: *mut rocblas_double_complex,
         lda: rocblas_int,
     ) -> rocblas_status;
@@ -7354,6 +7438,246 @@ unsafe extern "C" {
         E: *mut f64,
         strideE: rocblas_stride,
         fast_alg: rocblas_workmode,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_sgesdd(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut f32,
+        lda: rocblas_int,
+        S: *mut f32,
+        U: *mut f32,
+        ldu: rocblas_int,
+        V: *mut f32,
+        ldv: rocblas_int,
+        info: *mut rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_dgesdd(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut f64,
+        lda: rocblas_int,
+        S: *mut f64,
+        U: *mut f64,
+        ldu: rocblas_int,
+        V: *mut f64,
+        ldv: rocblas_int,
+        info: *mut rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_cgesdd(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut rocblas_float_complex,
+        lda: rocblas_int,
+        S: *mut f32,
+        U: *mut rocblas_float_complex,
+        ldu: rocblas_int,
+        V: *mut rocblas_float_complex,
+        ldv: rocblas_int,
+        info: *mut rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_zgesdd(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut rocblas_double_complex,
+        lda: rocblas_int,
+        S: *mut f64,
+        U: *mut rocblas_double_complex,
+        ldu: rocblas_int,
+        V: *mut rocblas_double_complex,
+        ldv: rocblas_int,
+        info: *mut rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_sgesdd_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *const *mut f32,
+        lda: rocblas_int,
+        S: *mut f32,
+        strideS: rocblas_stride,
+        U: *mut f32,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut f32,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_dgesdd_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *const *mut f64,
+        lda: rocblas_int,
+        S: *mut f64,
+        strideS: rocblas_stride,
+        U: *mut f64,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut f64,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_cgesdd_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *const *mut rocblas_float_complex,
+        lda: rocblas_int,
+        S: *mut f32,
+        strideS: rocblas_stride,
+        U: *mut rocblas_float_complex,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut rocblas_float_complex,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_zgesdd_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *const *mut rocblas_double_complex,
+        lda: rocblas_int,
+        S: *mut f64,
+        strideS: rocblas_stride,
+        U: *mut rocblas_double_complex,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut rocblas_double_complex,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_sgesdd_strided_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut f32,
+        lda: rocblas_int,
+        strideA: rocblas_stride,
+        S: *mut f32,
+        strideS: rocblas_stride,
+        U: *mut f32,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut f32,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_dgesdd_strided_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut f64,
+        lda: rocblas_int,
+        strideA: rocblas_stride,
+        S: *mut f64,
+        strideS: rocblas_stride,
+        U: *mut f64,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut f64,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_cgesdd_strided_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut rocblas_float_complex,
+        lda: rocblas_int,
+        strideA: rocblas_stride,
+        S: *mut f32,
+        strideS: rocblas_stride,
+        U: *mut rocblas_float_complex,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut rocblas_float_complex,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
+        info: *mut rocblas_int,
+        batch_count: rocblas_int,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocsolver_zgesdd_strided_batched(
+        handle: rocblas_handle,
+        left_svect: rocblas_svect,
+        right_svect: rocblas_svect,
+        m: rocblas_int,
+        n: rocblas_int,
+        A: *mut rocblas_double_complex,
+        lda: rocblas_int,
+        strideA: rocblas_stride,
+        S: *mut f64,
+        strideS: rocblas_stride,
+        U: *mut rocblas_double_complex,
+        ldu: rocblas_int,
+        strideU: rocblas_stride,
+        V: *mut rocblas_double_complex,
+        ldv: rocblas_int,
+        strideV: rocblas_stride,
         info: *mut rocblas_int,
         batch_count: rocblas_int,
     ) -> rocblas_status;

@@ -4352,17 +4352,6 @@ unsafe extern "C" {
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
-    pub fn rocsparse_extract(
-        handle: rocsparse_handle,
-        descr: rocsparse_extract_descr,
-        source: rocsparse_const_spmat_descr,
-        target: rocsparse_spmat_descr,
-        stage: rocsparse_extract_stage,
-        buffer_size_in_bytes: usize,
-        buffer: *mut ::std::os::raw::c_void,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
     pub fn rocsparse_extract_buffer_size(
         handle: rocsparse_handle,
         descr: rocsparse_extract_descr,
@@ -4377,6 +4366,17 @@ unsafe extern "C" {
         handle: rocsparse_handle,
         descr: rocsparse_extract_descr,
         nnz: *mut i64,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_extract(
+        handle: rocsparse_handle,
+        descr: rocsparse_extract_descr,
+        source: rocsparse_const_spmat_descr,
+        target: rocsparse_spmat_descr,
+        stage: rocsparse_extract_stage,
+        buffer_size_in_bytes: usize,
+        buffer: *mut ::std::os::raw::c_void,
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
@@ -5757,6 +5757,94 @@ unsafe extern "C" {
     pub fn rocsparse_zcsritsv_solve(
         handle: rocsparse_handle,
         host_nmaxiter: *mut rocsparse_int,
+        host_tol: *const f64,
+        host_history: *mut f64,
+        trans: rocsparse_operation,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        alpha: *const rocsparse_double_complex,
+        descr: rocsparse_mat_descr,
+        csr_val: *const rocsparse_double_complex,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        info: rocsparse_mat_info,
+        x: *const rocsparse_double_complex,
+        y: *mut rocsparse_double_complex,
+        policy: rocsparse_solve_policy,
+        temp_buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_scsritsv_solve_ex(
+        handle: rocsparse_handle,
+        host_nmaxiter: *mut rocsparse_int,
+        host_nfreeiter: rocsparse_int,
+        host_tol: *const f32,
+        host_history: *mut f32,
+        trans: rocsparse_operation,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        alpha: *const f32,
+        descr: rocsparse_mat_descr,
+        csr_val: *const f32,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        info: rocsparse_mat_info,
+        x: *const f32,
+        y: *mut f32,
+        policy: rocsparse_solve_policy,
+        temp_buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_dcsritsv_solve_ex(
+        handle: rocsparse_handle,
+        host_nmaxiter: *mut rocsparse_int,
+        host_nfreeiter: rocsparse_int,
+        host_tol: *const f64,
+        host_history: *mut f64,
+        trans: rocsparse_operation,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        alpha: *const f64,
+        descr: rocsparse_mat_descr,
+        csr_val: *const f64,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        info: rocsparse_mat_info,
+        x: *const f64,
+        y: *mut f64,
+        policy: rocsparse_solve_policy,
+        temp_buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_ccsritsv_solve_ex(
+        handle: rocsparse_handle,
+        host_nmaxiter: *mut rocsparse_int,
+        host_nfreeiter: rocsparse_int,
+        host_tol: *const f32,
+        host_history: *mut f32,
+        trans: rocsparse_operation,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        alpha: *const rocsparse_float_complex,
+        descr: rocsparse_mat_descr,
+        csr_val: *const rocsparse_float_complex,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        info: rocsparse_mat_info,
+        x: *const rocsparse_float_complex,
+        y: *mut rocsparse_float_complex,
+        policy: rocsparse_solve_policy,
+        temp_buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_zcsritsv_solve_ex(
+        handle: rocsparse_handle,
+        host_nmaxiter: *mut rocsparse_int,
+        host_nfreeiter: rocsparse_int,
         host_tol: *const f64,
         host_history: *mut f64,
         trans: rocsparse_operation,
@@ -8306,6 +8394,82 @@ unsafe extern "C" {
         alg: rocsparse_itilu0_alg,
         option: rocsparse_int,
         nmaxiter: *mut rocsparse_int,
+        tol: f64,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        csr_val: *const rocsparse_double_complex,
+        ilu0: *mut rocsparse_double_complex,
+        idx_base: rocsparse_index_base,
+        buffer_size: usize,
+        buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_scsritilu0_compute_ex(
+        handle: rocsparse_handle,
+        alg: rocsparse_itilu0_alg,
+        option: rocsparse_int,
+        nmaxiter: *mut rocsparse_int,
+        nfreeiter: rocsparse_int,
+        tol: f32,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        csr_val: *const f32,
+        ilu0: *mut f32,
+        idx_base: rocsparse_index_base,
+        buffer_size: usize,
+        buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_dcsritilu0_compute_ex(
+        handle: rocsparse_handle,
+        alg: rocsparse_itilu0_alg,
+        option: rocsparse_int,
+        nmaxiter: *mut rocsparse_int,
+        nfreeiter: rocsparse_int,
+        tol: f64,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        csr_val: *const f64,
+        ilu0: *mut f64,
+        idx_base: rocsparse_index_base,
+        buffer_size: usize,
+        buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_ccsritilu0_compute_ex(
+        handle: rocsparse_handle,
+        alg: rocsparse_itilu0_alg,
+        option: rocsparse_int,
+        nmaxiter: *mut rocsparse_int,
+        nfreeiter: rocsparse_int,
+        tol: f32,
+        m: rocsparse_int,
+        nnz: rocsparse_int,
+        csr_row_ptr: *const rocsparse_int,
+        csr_col_ind: *const rocsparse_int,
+        csr_val: *const rocsparse_float_complex,
+        ilu0: *mut rocsparse_float_complex,
+        idx_base: rocsparse_index_base,
+        buffer_size: usize,
+        buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_zcsritilu0_compute_ex(
+        handle: rocsparse_handle,
+        alg: rocsparse_itilu0_alg,
+        option: rocsparse_int,
+        nmaxiter: *mut rocsparse_int,
+        nfreeiter: rocsparse_int,
         tol: f64,
         m: rocsparse_int,
         nnz: rocsparse_int,

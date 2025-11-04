@@ -143,7 +143,7 @@ unsafe extern "C" {
         field_lower: *const usize,
         field_upper: *const usize,
         brick_stride: *const usize,
-        dim: usize,
+        dim_with_batch: usize,
         deviceID: ::std::os::raw::c_int,
     ) -> rocfft_status;
 }

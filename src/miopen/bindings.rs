@@ -21,12 +21,14 @@ pub const MIOPEN_LOG_FUNC_TIME_ENABLE: u32 = 0;
 pub const MIOPEN_ENABLE_SQLITE_BACKOFF: u32 = 1;
 pub const MIOPEN_USE_MLIR: u32 = 0;
 pub const MIOPEN_USE_COMPOSABLEKERNEL: u32 = 0;
+pub const MIOPEN_BUILD_DRIVER: u32 = 0;
 pub const MIOPEN_ENABLE_AI_IMMED_MODE_FALLBACK: u32 = 0;
 pub const MIOPEN_ENABLE_AI_KERNEL_TUNING: u32 = 0;
 pub const MIOPEN_HIP_COMPILER_HAS_OPTION_OFFLOAD_UNIFORM_BLOCK: u32 = 1;
 pub const MIOPEN_WORKAROUND_USE_BOOST_FILESYSTEM: u32 = 0;
-pub const MIOPEN_AMD_COMGR_VERSION_MAJOR: u32 = 2;
-pub const MIOPEN_AMD_COMGR_VERSION_MINOR: u32 = 8;
+pub const MIOPEN_ENABLE_FIN_INTERFACE: u32 = 0;
+pub const MIOPEN_AMD_COMGR_VERSION_MAJOR: u32 = 3;
+pub const MIOPEN_AMD_COMGR_VERSION_MINOR: u32 = 0;
 pub const MIOPEN_AMD_COMGR_VERSION_PATCH: u32 = 0;
 pub const MIOPEN_USE_RNE_BFLOAT16: u32 = 1;
 pub const MIOPEN_FP8_IEEE_EXPONENT_BIAS: u32 = 0;
@@ -38,10 +40,10 @@ pub const MIOPEN_USE_SQLITE_PERFDB: u32 = 0;
 pub const MIOPEN_NDEBUG: u32 = 0;
 pub const MIOPEN_ALLOC_BUFFERS: u32 = 0;
 pub const MIOPEN_ROCBLAS_VERSION_MAJOR: u32 = 4;
-pub const MIOPEN_ROCBLAS_VERSION_MINOR: u32 = 3;
-pub const MIOPEN_ROCBLAS_VERSION_PATCH: u32 = 0;
-pub const MIOPEN_ROCBLAS_VERSION_FLAT: u32 = 4003000;
-pub const MIOPEN_GOLDEN_DB_VERSION: u32 = 20;
+pub const MIOPEN_ROCBLAS_VERSION_MINOR: u32 = 4;
+pub const MIOPEN_ROCBLAS_VERSION_PATCH: u32 = 1;
+pub const MIOPEN_ROCBLAS_VERSION_FLAT: u32 = 4004001;
+pub const MIOPEN_GOLDEN_DB_VERSION: u32 = 21;
 pub const MIOPEN_API_VERSION_REDUCE_TENSOR: u32 = 1;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -300,6 +302,17 @@ pub const miopenConvolutionAttrib_t_MIOPEN_CONVOLUTION_ATTRIB_FP16_ALT_IMPL:
 pub const miopenConvolutionAttrib_t_MIOPEN_CONVOLUTION_ATTRIB_DETERMINISTIC:
     miopenConvolutionAttrib_t = 1;
 pub type miopenConvolutionAttrib_t = ::std::os::raw::c_uint;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeNormal: miopenConvolutionFindMode_t =
+    1;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeFast: miopenConvolutionFindMode_t =
+    2;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeHybrid: miopenConvolutionFindMode_t =
+    3;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeDynamicHybrid:
+    miopenConvolutionFindMode_t = 5;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeDefault:
+    miopenConvolutionFindMode_t = 5;
+pub type miopenConvolutionFindMode_t = ::std::os::raw::c_uint;
 unsafe extern "C" {
     pub fn miopenCreateTensorDescriptor(
         tensorDesc: *mut miopenTensorDescriptor_t,
@@ -555,6 +568,18 @@ unsafe extern "C" {
         convDesc: miopenConvolutionDescriptor_t,
         attr: miopenConvolutionAttrib_t,
         value: *mut ::std::os::raw::c_int,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenSetConvolutionFindMode(
+        convDesc: miopenConvolutionDescriptor_t,
+        findMode: miopenConvolutionFindMode_t,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenGetConvolutionFindMode(
+        convDesc: miopenConvolutionDescriptor_t,
+        findMode: *mut miopenConvolutionFindMode_t,
     ) -> miopenStatus_t;
 }
 pub const miopenConvFwdAlgorithm_t_miopenConvolutionFwdAlgoGEMM: miopenConvFwdAlgorithm_t = 0;
@@ -1649,6 +1674,7 @@ pub const miopenRNNInputMode_t_miopenRNNskip: miopenRNNInputMode_t = 1;
 pub type miopenRNNInputMode_t = ::std::os::raw::c_uint;
 pub const miopenRNNAlgo_t_miopenRNNdefault: miopenRNNAlgo_t = 0;
 pub const miopenRNNAlgo_t_miopenRNNfundamental: miopenRNNAlgo_t = 1;
+pub const miopenRNNAlgo_t_miopenRNNroundedDynamic: miopenRNNAlgo_t = 2;
 pub type miopenRNNAlgo_t = ::std::os::raw::c_uint;
 pub const miopenRNNDirectionMode_t_miopenRNNunidirection: miopenRNNDirectionMode_t = 0;
 pub const miopenRNNDirectionMode_t_miopenRNNbidirection: miopenRNNDirectionMode_t = 1;

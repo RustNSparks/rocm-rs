@@ -1,5 +1,8 @@
 // src/hip/memory.rs
 
+#[cfg(feature = "macros")]
+pub mod memory_ext;
+
 use crate::hip::error::{Error, Result};
 use crate::hip::kernel::AsKernelArg;
 use crate::hip::{Stream, ffi};
