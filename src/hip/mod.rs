@@ -17,6 +17,8 @@ pub mod bindings;
 
 // Public re-export of FFI for internal use
 pub mod ffi;
+#[cfg(feature = "macros")]
+pub mod memory_ext;
 
 // Re-export the main components for the public API
 pub use device::{Device, DeviceProperties, get_device_count, get_device_properties};

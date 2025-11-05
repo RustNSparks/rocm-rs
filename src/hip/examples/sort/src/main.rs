@@ -1,4 +1,4 @@
-use rocm_rs::hip::{self, DeviceMemory, memory::memory_ext::MemoryExt};
+use rocm_rs::hip::{self, DeviceMemory, memory_ext::MemoryExt};
 
 fn main() -> Result<(), hip::Error> {
     let arr: Vec<i32> = vec![
