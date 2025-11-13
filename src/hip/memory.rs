@@ -4,6 +4,7 @@ use crate::hip::kernel::AsKernelArg;
 use crate::hip::{Stream, ffi};
 use std::ffi::c_void;
 use std::marker::PhantomData;
+use std::sync::Arc;
 use std::{mem, ptr};
 
 pub type KernelArg = *mut c_void;
@@ -27,7 +28,13 @@ pub fn memory_info() -> Result<MemoryInfo> {
 }
 
 /// Safe wrapper for hip device memory
+/// TEAM-500: Arc-based sharing for cheap clones (CUDA parity)
+/// Uses Arc::make_mut() for copy-on-write semantics (backwards compatible)
 pub struct DeviceMemory<T> {
+    inner: Arc<DeviceMemoryInner<T>>,
+}
+
+struct DeviceMemoryInner<T> {
     ptr: *mut c_void,
     size: usize,
     phantom: PhantomData<T>,
@@ -36,6 +43,8 @@ pub struct DeviceMemory<T> {
 // Can't be automatically derived since we have a raw pointer
 unsafe impl<T: Send> Send for DeviceMemory<T> {}
 unsafe impl<T: Sync> Sync for DeviceMemory<T> {}
+unsafe impl<T: Send> Send for DeviceMemoryInner<T> {}
+unsafe impl<T: Sync> Sync for DeviceMemoryInner<T> {}
 
 #[derive(Clone)]
 pub struct PendingCopy<T> {
@@ -86,12 +95,15 @@ impl SynchronizeCopies for () {
 
 impl<T> DeviceMemory<T> {
     /// Allocate device memory for a number of elements
+    /// TEAM-500: Now uses Arc wrapper for cheap clones
     pub fn new(count: usize) -> Result<Self> {
         if count == 0 {
             return Ok(Self {
-                ptr: ptr::null_mut(),
-                size: 0,
-                phantom: PhantomData,
+                inner: Arc::new(DeviceMemoryInner {
+                    ptr: ptr::null_mut(),
+                    size: 0,
+                    phantom: PhantomData,
+                }),
             });
         }
 
@@ -104,37 +116,42 @@ impl<T> DeviceMemory<T> {
         }
 
         Ok(Self {
-            ptr,
-            size,
-            phantom: PhantomData,
+            inner: Arc::new(DeviceMemoryInner {
+                ptr,
+                size,
+                phantom: PhantomData,
+            }),
         })
     }
 
     /// Get the device pointer
     pub fn as_ptr(&self) -> *mut c_void {
-        self.ptr
+        self.inner.ptr
     }
 
     /// Get the size in bytes
     pub fn size(&self) -> usize {
-        self.size
+        self.inner.size
     }
 
     /// Get the number of elements
     pub fn count(&self) -> usize {
-        self.size / size_of::<T>()
+        self.inner.size / size_of::<T>()
     }
 
     /// Copy data from host to device
+    /// TEAM-500: Uses Arc::make_mut for COW (backwards compatible)
     pub fn copy_from_host(&mut self, data: &[T]) -> Result<()> {
-        if self.ptr.is_null() || data.is_empty() {
+        let inner = Arc::make_mut(&mut self.inner);  // COW: clones if refcount > 1
+        
+        if inner.ptr.is_null() || data.is_empty() {
             return Ok(());
         }
 
-        let copy_size = std::cmp::min(self.size, data.len() * std::mem::size_of::<T>());
+        let copy_size = std::cmp::min(inner.size, data.len() * std::mem::size_of::<T>());
         let error = unsafe {
             ffi::hipMemcpy(
-                self.ptr,
+                inner.ptr,
                 data.as_ptr() as *const c_void,
                 copy_size,
                 ffi::hipMemcpyKind_hipMemcpyHostToDevice,
@@ -148,17 +165,17 @@ impl<T> DeviceMemory<T> {
         Ok(())
     }
 
-    /// Copy data from device to host
+    /// Copy data from device to host (read-only, no Arc::make_mut needed)
     pub fn copy_to_host(&self, data: &mut [T]) -> Result<()> {
-        if self.ptr.is_null() || data.is_empty() {
+        if self.inner.ptr.is_null() || data.is_empty() {
             return Ok(());
         }
 
-        let copy_size = std::cmp::min(self.size, data.len() * std::mem::size_of::<T>());
+        let copy_size = std::cmp::min(self.inner.size, data.len() * std::mem::size_of::<T>());
         let error = unsafe {
             ffi::hipMemcpy(
                 data.as_mut_ptr() as *mut c_void,
-                self.ptr,
+                self.inner.ptr,
                 copy_size,
                 ffi::hipMemcpyKind_hipMemcpyDeviceToHost,
             )
@@ -172,16 +189,19 @@ impl<T> DeviceMemory<T> {
     }
 
     /// Copy data from another device memory
+    /// TEAM-500: Uses Arc::make_mut for COW (backwards compatible)
     pub fn copy_from_device(&mut self, src: &DeviceMemory<T>) -> Result<()> {
-        if self.ptr.is_null() || src.ptr.is_null() {
+        let inner = Arc::make_mut(&mut self.inner);  // COW: clones if refcount > 1
+        
+        if inner.ptr.is_null() || src.inner.ptr.is_null() {
             return Ok(());
         }
 
-        let copy_size = std::cmp::min(self.size, src.size);
+        let copy_size = std::cmp::min(inner.size, src.inner.size);
         let error = unsafe {
             ffi::hipMemcpy(
-                self.ptr,
-                src.ptr,
+                inner.ptr,
+                src.inner.ptr,
                 copy_size,
                 ffi::hipMemcpyKind_hipMemcpyDeviceToDevice,
             )
@@ -195,12 +215,15 @@ impl<T> DeviceMemory<T> {
     }
 
     /// Set memory to a value
+    /// TEAM-500: Uses Arc::make_mut for COW (backwards compatible)
     pub fn memset(&mut self, value: i32) -> Result<()> {
-        if self.ptr.is_null() {
+        let inner = Arc::make_mut(&mut self.inner);  // COW: clones if refcount > 1
+        
+        if inner.ptr.is_null() {
             return Ok(());
         }
 
-        let error = unsafe { ffi::hipMemset(self.ptr, value, self.size) };
+        let error = unsafe { ffi::hipMemset(inner.ptr, value, inner.size) };
 
         if error != ffi::hipError_t_hipSuccess {
             return Err(Error::new(error));
@@ -222,7 +245,7 @@ impl<T> DeviceMemory<T> {
         let required_bytes = source.len().saturating_mul(mem::size_of::<T>()); // Use saturating_mul just in case
 
         // Check if the source data fits within the allocated buffer size
-        if required_bytes > self.size {
+        if required_bytes > self.inner.size {
             return Err(Error::new(ffi::hipError_t_hipErrorInvalidValue));
         }
 
@@ -233,7 +256,7 @@ impl<T> DeviceMemory<T> {
 
         let error = unsafe {
             ffi::hipMemcpyAsync(
-                self.ptr, // Assuming self.ptr is *mut c_void or compatible
+                self.inner.ptr, // Assuming self.ptr is *mut c_void or compatible
                 source.as_ptr() as *const c_void,
                 required_bytes, // Copy the exact size needed for the source slice
                 ffi::hipMemcpyKind_hipMemcpyHostToDevice,
@@ -282,7 +305,7 @@ impl<T> DeviceMemory<T> {
         let required_bytes = dest.len().saturating_mul(mem::size_of::<T>());
 
         // Check if the GPU buffer has enough data to fill the destination slice
-        if required_bytes > self.size {
+        if required_bytes > self.inner.size {
             return Err(Error::new(ffi::hipError_t_hipErrorOutOfMemory));
         }
 
@@ -294,7 +317,7 @@ impl<T> DeviceMemory<T> {
         let error = unsafe {
             ffi::hipMemcpyAsync(
                 dest.as_mut_ptr() as *mut c_void,
-                self.ptr,       // Assuming self.ptr is *const c_void or compatible
+                self.inner.ptr,       // Assuming self.ptr is *const c_void or compatible
                 required_bytes, // Copy the exact size requested by the dest slice
                 ffi::hipMemcpyKind_hipMemcpyDeviceToHost,
                 stream.as_raw(),
@@ -310,13 +333,23 @@ impl<T> DeviceMemory<T> {
     }
 }
 
-impl<T> AsKernelArg for DeviceMemory<T> {
-    fn as_kernel_arg(&self) -> KernelArg {
-        &(self.ptr) as *const _ as KernelArg
+// TEAM-500: Arc-based clone (CUDA parity) - cheap reference counting
+impl<T> Clone for DeviceMemory<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
     }
 }
 
-impl<T> Drop for DeviceMemory<T> {
+impl<T> AsKernelArg for DeviceMemory<T> {
+    fn as_kernel_arg(&self) -> KernelArg {
+        &(self.inner.ptr) as *const _ as KernelArg
+    }
+}
+
+// TEAM-500: Drop moved to DeviceMemoryInner (Arc handles refcounting)
+impl<T> Drop for DeviceMemoryInner<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             unsafe {

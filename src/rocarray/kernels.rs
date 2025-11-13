@@ -1820,25 +1820,26 @@ define_unary_wrapper!(copy, u32, unary_copy_u32, "u32");
 //       via kernels.hip lines 904-1032. No additional wrappers needed here.
 // =============================================================================
 
-/// Upsample nearest 2D (CUDA: candle-kernels/src/conv.cu)
+/// Upsample nearest 2D - CUDA parity signature
+/// TEAM-499: Updated to match CUDA (candle-kernels/src/conv.cu:681-692)
+/// Reference: cuda_backend/mod.rs:940-972
 pub fn upsample_nearest2d_f32(
-    input: &DeviceMemory<f32>,
-    output: &mut DeviceMemory<f32>,
-    batch: u32,
-    channels: u32,
-    in_h: u32,
-    in_w: u32,
-    out_h: u32,
-    out_w: u32,
-    scale_h: u32,
-    scale_w: u32,
+    w_out: usize,
+    h_out: usize,
+    w_scale: f64,
+    h_scale: f64,
+    info: &DeviceMemory<usize>,  // [dims[4], strides[4]]
+    src: &DeviceMemory<f32>,
+    dst: &mut DeviceMemory<f32>,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
     let func = module.get_function("upsample_nearest2d_f32")?;
     
-    let total_elements = batch * channels * out_h * out_w;
-    let (grid, block) = calculate_grid_1d(total_elements);
+    // Calculate total elements for grid size
+    // info[0] = batch, info[1] = channels
+    let dst_el = w_out * h_out; // Will be multiplied by batch*channels in kernel
+    let (grid, block) = calculate_grid_1d(dst_el as u32);
     
     func.launch(
         grid,
@@ -1846,16 +1847,48 @@ pub fn upsample_nearest2d_f32(
         0,
         stream,
         &[
-            &input.as_ptr() as *const _ as *mut c_void,
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &batch as *const _ as *mut c_void,
-            &channels as *const _ as *mut c_void,
-            &in_h as *const _ as *mut c_void,
-            &in_w as *const _ as *mut c_void,
-            &out_h as *const _ as *mut c_void,
-            &out_w as *const _ as *mut c_void,
-            &scale_h as *const _ as *mut c_void,
-            &scale_w as *const _ as *mut c_void,
+            &w_out as *const _ as *mut c_void,
+            &h_out as *const _ as *mut c_void,
+            &w_scale as *const _ as *mut c_void,
+            &h_scale as *const _ as *mut c_void,
+            &info.as_ptr() as *const _ as *mut c_void,
+            &src.as_ptr() as *const _ as *mut c_void,
+            &dst.as_mut_ptr() as *const _ as *mut c_void,
+        ],
+    )
+}
+
+/// Upsample nearest 2D f16 - CUDA parity signature
+/// TEAM-499: f16 version matching CUDA signature
+pub fn upsample_nearest2d_f16(
+    w_out: usize,
+    h_out: usize,
+    w_scale: f64,
+    h_scale: f64,
+    info: &DeviceMemory<usize>,  // [dims[4], strides[4]]
+    src: &DeviceMemory<f16>,
+    dst: &mut DeviceMemory<f16>,
+    stream: &Stream,
+) -> Result<()> {
+    let module = get_kernels_module()?;
+    let func = module.get_function("upsample_nearest2d_f16")?;
+    
+    let dst_el = w_out * h_out;
+    let (grid, block) = calculate_grid_1d(dst_el as u32);
+    
+    func.launch(
+        grid,
+        block,
+        0,
+        stream,
+        &[
+            &w_out as *const _ as *mut c_void,
+            &h_out as *const _ as *mut c_void,
+            &w_scale as *const _ as *mut c_void,
+            &h_scale as *const _ as *mut c_void,
+            &info.as_ptr() as *const _ as *mut c_void,
+            &src.as_ptr() as *const _ as *mut c_void,
+            &dst.as_mut_ptr() as *const _ as *mut c_void,
         ],
     )
 }

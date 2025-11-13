@@ -1120,59 +1120,77 @@ extern "C" __global__ void upsample_nearest1d_f16(
     upsample_nearest1d_kernel(input, output, batch, channels, in_len, out_len, scale);
 }
 
-// Upsample nearest 2D - Simple nearest-neighbor upsampling for images
+// Upsample nearest 2D - CUDA parity implementation
+// TEAM-499: Copied from candle-kernels/src/conv.cu:501-540
+// Reference: CUDA uses info array (dims + strides) + double scales
 template<typename T>
-__global__ void upsample_nearest2d_kernel(
-    const T* input,
-    T* output,
-    unsigned int batch,
-    unsigned int channels,
-    unsigned int in_h,
-    unsigned int in_w,
-    unsigned int out_h,
-    unsigned int out_w,
-    unsigned int scale_h,
-    unsigned int scale_w
+__device__ void upsample_nearest2d(
+    const size_t w_out,
+    const size_t h_out,
+    const double w_scale,
+    const double h_scale,
+    const size_t *info,
+    const T *src,
+    T *dst
 ) {
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int total = batch * channels * out_h * out_w;
-    
-    if (idx < total) {
-        unsigned int w_out = idx % out_w;
-        unsigned int h_out = (idx / out_w) % out_h;
-        unsigned int c = (idx / (out_w * out_h)) % channels;
-        unsigned int b = idx / (out_w * out_h * channels);
-        
-        unsigned int h_in = h_out / scale_h;
-        unsigned int w_in = w_out / scale_w;
-        
-        unsigned int in_idx = b * (channels * in_h * in_w) + 
-                             c * (in_h * in_w) + 
-                             h_in * in_w + 
-                             w_in;
-        
-        output[idx] = input[in_idx];
+    const size_t dst_i = blockIdx.x * blockDim.x + threadIdx.x;
+    // src: (b_size, c_in, w_in, h_in)
+    const size_t *src_dims = info;
+    const size_t *src_s = info + 4;
+
+    const size_t c = src_dims[1];
+    const size_t w_in = src_dims[2];
+    const size_t h_in = src_dims[3];
+
+    if (dst_i >= src_dims[0] * c * w_out * h_out) {
+        return;
     }
+
+    // Calculate output indices
+    const size_t b_idx = dst_i / (w_out * h_out * c);
+    const size_t c_idx = (dst_i / (w_out * h_out)) % c;
+    const size_t dst_w = (dst_i / h_out) % w_out;
+    const size_t dst_h = dst_i % h_out;
+
+    // Calculate source indices with nearest-neighbor
+    size_t src_w = static_cast<size_t>(dst_w * w_scale);
+    size_t src_h = static_cast<size_t>(dst_h * h_scale);
+    if (src_w >= w_in) {
+        src_w = w_in - 1;
+    }
+    if (src_h >= h_in) {
+        src_h = h_in - 1;
+    }
+
+    // Use strides for proper indexing (supports non-contiguous tensors)
+    const size_t src_i = b_idx * src_s[0] + c_idx * src_s[1] + src_w * src_s[2] + src_h * src_s[3];
+    dst[dst_i] = src[src_i];
 }
 
+// TEAM-499: CUDA-compatible signature (candle-kernels/src/conv.cu:681-692)
 extern "C" __global__ void upsample_nearest2d_f32(
-    const float* input, float* output,
-    unsigned int batch, unsigned int channels,
-    unsigned int in_h, unsigned int in_w,
-    unsigned int out_h, unsigned int out_w,
-    unsigned int scale_h, unsigned int scale_w
+    const size_t w_out,
+    const size_t h_out,
+    const double w_scale,
+    const double h_scale,
+    const size_t *info,
+    const float *src,
+    float *dst
 ) {
-    upsample_nearest2d_kernel(input, output, batch, channels, in_h, in_w, out_h, out_w, scale_h, scale_w);
+    upsample_nearest2d<float>(w_out, h_out, w_scale, h_scale, info, src, dst);
 }
 
+// TEAM-499: CUDA-compatible signature for f16
 extern "C" __global__ void upsample_nearest2d_f16(
-    const _Float16* input, _Float16* output,
-    unsigned int batch, unsigned int channels,
-    unsigned int in_h, unsigned int in_w,
-    unsigned int out_h, unsigned int out_w,
-    unsigned int scale_h, unsigned int scale_w
+    const size_t w_out,
+    const size_t h_out,
+    const double w_scale,
+    const double h_scale,
+    const size_t *info,
+    const _Float16 *src,
+    _Float16 *dst
 ) {
-    upsample_nearest2d_kernel(input, output, batch, channels, in_h, in_w, out_h, out_w, scale_h, scale_w);
+    upsample_nearest2d<_Float16>(w_out, h_out, w_scale, h_scale, info, src, dst);
 }
 
 // Gather operation - Candle-compatible signature
