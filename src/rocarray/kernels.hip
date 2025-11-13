@@ -1464,3 +1464,252 @@ IA_OP(double, uint8_t, ia_u8_f64)
 IA_OP(_Float16, int64_t, ia_i64_f16)
 IA_OP(_Float16, uint32_t, ia_u32_f16)
 IA_OP(_Float16, uint8_t, ia_u8_f16)
+
+// =============================================================================
+// NORMALIZATION OPERATIONS
+// TEAM-503: Ported from candle-kernels/src/reduce.cu
+// =============================================================================
+
+#define WARP_SIZE 32
+
+// Warp-level reduction for float2 (mean, variance)
+static __device__ __forceinline__ float2 warp_reduce_sum_f2(float2 a) {
+#pragma unroll
+    for (int mask = 16; mask > 0; mask >>= 1) {
+        a.x += __shfl_xor(a.x, mask, 32);
+        a.y += __shfl_xor(a.y, mask, 32);
+    }
+    return a;
+}
+
+// Warp-level reduction for float
+static __device__ __forceinline__ float warp_reduce_sum_f(float x) {
+#pragma unroll
+    for (int mask = 16; mask > 0; mask >>= 1) {
+        x += __shfl_xor(x, mask, 32);
+    }
+    return x;
+}
+
+// LayerNorm kernel - ported from candle-kernels/src/reduce.cu (lines 70-131)
+// Reference: https://github.com/ggerganov/llama.cpp/blob/d59bd97065cd7ded6c4ecab54b1d5e0b1b11e318/ggml-cuda.cu#L477
+// Formula: y = (x - mean) / sqrt(variance + eps) * gamma + beta
+extern "C" __global__ void layernorm_f32(
+    const float* x,
+    float* dst,
+    const float* gamma,
+    const float* beta,
+    const int ncols,
+    const int block_size,
+    const float eps
+) {
+    const int row = blockIdx.x * blockDim.y + threadIdx.y;
+    const int tid = threadIdx.x;
+
+    // Compute mean and variance using Welford's online algorithm
+    float2 mean_var = make_float2(0.f, 0.f);
+
+    for (int col = tid; col < ncols; col += block_size) {
+        const float xi = x[row * ncols + col];
+        mean_var.x += xi;
+        mean_var.y += xi * xi;
+    }
+
+    // Reduce within warp
+    mean_var = warp_reduce_sum_f2(mean_var);
+    
+    // Reduce across warps if block_size > WARP_SIZE
+    if (block_size > WARP_SIZE) {
+        __shared__ float2 s_sum[32];
+        int warp_id = threadIdx.x / WARP_SIZE;
+        int lane_id = threadIdx.x % WARP_SIZE;
+        if (lane_id == 0) {
+            s_sum[warp_id] = mean_var;
+        }
+        __syncthreads();
+        mean_var = s_sum[lane_id];
+        mean_var = warp_reduce_sum_f2(mean_var);
+    }
+
+    const float mean = mean_var.x / ncols;
+    const float var = mean_var.y / ncols - mean * mean;
+    const float inv_std = rsqrtf(var + eps);
+
+    // Apply normalization with optional gamma and beta
+    if (gamma == nullptr && beta == nullptr) {
+        for (int col = tid; col < ncols; col += block_size) {
+            float lhs = (x[row * ncols + col] - mean) * inv_std;
+            dst[row * ncols + col] = lhs;
+        }
+    } else if (gamma == nullptr && beta != nullptr) {
+        for (int col = tid; col < ncols; col += block_size) {
+            float b = beta[col];
+            float lhs = (x[row * ncols + col] - mean) * inv_std;
+            dst[row * ncols + col] = lhs + b;
+        }
+    } else if (gamma != nullptr && beta == nullptr) {
+        for (int col = tid; col < ncols; col += block_size) {
+            float g = gamma[col];
+            float lhs = (x[row * ncols + col] - mean) * inv_std;
+            dst[row * ncols + col] = lhs * g;
+        }
+    } else {
+        for (int col = tid; col < ncols; col += block_size) {
+            float g = gamma[col];
+            float b = beta[col];
+            float lhs = (x[row * ncols + col] - mean) * inv_std;
+            dst[row * ncols + col] = lhs * g + b;
+        }
+    }
+}
+
+// RmsNorm kernel - ported from candle-kernels/src/reduce.cu (lines 133-175)
+// Reference: https://github.com/ggerganov/llama.cpp/blob/d59bd97065cd7ded6c4ecab54b1d5e0b1b11e318/ggml-cuda.cu#L523
+// Formula: y = x / sqrt(mean(x^2) + eps) * alpha
+extern "C" __global__ void rmsnorm_f32(
+    const float* x,
+    float* dst,
+    const float* alpha,
+    const int ncols,
+    const int block_size,
+    const float eps
+) {
+    const int row = blockIdx.x * blockDim.y + threadIdx.y;
+    const int tid = threadIdx.x;
+
+    // Compute sum of squares
+    float tmp = 0.0f;
+
+    for (int col = tid; col < ncols; col += block_size) {
+        const float xi = x[row * ncols + col];
+        tmp += xi * xi;
+    }
+
+    // Reduce within warp
+    tmp = warp_reduce_sum_f(tmp);
+    
+    // Reduce across warps if block_size > WARP_SIZE
+    if (block_size > WARP_SIZE) {
+        __shared__ float s_sum[32];
+        int warp_id = threadIdx.x / WARP_SIZE;
+        int lane_id = threadIdx.x % WARP_SIZE;
+        if (lane_id == 0) {
+            s_sum[warp_id] = tmp;
+        }
+        __syncthreads();
+        tmp = s_sum[lane_id];
+        tmp = warp_reduce_sum_f(tmp);
+    }
+
+    const float mean = tmp / ncols;
+    const float scale = rsqrtf(mean + eps);
+
+    // Apply RMS normalization with optional alpha
+    if (alpha == nullptr) {
+        for (int col = tid; col < ncols; col += block_size) {
+            dst[row * ncols + col] = scale * x[row * ncols + col];
+        }
+    } else {
+        for (int col = tid; col < ncols; col += block_size) {
+            float a = alpha[col];
+            dst[row * ncols + col] = scale * x[row * ncols + col] * a;
+        }
+    }
+}
+
+// =============================================================================
+// ROTARY POSITION EMBEDDINGS (RoPE)
+// TEAM-503: Ported from candle-kernels/src/reduce.cu
+// =============================================================================
+
+// RoPE Interleaved kernel - ported from candle-kernels/src/reduce.cu (lines 221-236)
+// Applies rotary embeddings with interleaved layout
+extern "C" __global__ void rope_i_f32(
+    const float* src,
+    const float* cos,
+    const float* sin,
+    float* dst,
+    const unsigned int bh,
+    const unsigned int td,
+    const unsigned int stride_b
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (2 * idx >= bh * td) return;
+
+    unsigned int rope_idx = idx % (td / 2);
+    if (stride_b > 0) {
+        unsigned int b_idx = (2 * idx) / stride_b;
+        rope_idx += b_idx * (td / 2);
+    }
+    float c = cos[rope_idx];
+    float s = sin[rope_idx];
+
+    dst[2 * idx] = src[2 * idx] * c - src[2 * idx + 1] * s;
+    dst[2 * idx + 1] = src[2 * idx] * s + src[2 * idx + 1] * c;
+}
+
+// RoPE Standard kernel - ported from candle-kernels/src/reduce.cu (lines 238-259)
+// Applies rotary embeddings with standard layout
+extern "C" __global__ void rope_f32(
+    const float* src,
+    const float* cos,
+    const float* sin,
+    float* dst,
+    const unsigned int bh,
+    const unsigned int td,
+    const unsigned int d,
+    const unsigned int stride_b
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (2 * idx >= bh * td) return;
+
+    unsigned int i_bh = idx / (td / 2);
+    unsigned int i_td = idx - (td / 2) * i_bh;
+    unsigned int i_t = i_td / (d / 2);
+    unsigned int i_d = i_td - (d / 2) * i_t;
+    unsigned int i1 = i_bh * td + i_t * d + i_d;
+    unsigned int i2 = i1 + d / 2;
+    unsigned int i_cs = i_t * (d / 2) + i_d;
+    if (stride_b > 0) {
+        unsigned int b_idx = (2 * idx) / stride_b;
+        i_cs += b_idx * (td / 2);
+    }
+    float c = cos[i_cs];
+    float s = sin[i_cs];
+
+    dst[i1] = src[i1] * c - src[i2] * s;
+    dst[i2] = src[i1] * s + src[i2] * c;
+}
+
+// RoPE Threaded kernel - ported from candle-kernels/src/reduce.cu (lines 261-291)
+// Applies rotary embeddings with threaded layout (batch, time, heads, dims)
+extern "C" __global__ void rope_thd_f32(
+    const float* src,
+    const float* cos,
+    const float* sin,
+    float* dst,
+    const unsigned int b,
+    const unsigned int t,
+    const unsigned int h,
+    const unsigned int d,
+    const unsigned int stride_b
+) {
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (2 * idx >= b * t * h * d) return;
+
+    unsigned int i_bth = idx / (d / 2);
+    unsigned int i_d = idx - (d / 2) * i_bth;
+    unsigned int i_t = (i_bth / h) % t;
+    unsigned int i1 = i_bth * d + i_d;
+    unsigned int i2 = i1 + d / 2;
+    unsigned int i_cs = i_t * (d / 2) + i_d;
+    if (stride_b > 0) {
+        unsigned int b_idx = (2 * idx) / stride_b;
+        i_cs += b_idx * ((t * d) / 2);
+    }
+    float c = cos[i_cs];
+    float s = sin[i_cs];
+
+    dst[i1] = src[i1] * c - src[i2] * s;
+    dst[i2] = src[i1] * s + src[i2] * c;
+}

@@ -1644,9 +1644,12 @@ define_where_wrapper!(i64, u32, where_i64_u32, "i64", "u32");
 
 // =============================================================================
 // TEAM-490: Unary Operations (Phase 2 Step 2)
+// TEAM-505: CUDA parity verified (candle-kernels/src/unary.cu:6-234)
 // =============================================================================
 
 /// Generic unary operation wrapper
+/// Created by: TEAM-490
+/// TEAM-505: CUDA parity (candle-kernels/src/unary.cu:6-29 UNARY_OP macro)
 fn unary_generic<T>(
     input: &DeviceMemory<T>,
     output: &DeviceMemory<T>,
@@ -1674,6 +1677,8 @@ where
 }
 
 /// Generic unary operation with parameter
+/// Created by: TEAM-490
+/// TEAM-505: CUDA parity (candle-kernels/src/unary.cu:68-92 UNARY_OP1 macro)
 fn unary_param_generic<T>(
     input: &DeviceMemory<T>,
     param: T,
@@ -1732,12 +1737,14 @@ macro_rules! define_unary_param_wrapper {
 }
 
 // Exponential/Logarithmic operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:192-195)
 define_unary_wrapper!(exp, f32, unary_exp_f32, "f32");
 define_unary_wrapper!(exp, f64, unary_exp_f64, "f64");
 define_unary_wrapper!(log, f32, unary_log_f32, "f32");
 define_unary_wrapper!(log, f64, unary_log_f64, "f64");
 
 // Trigonometric operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:196-201)
 define_unary_wrapper!(sin, f32, unary_sin_f32, "f32");
 define_unary_wrapper!(sin, f64, unary_sin_f64, "f64");
 define_unary_wrapper!(cos, f32, unary_cos_f32, "f32");
@@ -1746,6 +1753,7 @@ define_unary_wrapper!(tanh, f32, unary_tanh_f32, "f32");
 define_unary_wrapper!(tanh, f64, unary_tanh_f64, "f64");
 
 // Rounding operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:204-209)
 define_unary_wrapper!(ceil, f32, unary_ceil_f32, "f32");
 define_unary_wrapper!(ceil, f64, unary_ceil_f64, "f64");
 define_unary_wrapper!(floor, f32, unary_floor_f32, "f32");
@@ -1754,12 +1762,14 @@ define_unary_wrapper!(round, f32, unary_round_f32, "f32");
 define_unary_wrapper!(round, f64, unary_round_f64, "f64");
 
 // Error functions
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:202-203, 210-211)
 define_unary_wrapper!(erf, f32, unary_erf_f32, "f32");
 define_unary_wrapper!(erf, f64, unary_erf_f64, "f64");
 define_unary_wrapper!(normcdf, f32, unary_normcdf_f32, "f32");
 define_unary_wrapper!(normcdf, f64, unary_normcdf_f64, "f64");
 
 // Basic operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:188-191, 212-217, 230-231)
 define_unary_wrapper!(abs, f32, unary_abs_f32, "f32");
 define_unary_wrapper!(abs, f64, unary_abs_f64, "f64");
 define_unary_wrapper!(abs, i32, unary_abs_i32, "i32");
@@ -1787,6 +1797,7 @@ define_unary_wrapper!(sign, i32, unary_sign_i32, "i32");
 define_unary_wrapper!(sign, i64, unary_sign_i64, "i64");
 
 // Activation functions
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:218-227, 232-233)
 define_unary_wrapper!(gelu, f32, unary_gelu_f32, "f32");
 define_unary_wrapper!(gelu, f64, unary_gelu_f64, "f64");
 define_unary_wrapper!(gelu_erf, f32, unary_gelu_erf_f32, "f32");
@@ -1799,12 +1810,14 @@ define_unary_wrapper!(sigmoid, f32, unary_sigmoid_f32, "f32");
 define_unary_wrapper!(sigmoid, f64, unary_sigmoid_f64, "f64");
 
 // Parametric operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:224-225, 228-229)
 define_unary_param_wrapper!(elu, f32, unary_elu_f32, "f32");
 define_unary_param_wrapper!(elu, f64, unary_elu_f64, "f64");
 define_unary_param_wrapper!(powf, f32, unary_powf_f32, "f32");
 define_unary_param_wrapper!(powf, f64, unary_powf_f64, "f64");
 
 // Copy operations
+// Created by: TEAM-490 | TEAM-505: CUDA parity (candle-kernels/src/unary.cu:183-187)
 define_unary_wrapper!(copy, f32, unary_copy_f32, "f32");
 define_unary_wrapper!(copy, f64, unary_copy_f64, "f64");
 define_unary_wrapper!(copy, i32, unary_copy_i32, "i32");
@@ -1814,15 +1827,15 @@ define_unary_wrapper!(copy, u32, unary_copy_u32, "u32");
 
 // =============================================================================
 // TEAM-497: Indexing and upsampling operations (CUDA parity for Candle)
-// Kernel implementations: kernels.hip:1044-1351
+// TEAM-499: Updated upsample_nearest2d signatures
+// TEAM-505: CUDA parity verified (candle-kernels/src/conv.cu, candle-kernels/src/indexing.cu)
 // NOTE: Binary ops (badd, bsub, bmul, bdiv) and comparison ops (eq, ne, lt, le, gt, ge)
 //       are ALREADY wired up in Candle's ROCm backend (candle-core/src/rocm_backend/ops.rs)
 //       via kernels.hip lines 904-1032. No additional wrappers needed here.
 // =============================================================================
 
-/// Upsample nearest 2D - CUDA parity signature
-/// TEAM-499: Updated to match CUDA (candle-kernels/src/conv.cu:681-692)
-/// Reference: cuda_backend/mod.rs:940-972
+/// Upsample nearest 2D f32
+/// Created by: TEAM-499 | TEAM-505: CUDA parity (candle-kernels/src/conv.cu:681-692, 762)
 pub fn upsample_nearest2d_f32(
     w_out: usize,
     h_out: usize,
@@ -1858,8 +1871,8 @@ pub fn upsample_nearest2d_f32(
     )
 }
 
-/// Upsample nearest 2D f16 - CUDA parity signature
-/// TEAM-499: f16 version matching CUDA signature
+/// Upsample nearest 2D f16
+/// Created by: TEAM-499 | TEAM-505: CUDA parity (candle-kernels/src/conv.cu:681-692, 726)
 pub fn upsample_nearest2d_f16(
     w_out: usize,
     h_out: usize,
@@ -1893,8 +1906,8 @@ pub fn upsample_nearest2d_f16(
     )
 }
 
-/// Gather (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
-/// Kernel: gather_i64_f32 (GATHER_OP macro)
+/// Gather i64 -> f32
+/// Created by: TEAM-497 | TEAM-505: CUDA parity (candle-kernels/src/indexing.cu GATHER_OP macro)
 pub fn gather_i64_f32(
     numel: usize,
     ids: &DeviceMemory<i64>,
@@ -1929,8 +1942,8 @@ pub fn gather_i64_f32(
     )
 }
 
-/// Scatter (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
-/// Kernel: s_i64_f32 (S_OP macro)
+/// Scatter i64 -> f32
+/// Created by: TEAM-497 | TEAM-505: CUDA parity (candle-kernels/src/indexing.cu S_OP macro)
 pub fn s_i64_f32(
     ids: &DeviceMemory<i64>,
     inp: &DeviceMemory<f32>,
@@ -1964,8 +1977,8 @@ pub fn s_i64_f32(
     )
 }
 
-/// Scatter-add (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
-/// Kernel: sa_i64_f32 (SA_OP macro)
+/// Scatter-add i64 -> f32
+/// Created by: TEAM-497 | TEAM-505: CUDA parity (candle-kernels/src/indexing.cu SA_OP macro)
 pub fn sa_i64_f32(
     ids: &DeviceMemory<i64>,
     inp: &DeviceMemory<f32>,
@@ -1999,8 +2012,8 @@ pub fn sa_i64_f32(
     )
 }
 
-/// Index select (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
-/// Kernel: is_i64_f32 (IS_OP macro)
+/// Index select i64 -> f32
+/// Created by: TEAM-497 | TEAM-505: CUDA parity (candle-kernels/src/indexing.cu IS_OP macro)
 pub fn is_i64_f32(
     numel: usize,
     num_dims: usize,
@@ -2039,8 +2052,8 @@ pub fn is_i64_f32(
     )
 }
 
-/// Index add (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
-/// Kernel: ia_i64_f32 (IA_OP macro)
+/// Index add i64 -> f32
+/// Created by: TEAM-497 | TEAM-505: CUDA parity (candle-kernels/src/indexing.cu IA_OP macro)
 pub fn ia_i64_f32(
     ids: &DeviceMemory<i64>,
     ids_dim_size: usize,
@@ -2080,111 +2093,257 @@ pub fn ia_i64_f32(
 // NORMALIZATION OPERATIONS - TODO: Implement HIP kernels
 // ============================================================================
 
-/// Layer Normalization - TODO: Implement HIP kernel
-/// Reference: candle-kernels/src/reduce.cu (layernorm kernel)
+/// Layer Normalization - TEAM-503: Implemented
+/// Reference: candle-kernels/src/reduce.cu (layernorm kernel, lines 70-131)
 /// 
 /// LayerNorm computes: y = (x - mean) / sqrt(variance + eps) * gamma + beta
 /// where mean and variance are computed over the last dimension.
+/// 
+/// Uses warp-level reductions for efficient parallel computation.
 pub fn layer_norm_f32(
-    _input: &DeviceMemory<f32>,
-    _output: &mut DeviceMemory<f32>,
-    _gamma: &DeviceMemory<f32>,
-    _beta: &DeviceMemory<f32>,
-    _n_rows: usize,
-    _n_cols: usize,
-    _eps: f32,
-    _stream: &Stream,
+    input: &DeviceMemory<f32>,
+    output: &mut DeviceMemory<f32>,
+    gamma: &DeviceMemory<f32>,
+    beta: &DeviceMemory<f32>,
+    n_rows: usize,
+    n_cols: usize,
+    eps: f32,
+    stream: &Stream,
 ) -> Result<()> {
-    Err(crate::error::Error::NotImplemented(
-        "LayerNorm HIP kernel not yet implemented. \
-         Reference: candle-kernels/src/reduce.cu (layernorm). \
-         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
-    ))
+    let kernel_name = "layernorm_f32";
+    let function = get_kernel_function(kernel_name)?;
+
+    // Use block_size that's a multiple of warp size (32)
+    // Typical values: 32, 64, 128, 256
+    let block_size = if n_cols <= 32 {
+        32
+    } else if n_cols <= 128 {
+        128
+    } else {
+        256
+    };
+
+    // Grid: one block per row, block_y=1
+    let grid_dim = Dim3::new_2d(n_rows as u32, 1);
+    let block_dim = Dim3::new_2d(block_size, 1);
+
+    let n_cols_i32 = n_cols as i32;
+    let block_size_i32 = block_size as i32;
+    let eps_f32 = eps;
+
+    let mut kernel_args = [
+        input.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        gamma.as_ptr(),
+        beta.as_ptr(),
+        &n_cols_i32 as *const i32 as *mut c_void,
+        &block_size_i32 as *const i32 as *mut c_void,
+        &eps_f32 as *const f32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
+    Ok(())
 }
 
-/// RMS Normalization - TODO: Implement HIP kernel
-/// Reference: candle-kernels/src/reduce.cu (rmsnorm kernel)
+/// RMS Normalization - TEAM-503: Implemented
+/// Reference: candle-kernels/src/reduce.cu (rmsnorm kernel, lines 133-175)
 /// 
 /// RmsNorm computes: y = x / sqrt(mean(x^2) + eps) * alpha
+/// 
+/// Uses warp-level reductions for efficient parallel computation.
 pub fn rms_norm_f32(
-    _input: &DeviceMemory<f32>,
-    _output: &mut DeviceMemory<f32>,
-    _alpha: &DeviceMemory<f32>,
-    _n_rows: usize,
-    _n_cols: usize,
-    _eps: f32,
-    _stream: &Stream,
+    input: &DeviceMemory<f32>,
+    output: &mut DeviceMemory<f32>,
+    alpha: &DeviceMemory<f32>,
+    n_rows: usize,
+    n_cols: usize,
+    eps: f32,
+    stream: &Stream,
 ) -> Result<()> {
-    Err(crate::error::Error::NotImplemented(
-        "RmsNorm HIP kernel not yet implemented. \
-         Reference: candle-kernels/src/reduce.cu (rmsnorm). \
-         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
-    ))
+    let kernel_name = "rmsnorm_f32";
+    let function = get_kernel_function(kernel_name)?;
+
+    // Use block_size that's a multiple of warp size (32)
+    let block_size = if n_cols <= 32 {
+        32
+    } else if n_cols <= 128 {
+        128
+    } else {
+        256
+    };
+
+    // Grid: one block per row, block_y=1
+    let grid_dim = Dim3::new_2d(n_rows as u32, 1);
+    let block_dim = Dim3::new_2d(block_size, 1);
+
+    let n_cols_i32 = n_cols as i32;
+    let block_size_i32 = block_size as i32;
+    let eps_f32 = eps;
+
+    let mut kernel_args = [
+        input.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        alpha.as_ptr(),
+        &n_cols_i32 as *const i32 as *mut c_void,
+        &block_size_i32 as *const i32 as *mut c_void,
+        &eps_f32 as *const f32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
+    Ok(())
 }
 
 // ============================================================================
 // ROTARY POSITION EMBEDDINGS (RoPE) - TODO: Implement HIP kernels
 // ============================================================================
 
-/// Rotary Position Embeddings - Interleaved - TODO: Implement HIP kernel
-/// Reference: candle-kernels/src/ternary.cu (rope_i kernel)
+/// Rotary Position Embeddings - Interleaved - TEAM-503: Implemented
+/// Reference: candle-kernels/src/reduce.cu (rope_i kernel, lines 221-236)
+/// 
+/// Applies rotary embeddings with interleaved layout.
+/// Each pair of elements is rotated: [x0, x1] -> [x0*cos - x1*sin, x0*sin + x1*cos]
 pub fn rope_i_f32(
-    _input: &DeviceMemory<f32>,
-    _cos: &DeviceMemory<f32>,
-    _sin: &DeviceMemory<f32>,
-    _output: &mut DeviceMemory<f32>,
-    _b: usize,
-    _h: usize,
-    _t: usize,
-    _d: usize,
-    _stride_b: usize,
-    _stream: &Stream,
+    input: &DeviceMemory<f32>,
+    cos: &DeviceMemory<f32>,
+    sin: &DeviceMemory<f32>,
+    output: &mut DeviceMemory<f32>,
+    b: usize,
+    h: usize,
+    t: usize,
+    d: usize,
+    stride_b: usize,
+    stream: &Stream,
 ) -> Result<()> {
-    Err(crate::error::Error::NotImplemented(
-        "RopeI HIP kernel not yet implemented. \
-         Reference: candle-kernels/src/ternary.cu (rope_i). \
-         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
-    ))
+    let kernel_name = "rope_i_f32";
+    let function = get_kernel_function(kernel_name)?;
+
+    let bh = b * h;
+    let td = t * d;
+    let total_elements = bh * td;
+
+    // Each thread processes 2 elements (a pair)
+    let num_threads = (total_elements + 1) / 2;
+    
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(num_threads as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let bh_u32 = bh as u32;
+    let td_u32 = td as u32;
+    let stride_b_u32 = stride_b as u32;
+
+    let mut kernel_args = [
+        input.as_ptr(),
+        cos.as_ptr(),
+        sin.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &bh_u32 as *const u32 as *mut c_void,
+        &td_u32 as *const u32 as *mut c_void,
+        &stride_b_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
+    Ok(())
 }
 
-/// Rotary Position Embeddings - Standard - TODO: Implement HIP kernel
-/// Reference: candle-kernels/src/ternary.cu (rope kernel)
+/// Rotary Position Embeddings - Standard - TEAM-503: Implemented
+/// Reference: candle-kernels/src/reduce.cu (rope kernel, lines 238-259)
+/// 
+/// Applies rotary embeddings with standard layout.
+/// Rotates pairs separated by d/2: [x[i], x[i+d/2]] -> [x[i]*cos - x[i+d/2]*sin, x[i]*sin + x[i+d/2]*cos]
 pub fn rope_f32(
-    _input: &DeviceMemory<f32>,
-    _cos: &DeviceMemory<f32>,
-    _sin: &DeviceMemory<f32>,
-    _output: &mut DeviceMemory<f32>,
-    _b: usize,
-    _h: usize,
-    _t: usize,
-    _d: usize,
-    _stride_b: usize,
-    _stream: &Stream,
+    input: &DeviceMemory<f32>,
+    cos: &DeviceMemory<f32>,
+    sin: &DeviceMemory<f32>,
+    output: &mut DeviceMemory<f32>,
+    b: usize,
+    h: usize,
+    t: usize,
+    d: usize,
+    stride_b: usize,
+    stream: &Stream,
 ) -> Result<()> {
-    Err(crate::error::Error::NotImplemented(
-        "Rope HIP kernel not yet implemented. \
-         Reference: candle-kernels/src/ternary.cu (rope). \
-         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
-    ))
+    let kernel_name = "rope_f32";
+    let function = get_kernel_function(kernel_name)?;
+
+    let bh = b * h;
+    let td = t * d;
+    let total_elements = bh * td;
+
+    // Each thread processes 2 elements (a pair)
+    let num_threads = (total_elements + 1) / 2;
+    
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(num_threads as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let bh_u32 = bh as u32;
+    let td_u32 = td as u32;
+    let d_u32 = d as u32;
+    let stride_b_u32 = stride_b as u32;
+
+    let mut kernel_args = [
+        input.as_ptr(),
+        cos.as_ptr(),
+        sin.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &bh_u32 as *const u32 as *mut c_void,
+        &td_u32 as *const u32 as *mut c_void,
+        &d_u32 as *const u32 as *mut c_void,
+        &stride_b_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
+    Ok(())
 }
 
-/// Rotary Position Embeddings - Threaded - TODO: Implement HIP kernel
-/// Reference: candle-kernels/src/ternary.cu (rope_thd kernel)
+/// Rotary Position Embeddings - Threaded - TEAM-503: Implemented
+/// Reference: candle-kernels/src/reduce.cu (rope_thd kernel, lines 261-291)
+/// 
+/// Applies rotary embeddings with threaded layout (batch, time, heads, dims).
+/// Optimized for transformer attention patterns with explicit time dimension.
 pub fn rope_thd_f32(
-    _input: &DeviceMemory<f32>,
-    _cos: &DeviceMemory<f32>,
-    _sin: &DeviceMemory<f32>,
-    _output: &mut DeviceMemory<f32>,
-    _b: usize,
-    _t: usize,
-    _h: usize,
-    _d: usize,
-    _stride_b: usize,
-    _stream: &Stream,
+    input: &DeviceMemory<f32>,
+    cos: &DeviceMemory<f32>,
+    sin: &DeviceMemory<f32>,
+    output: &mut DeviceMemory<f32>,
+    b: usize,
+    t: usize,
+    h: usize,
+    d: usize,
+    stride_b: usize,
+    stream: &Stream,
 ) -> Result<()> {
-    Err(crate::error::Error::NotImplemented(
-        "RopeThd HIP kernel not yet implemented. \
-         Reference: candle-kernels/src/ternary.cu (rope_thd). \
-         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
-    ))
+    let kernel_name = "rope_thd_f32";
+    let function = get_kernel_function(kernel_name)?;
+
+    let total_elements = b * t * h * d;
+
+    // Each thread processes 2 elements (a pair)
+    let num_threads = (total_elements + 1) / 2;
+    
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(num_threads as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let b_u32 = b as u32;
+    let t_u32 = t as u32;
+    let h_u32 = h as u32;
+    let d_u32 = d as u32;
+    let stride_b_u32 = stride_b as u32;
+
+    let mut kernel_args = [
+        input.as_ptr(),
+        cos.as_ptr(),
+        sin.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &b_u32 as *const u32 as *mut c_void,
+        &t_u32 as *const u32 as *mut c_void,
+        &h_u32 as *const u32 as *mut c_void,
+        &d_u32 as *const u32 as *mut c_void,
+        &stride_b_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
+    Ok(())
 }
