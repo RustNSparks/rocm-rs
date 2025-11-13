@@ -308,6 +308,14 @@ impl<T> DeviceMemory<T> {
             Ok(PendingCopy { inner: dest })
         }
     }
+
+    pub unsafe fn cast<D>(self) -> DeviceMemory<D> {
+        DeviceMemory::<D> {
+            ptr: self.ptr,
+            size: self.size,
+            phantom: PhantomData::<D>,
+        }
+    }
 }
 
 impl<T> AsKernelArg for DeviceMemory<T> {
