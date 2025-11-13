@@ -628,8 +628,16 @@ DEFINE_RANGE_FILL(unsigned long long, ulong)
 // =============================================================================
 // TEAM-491: Primitive operations ported from Candle CUDA kernels
 // Original source: https://github.com/huggingface/candle
-// Ported from: candle-kernels/src/{cast.cu, ternary.cu, affine.cu, unary.cu}
-// These operations maintain parity with Candle's CUDA implementation
+// Reference: https://github.com/huggingface/candle/tree/main/candle-kernels/src
+// 
+// Ported from:
+//   - candle-kernels/src/cast.cu (https://github.com/huggingface/candle/blob/main/candle-kernels/src/cast.cu)
+//   - candle-kernels/src/ternary.cu (https://github.com/huggingface/candle/blob/main/candle-kernels/src/ternary.cu)
+//   - candle-kernels/src/affine.cu (https://github.com/huggingface/candle/blob/main/candle-kernels/src/affine.cu)
+//   - candle-kernels/src/unary.cu (https://github.com/huggingface/candle/blob/main/candle-kernels/src/unary.cu)
+//
+// These operations maintain parity with Candle's CUDA implementation.
+// We are NOT implementing from scratch - we port directly from Candle's reference.
 // =============================================================================
 
 #include <hip/hip_fp16.h>
@@ -666,7 +674,9 @@ __device__ inline float normcdf(float x) {
 
 // =============================================================================
 // Cast operations - Ported from Candle's cast.cu
-// Maintains parity with Candle CUDA implementation
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/cast.cu
+// Status: ✅ Complete parity (FP16, float, double casts)
+// Note: FP8 and BFloat16 omitted (ROCm lacks native __nv_fp8_e4m3, __nv_bfloat16)
 // =============================================================================
 
 template <typename S, typename T>
@@ -707,7 +717,8 @@ CAST_OP(double, double, cast_f64_f64)
 
 // =============================================================================
 // Ternary operations (where/select) - Ported from Candle's ternary.cu
-// Maintains parity with Candle CUDA implementation
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/ternary.cu
+// Status: ✅ Complete parity (where operations for all types)
 // IMPORTANT: Candle uses separate strides for condition, true_val, and false_val!
 // =============================================================================
 
@@ -770,7 +781,8 @@ WHERE_OP(int64_t, uint8_t, where_u8_i64)
 
 // =============================================================================
 // Affine operations (y = mx + b) - Ported from Candle's affine.cu
-// Maintains parity with Candle CUDA implementation
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/affine.cu
+// Status: ✅ Complete parity (affine for all types)
 // IMPORTANT: Candle allows in-place operations (inp can be null, uses out[i] as input)
 // =============================================================================
 
@@ -817,7 +829,10 @@ AFFINE_OP(int64_t, affine_i64, x * mul + add)
 
 // =============================================================================
 // Unary operations (GELU, SILU, exp, log, sqrt, sin, cos, etc.)
-// Ported from Candle's unary.cu - Maintains parity with Candle CUDA implementation
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/unary.cu
+// Status: ✅ Complete parity (basic unary ops: exp, log, sin, cos, sqrt, gelu, silu)
+// Status: ⚠️ MISSING: neg, recip, abs, sqr, tanh, erf, ceil, floor, round, relu, sign, gelu_erf
+//                     normcdf, sigmoid, elu, powf (see TEAM-495 below)
 // =============================================================================
 
 template<typename T>
@@ -881,6 +896,9 @@ UNARY_OP(_Float16, usilu_f16, static_cast<_Float16>(silu_fwd(static_cast<float>(
 
 // =============================================================================
 // TEAM-495: Binary operations with Candle signature
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/binary.cu
+// Status: ✅ Complete parity (add, sub, mul, div for all types)
+// IMPORTANT: Uses separate strides for lhs and rhs (same as Candle)
 // =============================================================================
 
 #define BINARY_OP(TYPENAME, FN_NAME, OP) \
@@ -941,6 +959,9 @@ BINARY_OP(int64_t, bdiv_i64, /)
 
 // =============================================================================
 // TEAM-495: Comparison operations
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/binary.cu (BINARY_OP_OUT macro)
+// Status: ✅ Complete parity (eq, ne, lt, le, gt, ge for all types)
+// Output type: uint8_t (same as Candle)
 // =============================================================================
 
 #define CMP_OP(TYPENAME, FN_NAME, OP) \
@@ -1011,6 +1032,9 @@ CMP_OP(int64_t, ge_i64, >=)
 
 // =============================================================================
 // TEAM-495: Additional unary operations (missing from TEAM-491)
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/unary.cu
+// Status: ⚠️ NEEDS VERIFICATION - Added but need to verify formulas match Candle exactly
+// TODO: Add missing ops: unormcdf, usigmoid, uelu, upowf (see Candle unary.cu lines 210-233)
 // =============================================================================
 
 // Neg, recip, abs, sqr, tanh, erf, ceil, floor, round, relu, sign, gelu_erf
@@ -1040,3 +1064,315 @@ UNARY_OP(double, uround_f64, round(x))
 UNARY_OP(double, urelu_f64, fmax(0.0, x))
 UNARY_OP(double, usign_f64, (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0))
 UNARY_OP(double, ugelu_erf_f64, 0.5 * x * (1.0 + erf(x * 0.7071067812)))
+
+// =============================================================================
+// TEAM-497: Indexing and upsampling operations (CUDA parity for Candle)
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/indexing.cu
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/conv.cu
+// Status: ⚠️ PARTIAL PARITY - Simplified signatures, need to match Candle exactly
+// TODO: Add num_dims, info parameters, strided tensor support, max_value<I>() sentinel handling
+// =============================================================================
+
+// Upsample nearest 1D - Simple nearest-neighbor upsampling
+template<typename T>
+__global__ void upsample_nearest1d_kernel(
+    const T* input,
+    T* output,
+    unsigned int batch,
+    unsigned int channels,
+    unsigned int in_len,
+    unsigned int out_len,
+    unsigned int scale
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int total = batch * channels * out_len;
+    
+    if (idx < total) {
+        unsigned int l_out = idx % out_len;
+        unsigned int c = (idx / out_len) % channels;
+        unsigned int b = idx / (out_len * channels);
+        
+        unsigned int l_in = l_out / scale;
+        
+        unsigned int in_idx = b * (channels * in_len) + c * in_len + l_in;
+        output[idx] = input[in_idx];
+    }
+}
+
+extern "C" __global__ void upsample_nearest1d_f32(
+    const float* input, float* output,
+    unsigned int batch, unsigned int channels,
+    unsigned int in_len, unsigned int out_len, unsigned int scale
+) {
+    upsample_nearest1d_kernel(input, output, batch, channels, in_len, out_len, scale);
+}
+
+extern "C" __global__ void upsample_nearest1d_f16(
+    const _Float16* input, _Float16* output,
+    unsigned int batch, unsigned int channels,
+    unsigned int in_len, unsigned int out_len, unsigned int scale
+) {
+    upsample_nearest1d_kernel(input, output, batch, channels, in_len, out_len, scale);
+}
+
+// Upsample nearest 2D - Simple nearest-neighbor upsampling for images
+template<typename T>
+__global__ void upsample_nearest2d_kernel(
+    const T* input,
+    T* output,
+    unsigned int batch,
+    unsigned int channels,
+    unsigned int in_h,
+    unsigned int in_w,
+    unsigned int out_h,
+    unsigned int out_w,
+    unsigned int scale_h,
+    unsigned int scale_w
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int total = batch * channels * out_h * out_w;
+    
+    if (idx < total) {
+        unsigned int w_out = idx % out_w;
+        unsigned int h_out = (idx / out_w) % out_h;
+        unsigned int c = (idx / (out_w * out_h)) % channels;
+        unsigned int b = idx / (out_w * out_h * channels);
+        
+        unsigned int h_in = h_out / scale_h;
+        unsigned int w_in = w_out / scale_w;
+        
+        unsigned int in_idx = b * (channels * in_h * in_w) + 
+                             c * (in_h * in_w) + 
+                             h_in * in_w + 
+                             w_in;
+        
+        output[idx] = input[in_idx];
+    }
+}
+
+extern "C" __global__ void upsample_nearest2d_f32(
+    const float* input, float* output,
+    unsigned int batch, unsigned int channels,
+    unsigned int in_h, unsigned int in_w,
+    unsigned int out_h, unsigned int out_w,
+    unsigned int scale_h, unsigned int scale_w
+) {
+    upsample_nearest2d_kernel(input, output, batch, channels, in_h, in_w, out_h, out_w, scale_h, scale_w);
+}
+
+extern "C" __global__ void upsample_nearest2d_f16(
+    const _Float16* input, _Float16* output,
+    unsigned int batch, unsigned int channels,
+    unsigned int in_h, unsigned int in_w,
+    unsigned int out_h, unsigned int out_w,
+    unsigned int scale_h, unsigned int scale_w
+) {
+    upsample_nearest2d_kernel(input, output, batch, channels, in_h, in_w, out_h, out_w, scale_h, scale_w);
+}
+
+// Gather operation - Select elements by indices along a dimension
+template<typename T, typename I>
+__global__ void gather_kernel(
+    const T* input,
+    const I* indices,
+    T* output,
+    unsigned int num_elements,
+    unsigned int dim_size,
+    unsigned int inner_size
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (idx < num_elements) {
+        unsigned int outer_idx = idx / inner_size;
+        unsigned int inner_idx = idx % inner_size;
+        unsigned int indices_idx = outer_idx;
+        
+        I index = indices[indices_idx];
+        if (index >= 0 && index < dim_size) {
+            unsigned int input_idx = outer_idx * dim_size * inner_size + index * inner_size + inner_idx;
+            output[idx] = input[input_idx];
+        } else {
+            output[idx] = T(0); // Out of bounds = 0
+        }
+    }
+}
+
+extern "C" __global__ void gather_f32_i64(
+    const float* input, const int64_t* indices, float* output,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    gather_kernel(input, indices, output, num_elements, dim_size, inner_size);
+}
+
+extern "C" __global__ void gather_f32_u32(
+    const float* input, const uint32_t* indices, float* output,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    gather_kernel(input, indices, output, num_elements, dim_size, inner_size);
+}
+
+// Scatter operation - Place elements at indices along a dimension
+template<typename T, typename I>
+__global__ void scatter_kernel(
+    T* output,
+    const I* indices,
+    const T* values,
+    unsigned int num_elements,
+    unsigned int dim_size,
+    unsigned int inner_size
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (idx < num_elements) {
+        unsigned int outer_idx = idx / inner_size;
+        unsigned int inner_idx = idx % inner_size;
+        unsigned int indices_idx = outer_idx;
+        
+        I index = indices[indices_idx];
+        if (index >= 0 && index < dim_size) {
+            unsigned int output_idx = outer_idx * dim_size * inner_size + index * inner_size + inner_idx;
+            output[output_idx] = values[idx];
+        }
+    }
+}
+
+extern "C" __global__ void scatter_f32_i64(
+    float* output, const int64_t* indices, const float* values,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    scatter_kernel(output, indices, values, num_elements, dim_size, inner_size);
+}
+
+extern "C" __global__ void scatter_f32_u32(
+    float* output, const uint32_t* indices, const float* values,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    scatter_kernel(output, indices, values, num_elements, dim_size, inner_size);
+}
+
+// Scatter-add operation - Accumulate elements at indices along a dimension (atomic)
+template<typename T, typename I>
+__global__ void scatter_add_kernel(
+    T* output,
+    const I* indices,
+    const T* values,
+    unsigned int num_elements,
+    unsigned int dim_size,
+    unsigned int inner_size
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (idx < num_elements) {
+        unsigned int outer_idx = idx / inner_size;
+        unsigned int inner_idx = idx % inner_size;
+        unsigned int indices_idx = outer_idx;
+        
+        I index = indices[indices_idx];
+        if (index >= 0 && index < dim_size) {
+            unsigned int output_idx = outer_idx * dim_size * inner_size + index * inner_size + inner_idx;
+            atomicAdd(&output[output_idx], values[idx]);
+        }
+    }
+}
+
+extern "C" __global__ void scatter_add_f32_i64(
+    float* output, const int64_t* indices, const float* values,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    scatter_add_kernel(output, indices, values, num_elements, dim_size, inner_size);
+}
+
+extern "C" __global__ void scatter_add_f32_u32(
+    float* output, const uint32_t* indices, const float* values,
+    unsigned int num_elements, unsigned int dim_size, unsigned int inner_size
+) {
+    scatter_add_kernel(output, indices, values, num_elements, dim_size, inner_size);
+}
+
+// Index select - Select elements along a dimension (like gather but simpler interface)
+template<typename T, typename I>
+__global__ void index_select_kernel(
+    const T* input,
+    const I* indices,
+    T* output,
+    unsigned int num_indices,
+    unsigned int dim_size,
+    unsigned int stride_before,
+    unsigned int stride_after
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int total = stride_before * num_indices * stride_after;
+    
+    if (idx < total) {
+        unsigned int after_idx = idx % stride_after;
+        unsigned int index_idx = (idx / stride_after) % num_indices;
+        unsigned int before_idx = idx / (stride_after * num_indices);
+        
+        I dim_idx = indices[index_idx];
+        if (dim_idx >= 0 && dim_idx < dim_size) {
+            unsigned int input_idx = before_idx * (dim_size * stride_after) + dim_idx * stride_after + after_idx;
+            output[idx] = input[input_idx];
+        } else {
+            output[idx] = T(0);
+        }
+    }
+}
+
+extern "C" __global__ void index_select_f32_i64(
+    const float* input, const int64_t* indices, float* output,
+    unsigned int num_indices, unsigned int dim_size,
+    unsigned int stride_before, unsigned int stride_after
+) {
+    index_select_kernel(input, indices, output, num_indices, dim_size, stride_before, stride_after);
+}
+
+extern "C" __global__ void index_select_f32_u32(
+    const float* input, const uint32_t* indices, float* output,
+    unsigned int num_indices, unsigned int dim_size,
+    unsigned int stride_before, unsigned int stride_after
+) {
+    index_select_kernel(input, indices, output, num_indices, dim_size, stride_before, stride_after);
+}
+
+// Index add - Accumulate values at indices along a dimension
+template<typename T, typename I>
+__global__ void index_add_kernel(
+    T* output,
+    const I* indices,
+    const T* values,
+    unsigned int num_indices,
+    unsigned int dim_size,
+    unsigned int stride_before,
+    unsigned int stride_after
+) {
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int total = stride_before * num_indices * stride_after;
+    
+    if (idx < total) {
+        unsigned int after_idx = idx % stride_after;
+        unsigned int index_idx = (idx / stride_after) % num_indices;
+        unsigned int before_idx = idx / (stride_after * num_indices);
+        
+        I dim_idx = indices[index_idx];
+        if (dim_idx >= 0 && dim_idx < dim_size) {
+            unsigned int output_idx = before_idx * (dim_size * stride_after) + dim_idx * stride_after + after_idx;
+            atomicAdd(&output[output_idx], values[idx]);
+        }
+    }
+}
+
+extern "C" __global__ void index_add_f32_i64(
+    float* output, const int64_t* indices, const float* values,
+    unsigned int num_indices, unsigned int dim_size,
+    unsigned int stride_before, unsigned int stride_after
+) {
+    index_add_kernel(output, indices, values, num_indices, dim_size, stride_before, stride_after);
+}
+
+extern "C" __global__ void index_add_f32_u32(
+    float* output, const uint32_t* indices, const float* values,
+    unsigned int num_indices, unsigned int dim_size,
+    unsigned int stride_before, unsigned int stride_after
+) {
+    index_add_kernel(output, indices, values, num_indices, dim_size, stride_before, stride_after);
+}
