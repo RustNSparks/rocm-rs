@@ -1482,12 +1482,28 @@ where
 // TEAM-490: Cast Operations (Phase 2 Step 2)
 // =============================================================================
 
-/// Generic cast operation wrapper
+/// Generic cast operation wrapper (synchronous)
 fn cast_generic<S, D>(
     input: &DeviceMemory<S>,
     output: &DeviceMemory<D>,
     kernel_name: &str,
     len: usize,
+) -> Result<()>
+where
+    S: Copy + Default + 'static,
+    D: Copy + Default + 'static,
+{
+    cast_generic_async(input, output, kernel_name, len, &Stream::new()?)
+}
+
+/// Generic cast operation wrapper (asynchronous)
+/// TEAM-507: Added async version to avoid implicit synchronization on null stream
+fn cast_generic_async<S, D>(
+    input: &DeviceMemory<S>,
+    output: &DeviceMemory<D>,
+    kernel_name: &str,
+    len: usize,
+    stream: &Stream,
 ) -> Result<()>
 where
     S: Copy + Default + 'static,
@@ -1506,13 +1522,14 @@ where
         &len_u32 as *const u32 as *mut c_void,
     ];
 
-    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
     Ok(())
 }
 
-// Macro to define cast wrapper functions
+// Macro to define cast wrapper functions (sync and async versions)
+// TEAM-507: Updated to generate both sync and async versions
 macro_rules! define_cast_wrapper {
-    ($src_type:ty, $dst_type:ty, $fn_name:ident, $src_name:literal, $dst_name:literal) => {
+    ($src_type:ty, $dst_type:ty, $fn_name:ident, $fn_name_async:ident, $src_name:literal, $dst_name:literal) => {
         pub fn $fn_name(
             input: &DeviceMemory<$src_type>,
             output: &DeviceMemory<$dst_type>,
@@ -1521,56 +1538,66 @@ macro_rules! define_cast_wrapper {
             let kernel_name = concat!("cast_", $src_name, "_", $dst_name);
             cast_generic(input, output, kernel_name, len)
         }
+        
+        pub fn $fn_name_async(
+            input: &DeviceMemory<$src_type>,
+            output: &DeviceMemory<$dst_type>,
+            len: usize,
+            stream: &Stream,
+        ) -> Result<()> {
+            let kernel_name = concat!("cast_", $src_name, "_", $dst_name);
+            cast_generic_async(input, output, kernel_name, len, stream)
+        }
     };
 }
 
 // F32 casts
-define_cast_wrapper!(f32, f64, cast_f32_f64, "f32", "f64");
-define_cast_wrapper!(f32, i32, cast_f32_i32, "f32", "i32");
-define_cast_wrapper!(f32, i64, cast_f32_i64, "f32", "i64");
-define_cast_wrapper!(f32, u8, cast_f32_u8, "f32", "u8");
-define_cast_wrapper!(f32, u32, cast_f32_u32, "f32", "u32");
+define_cast_wrapper!(f32, f64, cast_f32_f64, cast_f32_f64_async, "f32", "f64");
+define_cast_wrapper!(f32, i32, cast_f32_i32, cast_f32_i32_async, "f32", "i32");
+define_cast_wrapper!(f32, i64, cast_f32_i64, cast_f32_i64_async, "f32", "i64");
+define_cast_wrapper!(f32, u8, cast_f32_u8, cast_f32_u8_async, "f32", "u8");
+define_cast_wrapper!(f32, u32, cast_f32_u32, cast_f32_u32_async, "f32", "u32");
 
 // F64 casts
-define_cast_wrapper!(f64, f32, cast_f64_f32, "f64", "f32");
-define_cast_wrapper!(f64, i32, cast_f64_i32, "f64", "i32");
-define_cast_wrapper!(f64, i64, cast_f64_i64, "f64", "i64");
-define_cast_wrapper!(f64, u8, cast_f64_u8, "f64", "u8");
-define_cast_wrapper!(f64, u32, cast_f64_u32, "f64", "u32");
+define_cast_wrapper!(f64, f32, cast_f64_f32, cast_f64_f32_async, "f64", "f32");
+define_cast_wrapper!(f64, i32, cast_f64_i32, cast_f64_i32_async, "f64", "i32");
+define_cast_wrapper!(f64, i64, cast_f64_i64, cast_f64_i64_async, "f64", "i64");
+define_cast_wrapper!(f64, u8, cast_f64_u8, cast_f64_u8_async, "f64", "u8");
+define_cast_wrapper!(f64, u32, cast_f64_u32, cast_f64_u32_async, "f64", "u32");
 
 // I32 casts
-define_cast_wrapper!(i32, f32, cast_i32_f32, "i32", "f32");
-define_cast_wrapper!(i32, f64, cast_i32_f64, "i32", "f64");
-define_cast_wrapper!(i32, i64, cast_i32_i64, "i32", "i64");
-define_cast_wrapper!(i32, u8, cast_i32_u8, "i32", "u8");
-define_cast_wrapper!(i32, u32, cast_i32_u32, "i32", "u32");
+define_cast_wrapper!(i32, f32, cast_i32_f32, cast_i32_f32_async, "i32", "f32");
+define_cast_wrapper!(i32, f64, cast_i32_f64, cast_i32_f64_async, "i32", "f64");
+define_cast_wrapper!(i32, i64, cast_i32_i64, cast_i32_i64_async, "i32", "i64");
+define_cast_wrapper!(i32, u8, cast_i32_u8, cast_i32_u8_async, "i32", "u8");
+define_cast_wrapper!(i32, u32, cast_i32_u32, cast_i32_u32_async, "i32", "u32");
 
 // I64 casts
-define_cast_wrapper!(i64, f32, cast_i64_f32, "i64", "f32");
-define_cast_wrapper!(i64, f64, cast_i64_f64, "i64", "f64");
-define_cast_wrapper!(i64, i32, cast_i64_i32, "i64", "i32");
-define_cast_wrapper!(i64, u8, cast_i64_u8, "i64", "u8");
-define_cast_wrapper!(i64, u32, cast_i64_u32, "i64", "u32");
+define_cast_wrapper!(i64, f32, cast_i64_f32, cast_i64_f32_async, "i64", "f32");
+define_cast_wrapper!(i64, f64, cast_i64_f64, cast_i64_f64_async, "i64", "f64");
+define_cast_wrapper!(i64, i32, cast_i64_i32, cast_i64_i32_async, "i64", "i32");
+define_cast_wrapper!(i64, u8, cast_i64_u8, cast_i64_u8_async, "i64", "u8");
+define_cast_wrapper!(i64, u32, cast_i64_u32, cast_i64_u32_async, "i64", "u32");
 
 // U8 casts
-define_cast_wrapper!(u8, f32, cast_u8_f32, "u8", "f32");
-define_cast_wrapper!(u8, f64, cast_u8_f64, "u8", "f64");
-define_cast_wrapper!(u8, i32, cast_u8_i32, "u8", "i32");
-define_cast_wrapper!(u8, i64, cast_u8_i64, "u8", "i64");
-define_cast_wrapper!(u8, u32, cast_u8_u32, "u8", "u32");
+define_cast_wrapper!(u8, f32, cast_u8_f32, cast_u8_f32_async, "u8", "f32");
+define_cast_wrapper!(u8, f64, cast_u8_f64, cast_u8_f64_async, "u8", "f64");
+define_cast_wrapper!(u8, i32, cast_u8_i32, cast_u8_i32_async, "u8", "i32");
+define_cast_wrapper!(u8, i64, cast_u8_i64, cast_u8_i64_async, "u8", "i64");
+define_cast_wrapper!(u8, u32, cast_u8_u32, cast_u8_u32_async, "u8", "u32");
 
 // U32 casts
-define_cast_wrapper!(u32, f32, cast_u32_f32, "u32", "f32");
-define_cast_wrapper!(u32, f64, cast_u32_f64, "u32", "f64");
-define_cast_wrapper!(u32, i32, cast_u32_i32, "u32", "i32");
-define_cast_wrapper!(u32, i64, cast_u32_i64, "u32", "i64");
-define_cast_wrapper!(u32, u8, cast_u32_u8, "u32", "u8");
+define_cast_wrapper!(u32, f32, cast_u32_f32, cast_u32_f32_async, "u32", "f32");
+define_cast_wrapper!(u32, f64, cast_u32_f64, cast_u32_f64_async, "u32", "f64");
+define_cast_wrapper!(u32, i32, cast_u32_i32, cast_u32_i32_async, "u32", "i32");
+define_cast_wrapper!(u32, i64, cast_u32_i64, cast_u32_i64_async, "u32", "i64");
+define_cast_wrapper!(u32, u8, cast_u32_u8, cast_u32_u8_async, "u32", "u8");
 
 // =============================================================================
 // TEAM-490: Ternary Operations (Phase 2 Step 2)
 // =============================================================================
 
-/// Generic ternary where/select operation
+/// Generic ternary where/select operation (synchronous)
 fn where_generic<C, T>(
     condition: &DeviceMemory<C>,
     true_vals: &DeviceMemory<T>,
@@ -1578,6 +1605,24 @@ fn where_generic<C, T>(
     output: &DeviceMemory<T>,
     kernel_name: &str,
     len: usize,
+) -> Result<()>
+where
+    C: Copy + Default + 'static,
+    T: Copy + Default + 'static,
+{
+    where_generic_async(condition, true_vals, false_vals, output, kernel_name, len, &Stream::new()?)
+}
+
+/// Generic ternary where/select operation (asynchronous)
+/// TEAM-507: Added async version to avoid implicit synchronization on null stream
+fn where_generic_async<C, T>(
+    condition: &DeviceMemory<C>,
+    true_vals: &DeviceMemory<T>,
+    false_vals: &DeviceMemory<T>,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+    stream: &Stream,
 ) -> Result<()>
 where
     C: Copy + Default + 'static,
@@ -1598,13 +1643,14 @@ where
         &len_u32 as *const u32 as *mut c_void,
     ];
 
-    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
     Ok(())
 }
 
-// Macro to define where wrapper functions
+// Macro to define where wrapper functions (sync and async versions)
+// TEAM-507: Updated to generate both sync and async versions
 macro_rules! define_where_wrapper {
-    ($cond_type:ty, $val_type:ty, $fn_name:ident, $cond_name:literal, $val_name:literal) => {
+    ($cond_type:ty, $val_type:ty, $fn_name:ident, $fn_name_async:ident, $cond_name:literal, $val_name:literal) => {
         pub fn $fn_name(
             condition: &DeviceMemory<$cond_type>,
             true_vals: &DeviceMemory<$val_type>,
@@ -1615,39 +1661,51 @@ macro_rules! define_where_wrapper {
             let kernel_name = concat!("where_", $cond_name, "_", $val_name);
             where_generic(condition, true_vals, false_vals, output, kernel_name, len)
         }
+        
+        pub fn $fn_name_async(
+            condition: &DeviceMemory<$cond_type>,
+            true_vals: &DeviceMemory<$val_type>,
+            false_vals: &DeviceMemory<$val_type>,
+            output: &DeviceMemory<$val_type>,
+            len: usize,
+            stream: &Stream,
+        ) -> Result<()> {
+            let kernel_name = concat!("where_", $cond_name, "_", $val_name);
+            where_generic_async(condition, true_vals, false_vals, output, kernel_name, len, stream)
+        }
     };
 }
 
 // U8 condition with various value types
-define_where_wrapper!(u8, f32, where_u8_f32, "u8", "f32");
-define_where_wrapper!(u8, f64, where_u8_f64, "u8", "f64");
-define_where_wrapper!(u8, i32, where_u8_i32, "u8", "i32");
-define_where_wrapper!(u8, i64, where_u8_i64, "u8", "i64");
-define_where_wrapper!(u8, u8, where_u8_u8, "u8", "u8");
-define_where_wrapper!(u8, u32, where_u8_u32, "u8", "u32");
+define_where_wrapper!(u8, f32, where_u8_f32, where_u8_f32_async, "u8", "f32");
+define_where_wrapper!(u8, f64, where_u8_f64, where_u8_f64_async, "u8", "f64");
+define_where_wrapper!(u8, i32, where_u8_i32, where_u8_i32_async, "u8", "i32");
+define_where_wrapper!(u8, i64, where_u8_i64, where_u8_i64_async, "u8", "i64");
+define_where_wrapper!(u8, u8, where_u8_u8, where_u8_u8_async, "u8", "u8");
+define_where_wrapper!(u8, u32, where_u8_u32, where_u8_u32_async, "u8", "u32");
 
 // I32 condition with various value types
-define_where_wrapper!(i32, f32, where_i32_f32, "i32", "f32");
-define_where_wrapper!(i32, f64, where_i32_f64, "i32", "f64");
-define_where_wrapper!(i32, i32, where_i32_i32, "i32", "i32");
-define_where_wrapper!(i32, i64, where_i32_i64, "i32", "i64");
-define_where_wrapper!(i32, u8, where_i32_u8, "i32", "u8");
-define_where_wrapper!(i32, u32, where_i32_u32, "i32", "u32");
+define_where_wrapper!(i32, f32, where_i32_f32, where_i32_f32_async, "i32", "f32");
+define_where_wrapper!(i32, f64, where_i32_f64, where_i32_f64_async, "i32", "f64");
+define_where_wrapper!(i32, i32, where_i32_i32, where_i32_i32_async, "i32", "i32");
+define_where_wrapper!(i32, i64, where_i32_i64, where_i32_i64_async, "i32", "i64");
+define_where_wrapper!(i32, u8, where_i32_u8, where_i32_u8_async, "i32", "u8");
+define_where_wrapper!(i32, u32, where_i32_u32, where_i32_u32_async, "i32", "u32");
 
 // I64 condition with various value types
-define_where_wrapper!(i64, f32, where_i64_f32, "i64", "f32");
-define_where_wrapper!(i64, f64, where_i64_f64, "i64", "f64");
-define_where_wrapper!(i64, i32, where_i64_i32, "i64", "i32");
-define_where_wrapper!(i64, i64, where_i64_i64, "i64", "i64");
-define_where_wrapper!(i64, u8, where_i64_u8, "i64", "u8");
-define_where_wrapper!(i64, u32, where_i64_u32, "i64", "u32");
+define_where_wrapper!(i64, f32, where_i64_f32, where_i64_f32_async, "i64", "f32");
+define_where_wrapper!(i64, f64, where_i64_f64, where_i64_f64_async, "i64", "f64");
+define_where_wrapper!(i64, i32, where_i64_i32, where_i64_i32_async, "i64", "i32");
+define_where_wrapper!(i64, i64, where_i64_i64, where_i64_i64_async, "i64", "i64");
+define_where_wrapper!(i64, u8, where_i64_u8, where_i64_u8_async, "i64", "u8");
+define_where_wrapper!(i64, u32, where_i64_u32, where_i64_u32_async, "i64", "u32");
 
 // =============================================================================
 // TEAM-490: Unary Operations (Phase 2 Step 2)
 // TEAM-505: CUDA parity verified (candle-kernels/src/unary.cu:6-234)
 // =============================================================================
 
-/// Generic unary operation wrapper
+/// Generic unary operation wrapper (synchronous)
 /// Created by: TEAM-490
 /// TEAM-505: CUDA parity (candle-kernels/src/unary.cu:6-29 UNARY_OP macro)
 fn unary_generic<T>(
@@ -1655,6 +1713,21 @@ fn unary_generic<T>(
     output: &DeviceMemory<T>,
     kernel_name: &str,
     len: usize,
+) -> Result<()>
+where
+    T: Copy + Default + 'static,
+{
+    unary_generic_async(input, output, kernel_name, len, &Stream::new()?)
+}
+
+/// Generic unary operation wrapper (asynchronous)
+/// TEAM-507: Added async version to avoid implicit synchronization on null stream
+fn unary_generic_async<T>(
+    input: &DeviceMemory<T>,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+    stream: &Stream,
 ) -> Result<()>
 where
     T: Copy + Default + 'static,
@@ -1672,11 +1745,11 @@ where
         &len_u32 as *const u32 as *mut c_void,
     ];
 
-    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
     Ok(())
 }
 
-/// Generic unary operation with parameter
+/// Generic unary operation with parameter (synchronous)
 /// Created by: TEAM-490
 /// TEAM-505: CUDA parity (candle-kernels/src/unary.cu:68-92 UNARY_OP1 macro)
 fn unary_param_generic<T>(
@@ -1685,6 +1758,22 @@ fn unary_param_generic<T>(
     output: &DeviceMemory<T>,
     kernel_name: &str,
     len: usize,
+) -> Result<()>
+where
+    T: Copy + Default + 'static,
+{
+    unary_param_generic_async(input, param, output, kernel_name, len, &Stream::new()?)
+}
+
+/// Generic unary operation with parameter (asynchronous)
+/// TEAM-507: Added async version to avoid implicit synchronization on null stream
+fn unary_param_generic_async<T>(
+    input: &DeviceMemory<T>,
+    param: T,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+    stream: &Stream,
 ) -> Result<()>
 where
     T: Copy + Default + 'static,
@@ -1703,7 +1792,7 @@ where
         &len_u32 as *const u32 as *mut c_void,
     ];
 
-    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    function.launch(grid_dim, block_dim, 0, Some(stream), &mut kernel_args)?;
     Ok(())
 }
 
