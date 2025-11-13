@@ -624,3 +624,257 @@ DEFINE_RANGE_FILL(int, int)
 DEFINE_RANGE_FILL(unsigned int, uint)
 DEFINE_RANGE_FILL(long long, long)
 DEFINE_RANGE_FILL(unsigned long long, ulong)
+
+// =============================================================================
+// TEAM-491: Primitive operations ported from Candle CUDA kernels
+// Original source: https://github.com/huggingface/candle
+// Ported from: candle-kernels/src/{cast.cu, ternary.cu, affine.cu, unary.cu}
+// These operations maintain parity with Candle's CUDA implementation
+// =============================================================================
+
+#include <hip/hip_fp16.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+// Utility helpers from Candle's cuda_utils.cuh
+__device__ inline bool is_contiguous(unsigned int num_dims, const unsigned int* dims, const unsigned int* strides) {
+    if (num_dims == 0) return true;
+    unsigned int expected_stride = 1;
+    for (int i = num_dims - 1; i >= 0; i--) {
+        if (strides[i] != expected_stride) return false;
+        expected_stride *= dims[i];
+    }
+    return true;
+}
+
+// Strided index helper
+__device__ inline unsigned int get_strided_index(unsigned int idx, unsigned int num_dims, 
+                                                  const unsigned int* dims, const unsigned int* strides) {
+    unsigned int strided_i = 0;
+    for (unsigned int d = 0; d < num_dims; d++) {
+        unsigned int dim_idx = idx % dims[num_dims - 1 - d];
+        strided_i += dim_idx * strides[num_dims - 1 - d];
+        idx /= dims[num_dims - 1 - d];
+    }
+    return strided_i;
+}
+
+// NormCDF helper
+__device__ inline float normcdf(float x) {
+    return 0.5f * (1.0f + erf(x * 0.707106781f)); // M_SQRT1_2
+}
+
+// =============================================================================
+// Cast operations - Ported from Candle's cast.cu
+// Maintains parity with Candle CUDA implementation
+// =============================================================================
+
+template <typename S, typename T>
+__device__ void cast_(const size_t numel, const size_t num_dims, const size_t *info,
+                      const S *inp, T *out) {
+    const size_t *dims = info;
+    const size_t *strides = info + num_dims;
+    if (info == nullptr || is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides)) {
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) {
+            out[i] = static_cast<T>(inp[i]);
+        }
+    } else {
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) {
+            unsigned strided_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides);
+            out[i] = static_cast<T>(inp[strided_i]);
+        }
+    }
+}
+
+#define CAST_OP(SRC_TYPENAME, DST_TYPENAME, FN_NAME) \
+extern "C" __global__ void FN_NAME(const size_t numel, const size_t num_dims, const size_t *info, \
+                                    const SRC_TYPENAME *inp, DST_TYPENAME *out) { \
+    cast_<SRC_TYPENAME, DST_TYPENAME>(numel, num_dims, info, inp, out); \
+}
+
+// FP16 casts
+CAST_OP(_Float16, _Float16, cast_f16_f16)
+CAST_OP(_Float16, float, cast_f16_f32)
+CAST_OP(_Float16, double, cast_f16_f64)
+CAST_OP(float, _Float16, cast_f32_f16)
+CAST_OP(double, _Float16, cast_f64_f16)
+
+// Standard casts
+CAST_OP(float, float, cast_f32_f32)
+CAST_OP(float, double, cast_f32_f64)
+CAST_OP(double, float, cast_f64_f32)
+CAST_OP(double, double, cast_f64_f64)
+
+// =============================================================================
+// Ternary operations (where/select) - Ported from Candle's ternary.cu
+// Maintains parity with Candle CUDA implementation
+// IMPORTANT: Candle uses separate strides for condition, true_val, and false_val!
+// =============================================================================
+
+#define WHERE_OP(TYPENAME, ID_TYPENAME, FN_NAME) \
+extern "C" __global__ void FN_NAME( \
+    const size_t numel, \
+    const size_t num_dims, \
+    const size_t *info, \
+    const ID_TYPENAME *ids, \
+    const TYPENAME *t, \
+    const TYPENAME *f, \
+    TYPENAME *out \
+) { \
+    const size_t *dims = info; \
+    const size_t *strides = info + num_dims; \
+    const size_t *strides_t = info + 2*num_dims; \
+    const size_t *strides_f = info + 3*num_dims; \
+    if (is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides) \
+        && is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides_f) \
+        && is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides_t)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            out[i] = ids[i] ? t[i] : f[i]; \
+        } \
+    } \
+    else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned strided_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides); \
+            unsigned strided_i_t = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides_t); \
+            unsigned strided_i_f = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides_f); \
+            out[i] = ids[strided_i] ? t[strided_i_t] : f[strided_i_f]; \
+        } \
+    } \
+}
+
+// FP16 where operations
+WHERE_OP(_Float16, int64_t, where_i64_f16)
+WHERE_OP(_Float16, uint32_t, where_u32_f16)
+WHERE_OP(_Float16, uint8_t, where_u8_f16)
+
+// Float where operations
+WHERE_OP(float, int64_t, where_i64_f32)
+WHERE_OP(float, uint32_t, where_u32_f32)
+WHERE_OP(float, uint8_t, where_u8_f32)
+
+// Double where operations
+WHERE_OP(double, int64_t, where_i64_f64)
+WHERE_OP(double, uint32_t, where_u32_f64)
+WHERE_OP(double, uint8_t, where_u8_f64)
+
+// Integer where operations
+WHERE_OP(uint8_t, int64_t, where_i64_u8)
+WHERE_OP(uint8_t, uint32_t, where_u32_u8)
+WHERE_OP(uint8_t, uint8_t, where_u8_u8)
+WHERE_OP(uint32_t, int64_t, where_i64_u32)
+WHERE_OP(uint32_t, uint32_t, where_u32_u32)
+WHERE_OP(uint32_t, uint8_t, where_u8_u32)
+WHERE_OP(int64_t, int64_t, where_i64_i64)
+WHERE_OP(int64_t, uint32_t, where_u32_i64)
+WHERE_OP(int64_t, uint8_t, where_u8_i64)
+
+// =============================================================================
+// Affine operations (y = mx + b) - Ported from Candle's affine.cu
+// Maintains parity with Candle CUDA implementation
+// IMPORTANT: Candle allows in-place operations (inp can be null, uses out[i] as input)
+// =============================================================================
+
+#define AFFINE_OP(TYPENAME, FN_NAME, AFFINE) \
+extern "C" __global__ void FN_NAME( \
+    const size_t numel, \
+    const size_t num_dims, \
+    const size_t *info, \
+    const TYPENAME *inp, \
+    TYPENAME *out, \
+    const TYPENAME mul, \
+    const TYPENAME add \
+) { \
+    const size_t *dims = info; \
+    const size_t *strides = info + num_dims; \
+    if (info == nullptr || is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            TYPENAME x = inp ? inp[i] : out[i]; \
+            out[i] = AFFINE; \
+        } \
+    } \
+    else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned strided_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides); \
+            TYPENAME x = inp ? inp[strided_i] : out[i]; \
+            out[i] = AFFINE; \
+        } \
+    } \
+}
+
+// FP16 affine
+AFFINE_OP(_Float16, affine_f16, x * mul + add)
+
+// Float/Double affine
+AFFINE_OP(float, affine_f32, x * mul + add)
+AFFINE_OP(double, affine_f64, x * mul + add)
+
+// Integer affine
+AFFINE_OP(uint8_t, affine_u8, x * mul + add)
+AFFINE_OP(uint32_t, affine_u32, x * mul + add)
+AFFINE_OP(int16_t, affine_i16, x * mul + add)
+AFFINE_OP(int32_t, affine_i32, x * mul + add)
+AFFINE_OP(int64_t, affine_i64, x * mul + add)
+
+// =============================================================================
+// Unary operations (GELU, SILU, exp, log, sqrt, sin, cos, etc.)
+// Ported from Candle's unary.cu - Maintains parity with Candle CUDA implementation
+// =============================================================================
+
+template<typename T>
+__device__ __forceinline__ T gelu_fwd(T x) {
+    T x_sq = x * x;
+    T x_cube = x_sq * x;
+    T alpha = x + static_cast<T>(0.044715) * x_cube;
+    return static_cast<T>(0.5) * x * (static_cast<T>(1.0) + tanh(static_cast<T>(M_2_SQRTPI * M_SQRT1_2) * alpha));
+}
+
+template<typename T>
+__device__ __forceinline__ T silu_fwd(T x) {
+    return x / (static_cast<T>(1) + exp(-x));
+}
+
+#define UNARY_OP(TYPENAME, FN_NAME, FUNC) \
+extern "C" __global__ void FN_NAME(const size_t numel, const size_t num_dims, const size_t *info, \
+                                    const TYPENAME *inp, TYPENAME *out) { \
+    const size_t *dims = info; \
+    const size_t *strides = info + num_dims; \
+    if (info == nullptr || is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            TYPENAME x = inp ? inp[i] : out[i]; \
+            out[i] = FUNC; \
+        } \
+    } else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned strided_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides); \
+            TYPENAME x = inp ? inp[strided_i] : out[i]; \
+            out[i] = FUNC; \
+        } \
+    } \
+}
+
+// Float unary ops
+UNARY_OP(float, uexp_f32, expf(x))
+UNARY_OP(float, ulog_f32, logf(x))
+UNARY_OP(float, usin_f32, sinf(x))
+UNARY_OP(float, ucos_f32, cosf(x))
+UNARY_OP(float, usqrt_f32, sqrtf(x))
+UNARY_OP(float, ugelu_f32, gelu_fwd(x))
+UNARY_OP(float, usilu_f32, silu_fwd(x))
+
+// Double unary ops
+UNARY_OP(double, uexp_f64, exp(x))
+UNARY_OP(double, ulog_f64, log(x))
+UNARY_OP(double, usin_f64, sin(x))
+UNARY_OP(double, ucos_f64, cos(x))
+UNARY_OP(double, usqrt_f64, sqrt(x))
+UNARY_OP(double, ugelu_f64, gelu_fwd(x))
+UNARY_OP(double, usilu_f64, silu_fwd(x))
+
+// FP16 unary ops
+UNARY_OP(_Float16, uexp_f16, static_cast<_Float16>(expf(static_cast<float>(x))))
+UNARY_OP(_Float16, ulog_f16, static_cast<_Float16>(logf(static_cast<float>(x))))
+UNARY_OP(_Float16, usin_f16, static_cast<_Float16>(sinf(static_cast<float>(x))))
+UNARY_OP(_Float16, ucos_f16, static_cast<_Float16>(cosf(static_cast<float>(x))))
+UNARY_OP(_Float16, usqrt_f16, static_cast<_Float16>(sqrtf(static_cast<float>(x))))
+UNARY_OP(_Float16, ugelu_f16, static_cast<_Float16>(gelu_fwd(static_cast<float>(x))))
+UNARY_OP(_Float16, usilu_f16, static_cast<_Float16>(silu_fwd(static_cast<float>(x))))
