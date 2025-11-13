@@ -1570,8 +1570,19 @@ extern "C" __global__ void layernorm_f32(
             s_sum[warp_id] = mean_var;
         }
         __syncthreads();
-        mean_var = s_sum[lane_id];
-        mean_var = warp_reduce_sum_f2(mean_var);
+        // Only first warp performs final reduction
+        if (warp_id == 0) {
+            float2 final_sum = make_float2(0.0f, 0.0f);
+            if (lane_id < (block_size / WARP_SIZE)) {
+                final_sum = s_sum[lane_id];
+            }
+            final_sum = warp_reduce_sum_f2(final_sum);
+            if (lane_id == 0) {
+                s_sum[0] = final_sum;
+            }
+        }
+        __syncthreads();
+        mean_var = s_sum[0];
     }
 
     const float mean = mean_var.x / ncols;
@@ -1640,8 +1651,19 @@ extern "C" __global__ void rmsnorm_f32(
             s_sum[warp_id] = tmp;
         }
         __syncthreads();
-        tmp = s_sum[lane_id];
-        tmp = warp_reduce_sum_f(tmp);
+        // Only first warp performs final reduction
+        if (warp_id == 0) {
+            float final_sum = 0.0f;
+            if (lane_id < (block_size / WARP_SIZE)) {
+                final_sum = s_sum[lane_id];
+            }
+            final_sum = warp_reduce_sum_f(final_sum);
+            if (lane_id == 0) {
+                s_sum[0] = final_sum;
+            }
+        }
+        __syncthreads();
+        tmp = s_sum[0];
     }
 
     const float mean = tmp / ncols;
