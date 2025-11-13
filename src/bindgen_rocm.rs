@@ -80,7 +80,7 @@ fn default_kernels() -> Option<Vec<PathBuf>> {
 
 fn default_include() -> Option<Vec<PathBuf>> {
     Some(
-        glob::glob("src/**/*.cuh")
+        glob::glob("src/**/*.h")
             .ok()?
             .map(|p| p.expect("Invalid path"))
             .collect(),
