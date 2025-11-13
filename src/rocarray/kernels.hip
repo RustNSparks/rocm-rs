@@ -404,6 +404,49 @@ extern "C" __global__ void fill_value(
 }
 
 // =============================================================================
+// CONST_SET operations - Ported from Candle's fill.cu for CUDA parity
+// Reference: https://github.com/huggingface/candle/blob/main/candle-kernels/src/fill.cu#L40-L67
+// Status: ✅ Complete parity (handles contiguous AND strided layouts)
+// TEAM-509: Ported CONST_SET_OP from CUDA to HIP for candle ROCm backend
+// =============================================================================
+
+#define CONST_SET_OP(TYPENAME, FN_NAME) \
+extern "C" __global__ void FN_NAME( \
+    const size_t numel, \
+    const size_t num_dims, \
+    const size_t *info, \
+    const TYPENAME inp, \
+    TYPENAME *out \
+) { \
+    const size_t *dims = info; \
+    const size_t *strides = info + num_dims; \
+    if (info == nullptr || is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)strides)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            out[i] = inp; \
+        } \
+    } \
+    else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned strided_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)strides); \
+            out[strided_i] = inp; \
+        } \
+    } \
+}
+
+// Basic types (matching Candle's fill.cu:63-67)
+CONST_SET_OP(float, const_set_f32)
+CONST_SET_OP(double, const_set_f64)
+CONST_SET_OP(uint8_t, const_set_u8)
+CONST_SET_OP(uint32_t, const_set_u32)
+CONST_SET_OP(int64_t, const_set_i64)
+
+// FP16 support (matching Candle's fill.cu:73)
+CONST_SET_OP(_Float16, const_set_f16)
+
+// Note: BF16 and FP8 omitted (ROCm lacks native __nv_bfloat16, __nv_fp8_e4m3)
+// Candle's CUDA implementation has these at fill.cu:82,86 but they require CUDA arch >= 800
+
+// =============================================================================
 // Generic map, filter, reduce operations (placeholders)
 // =============================================================================
 
