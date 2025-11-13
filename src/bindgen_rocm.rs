@@ -71,7 +71,7 @@ pub struct Bindings {
 
 fn default_kernels() -> Option<Vec<PathBuf>> {
     Some(
-        glob::glob("src/**/*.cu")
+        glob::glob("src/**/*.hip")
             .ok()?
             .map(|p| p.expect("Invalid path"))
             .collect(),
