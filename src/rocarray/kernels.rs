@@ -2090,11 +2090,13 @@ pub fn ia_i64_f32(
 }
 
 // ============================================================================
-// NORMALIZATION OPERATIONS - TODO: Implement HIP kernels
+// NORMALIZATION OPERATIONS
+// Created by: TEAM-503 | TEAM-505: CUDA parity verified
+// Reference: candle-kernels/src/reduce.cu
 // ============================================================================
 
-/// Layer Normalization - TEAM-503: Implemented
-/// Reference: candle-kernels/src/reduce.cu (layernorm kernel, lines 70-131)
+/// Layer Normalization
+/// Created by: TEAM-503 | TEAM-505: CUDA parity (candle-kernels/src/reduce.cu:70-131)
 /// 
 /// LayerNorm computes: y = (x - mean) / sqrt(variance + eps) * gamma + beta
 /// where mean and variance are computed over the last dimension.
@@ -2145,8 +2147,8 @@ pub fn layer_norm_f32(
     Ok(())
 }
 
-/// RMS Normalization - TEAM-503: Implemented
-/// Reference: candle-kernels/src/reduce.cu (rmsnorm kernel, lines 133-175)
+/// RMS Normalization
+/// Created by: TEAM-503 | TEAM-505: CUDA parity (candle-kernels/src/reduce.cu:133-175)
 /// 
 /// RmsNorm computes: y = x / sqrt(mean(x^2) + eps) * alpha
 /// 
@@ -2194,11 +2196,13 @@ pub fn rms_norm_f32(
 }
 
 // ============================================================================
-// ROTARY POSITION EMBEDDINGS (RoPE) - TODO: Implement HIP kernels
+// ROTARY POSITION EMBEDDINGS (RoPE)
+// Created by: TEAM-503 | TEAM-505: CUDA parity verified
+// Reference: candle-kernels/src/reduce.cu
 // ============================================================================
 
-/// Rotary Position Embeddings - Interleaved - TEAM-503: Implemented
-/// Reference: candle-kernels/src/reduce.cu (rope_i kernel, lines 221-236)
+/// Rotary Position Embeddings - Interleaved
+/// Created by: TEAM-503 | TEAM-505: CUDA parity (candle-kernels/src/reduce.cu:221-236)
 /// 
 /// Applies rotary embeddings with interleaved layout.
 /// Each pair of elements is rotated: [x0, x1] -> [x0*cos - x1*sin, x0*sin + x1*cos]
@@ -2246,8 +2250,8 @@ pub fn rope_i_f32(
     Ok(())
 }
 
-/// Rotary Position Embeddings - Standard - TEAM-503: Implemented
-/// Reference: candle-kernels/src/reduce.cu (rope kernel, lines 238-259)
+/// Rotary Position Embeddings - Standard
+/// Created by: TEAM-503 | TEAM-505: CUDA parity (candle-kernels/src/reduce.cu:238-259)
 /// 
 /// Applies rotary embeddings with standard layout.
 /// Rotates pairs separated by d/2: [x[i], x[i+d/2]] -> [x[i]*cos - x[i+d/2]*sin, x[i]*sin + x[i+d/2]*cos]
@@ -2297,8 +2301,8 @@ pub fn rope_f32(
     Ok(())
 }
 
-/// Rotary Position Embeddings - Threaded - TEAM-503: Implemented
-/// Reference: candle-kernels/src/reduce.cu (rope_thd kernel, lines 261-291)
+/// Rotary Position Embeddings - Threaded
+/// Created by: TEAM-503 | TEAM-505: CUDA parity (candle-kernels/src/reduce.cu:261-291)
 /// 
 /// Applies rotary embeddings with threaded layout (batch, time, heads, dims).
 /// Optimized for transformer attention patterns with explicit time dimension.
