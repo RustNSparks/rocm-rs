@@ -878,3 +878,165 @@ UNARY_OP(_Float16, ucos_f16, static_cast<_Float16>(cosf(static_cast<float>(x))))
 UNARY_OP(_Float16, usqrt_f16, static_cast<_Float16>(sqrtf(static_cast<float>(x))))
 UNARY_OP(_Float16, ugelu_f16, static_cast<_Float16>(gelu_fwd(static_cast<float>(x))))
 UNARY_OP(_Float16, usilu_f16, static_cast<_Float16>(silu_fwd(static_cast<float>(x))))
+
+// =============================================================================
+// TEAM-495: Binary operations with Candle signature
+// =============================================================================
+
+#define BINARY_OP(TYPENAME, FN_NAME, OP) \
+extern "C" __global__ void FN_NAME( \
+    const size_t numel, \
+    const size_t num_dims, \
+    const size_t *info, \
+    const TYPENAME *lhs, \
+    const TYPENAME *rhs, \
+    TYPENAME *out \
+) { \
+    const size_t *dims = info; \
+    const size_t *lhs_strides = info + num_dims; \
+    const size_t *rhs_strides = info + 2*num_dims; \
+    if (is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)lhs_strides) \
+        && is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)rhs_strides)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            out[i] = lhs[i] OP rhs[i]; \
+        } \
+    } else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned lhs_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)lhs_strides); \
+            unsigned rhs_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)rhs_strides); \
+            out[i] = lhs[lhs_i] OP rhs[rhs_i]; \
+        } \
+    } \
+}
+
+// Float binary ops
+BINARY_OP(float, badd_f32, +)
+BINARY_OP(float, bsub_f32, -)
+BINARY_OP(float, bmul_f32, *)
+BINARY_OP(float, bdiv_f32, /)
+
+// Double binary ops
+BINARY_OP(double, badd_f64, +)
+BINARY_OP(double, bsub_f64, -)
+BINARY_OP(double, bmul_f64, *)
+BINARY_OP(double, bdiv_f64, /)
+
+// U8 binary ops
+BINARY_OP(uint8_t, badd_u8, +)
+BINARY_OP(uint8_t, bsub_u8, -)
+BINARY_OP(uint8_t, bmul_u8, *)
+BINARY_OP(uint8_t, bdiv_u8, /)
+
+// U32 binary ops
+BINARY_OP(uint32_t, badd_u32, +)
+BINARY_OP(uint32_t, bsub_u32, -)
+BINARY_OP(uint32_t, bmul_u32, *)
+BINARY_OP(uint32_t, bdiv_u32, /)
+
+// I64 binary ops
+BINARY_OP(int64_t, badd_i64, +)
+BINARY_OP(int64_t, bsub_i64, -)
+BINARY_OP(int64_t, bmul_i64, *)
+BINARY_OP(int64_t, bdiv_i64, /)
+
+// =============================================================================
+// TEAM-495: Comparison operations
+// =============================================================================
+
+#define CMP_OP(TYPENAME, FN_NAME, OP) \
+extern "C" __global__ void FN_NAME( \
+    const size_t numel, \
+    const size_t num_dims, \
+    const size_t *info, \
+    const TYPENAME *lhs, \
+    const TYPENAME *rhs, \
+    uint8_t *out \
+) { \
+    const size_t *dims = info; \
+    const size_t *lhs_strides = info + num_dims; \
+    const size_t *rhs_strides = info + 2*num_dims; \
+    if (is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)lhs_strides) \
+        && is_contiguous(num_dims, (const unsigned int*)dims, (const unsigned int*)rhs_strides)) { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            out[i] = (lhs[i] OP rhs[i]) ? 1 : 0; \
+        } \
+    } else { \
+        for (unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < numel; i += blockDim.x * gridDim.x) { \
+            unsigned lhs_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)lhs_strides); \
+            unsigned rhs_i = get_strided_index(i, num_dims, (const unsigned int*)dims, (const unsigned int*)rhs_strides); \
+            out[i] = (lhs[lhs_i] OP rhs[rhs_i]) ? 1 : 0; \
+        } \
+    } \
+}
+
+// Float comparison ops
+CMP_OP(float, eq_f32, ==)
+CMP_OP(float, ne_f32, !=)
+CMP_OP(float, lt_f32, <)
+CMP_OP(float, le_f32, <=)
+CMP_OP(float, gt_f32, >)
+CMP_OP(float, ge_f32, >=)
+
+// Double comparison ops
+CMP_OP(double, eq_f64, ==)
+CMP_OP(double, ne_f64, !=)
+CMP_OP(double, lt_f64, <)
+CMP_OP(double, le_f64, <=)
+CMP_OP(double, gt_f64, >)
+CMP_OP(double, ge_f64, >=)
+
+// U8 comparison ops
+CMP_OP(uint8_t, eq_u8, ==)
+CMP_OP(uint8_t, ne_u8, !=)
+CMP_OP(uint8_t, lt_u8, <)
+CMP_OP(uint8_t, le_u8, <=)
+CMP_OP(uint8_t, gt_u8, >)
+CMP_OP(uint8_t, ge_u8, >=)
+
+// U32 comparison ops
+CMP_OP(uint32_t, eq_u32, ==)
+CMP_OP(uint32_t, ne_u32, !=)
+CMP_OP(uint32_t, lt_u32, <)
+CMP_OP(uint32_t, le_u32, <=)
+CMP_OP(uint32_t, gt_u32, >)
+CMP_OP(uint32_t, ge_u32, >=)
+
+// I64 comparison ops
+CMP_OP(int64_t, eq_i64, ==)
+CMP_OP(int64_t, ne_i64, !=)
+CMP_OP(int64_t, lt_i64, <)
+CMP_OP(int64_t, le_i64, <=)
+CMP_OP(int64_t, gt_i64, >)
+CMP_OP(int64_t, ge_i64, >=)
+
+// =============================================================================
+// TEAM-495: Additional unary operations (missing from TEAM-491)
+// =============================================================================
+
+// Neg, recip, abs, sqr, tanh, erf, ceil, floor, round, relu, sign, gelu_erf
+UNARY_OP(float, uneg_f32, -x)
+UNARY_OP(float, urecip_f32, 1.0f / x)
+UNARY_OP(float, uabs_f32, fabsf(x))
+UNARY_OP(float, usqr_f32, x * x)
+UNARY_OP(float, utanh_f32, tanhf(x))
+UNARY_OP(float, uerf_f32, erff(x))
+UNARY_OP(float, uceil_f32, ceilf(x))
+UNARY_OP(float, ufloor_f32, floorf(x))
+UNARY_OP(float, uround_f32, roundf(x))
+UNARY_OP(float, urelu_f32, fmaxf(0.0f, x))
+UNARY_OP(float, usign_f32, (x > 0.0f) ? 1.0f : ((x < 0.0f) ? -1.0f : 0.0f))
+UNARY_OP(float, ugelu_erf_f32, 0.5f * x * (1.0f + erff(x * 0.7071067812f)))
+
+// Same for double
+UNARY_OP(double, uneg_f64, -x)
+UNARY_OP(double, urecip_f64, 1.0 / x)
+UNARY_OP(double, uabs_f64, fabs(x))
+UNARY_OP(double, usqr_f64, x * x)
+UNARY_OP(double, utanh_f64, tanh(x))
+UNARY_OP(double, uerf_f64, erf(x))
+UNARY_OP(double, uceil_f64, ceil(x))
+UNARY_OP(double, ufloor_f64, floor(x))
+UNARY_OP(double, uround_f64, round(x))
+UNARY_OP(double, urelu_f64, fmax(0.0, x))
+UNARY_OP(double, usign_f64, (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0))
+UNARY_OP(double, ugelu_erf_f64, 0.5 * x * (1.0 + erf(x * 0.7071067812)))
