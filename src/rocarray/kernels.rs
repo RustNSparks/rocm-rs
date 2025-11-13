@@ -1852,7 +1852,9 @@ pub fn upsample_nearest2d_f32(
     // Calculate total elements for grid size
     // info[0] = batch, info[1] = channels
     let dst_el = w_out * h_out; // Will be multiplied by batch*channels in kernel
-    let (grid, block) = calculate_grid_1d(dst_el as u32);
+    let block_size = 256;
+    let grid = calculate_grid_1d(dst_el as u32, block_size);
+    let block = Dim3::new_1d(block_size);
     
     func.launch(
         grid,
