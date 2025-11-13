@@ -1815,6 +1815,9 @@ define_unary_wrapper!(copy, u32, unary_copy_u32, "u32");
 // =============================================================================
 // TEAM-497: Indexing and upsampling operations (CUDA parity for Candle)
 // Kernel implementations: kernels.hip:1044-1351
+// NOTE: Binary ops (badd, bsub, bmul, bdiv) and comparison ops (eq, ne, lt, le, gt, ge)
+//       are ALREADY wired up in Candle's ROCm backend (candle-core/src/rocm_backend/ops.rs)
+//       via kernels.hip lines 904-1032. No additional wrappers needed here.
 // =============================================================================
 
 /// Upsample nearest 2D (CUDA: candle-kernels/src/conv.cu)
@@ -1857,20 +1860,23 @@ pub fn upsample_nearest2d_f32(
     )
 }
 
-/// Gather (CUDA: candle-kernels/src/indexing.cu)
-pub fn gather_f32_i64(
-    input: &DeviceMemory<f32>,
-    indices: &DeviceMemory<i64>,
-    output: &mut DeviceMemory<f32>,
-    num_elements: u32,
-    dim_size: u32,
-    inner_size: u32,
+/// Gather (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
+/// Kernel: gather_i64_f32 (GATHER_OP macro)
+pub fn gather_i64_f32(
+    numel: usize,
+    ids: &DeviceMemory<i64>,
+    inp: &DeviceMemory<f32>,
+    out: &mut DeviceMemory<f32>,
+    left_size: usize,
+    src_dim_size: usize,
+    ids_dim_size: usize,
+    right_size: usize,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
-    let func = module.get_function("gather_f32_i64")?;
+    let func = module.get_function("gather_i64_f32")?;
     
-    let (grid, block) = calculate_grid_1d(num_elements);
+    let (grid, block) = calculate_grid_1d(numel as u32);
     
     func.launch(
         grid,
@@ -1878,30 +1884,35 @@ pub fn gather_f32_i64(
         0,
         stream,
         &[
-            &input.as_ptr() as *const _ as *mut c_void,
-            &indices.as_ptr() as *const _ as *mut c_void,
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &num_elements as *const _ as *mut c_void,
-            &dim_size as *const _ as *mut c_void,
-            &inner_size as *const _ as *mut c_void,
+            &(numel as u64) as *const _ as *mut c_void,
+            &ids.as_ptr() as *const _ as *mut c_void,
+            &inp.as_ptr() as *const _ as *mut c_void,
+            &out.as_mut_ptr() as *const _ as *mut c_void,
+            &(left_size as u64) as *const _ as *mut c_void,
+            &(src_dim_size as u64) as *const _ as *mut c_void,
+            &(ids_dim_size as u64) as *const _ as *mut c_void,
+            &(right_size as u64) as *const _ as *mut c_void,
         ],
     )
 }
 
-/// Scatter (CUDA: candle-kernels/src/indexing.cu)
-pub fn scatter_f32_i64(
-    output: &mut DeviceMemory<f32>,
-    indices: &DeviceMemory<i64>,
-    values: &DeviceMemory<f32>,
-    num_elements: u32,
-    dim_size: u32,
-    inner_size: u32,
+/// Scatter (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
+/// Kernel: s_i64_f32 (S_OP macro)
+pub fn s_i64_f32(
+    ids: &DeviceMemory<i64>,
+    inp: &DeviceMemory<f32>,
+    out: &mut DeviceMemory<f32>,
+    left_size: usize,
+    src_dim_size: usize,
+    dst_dim_size: usize,
+    right_size: usize,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
-    let func = module.get_function("scatter_f32_i64")?;
+    let func = module.get_function("s_i64_f32")?;
     
-    let (grid, block) = calculate_grid_1d(num_elements);
+    let numel = left_size * right_size;
+    let (grid, block) = calculate_grid_1d(numel as u32);
     
     func.launch(
         grid,
@@ -1909,30 +1920,34 @@ pub fn scatter_f32_i64(
         0,
         stream,
         &[
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &indices.as_ptr() as *const _ as *mut c_void,
-            &values.as_ptr() as *const _ as *mut c_void,
-            &num_elements as *const _ as *mut c_void,
-            &dim_size as *const _ as *mut c_void,
-            &inner_size as *const _ as *mut c_void,
+            &ids.as_ptr() as *const _ as *mut c_void,
+            &inp.as_ptr() as *const _ as *mut c_void,
+            &out.as_mut_ptr() as *const _ as *mut c_void,
+            &(left_size as u64) as *const _ as *mut c_void,
+            &(src_dim_size as u64) as *const _ as *mut c_void,
+            &(dst_dim_size as u64) as *const _ as *mut c_void,
+            &(right_size as u64) as *const _ as *mut c_void,
         ],
     )
 }
 
-/// Scatter-add (CUDA: candle-kernels/src/indexing.cu)
-pub fn scatter_add_f32_i64(
-    output: &mut DeviceMemory<f32>,
-    indices: &DeviceMemory<i64>,
-    values: &DeviceMemory<f32>,
-    num_elements: u32,
-    dim_size: u32,
-    inner_size: u32,
+/// Scatter-add (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
+/// Kernel: sa_i64_f32 (SA_OP macro)
+pub fn sa_i64_f32(
+    ids: &DeviceMemory<i64>,
+    inp: &DeviceMemory<f32>,
+    out: &mut DeviceMemory<f32>,
+    left_size: usize,
+    src_dim_size: usize,
+    dst_dim_size: usize,
+    right_size: usize,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
-    let func = module.get_function("scatter_add_f32_i64")?;
+    let func = module.get_function("sa_i64_f32")?;
     
-    let (grid, block) = calculate_grid_1d(num_elements);
+    let numel = left_size * right_size;
+    let (grid, block) = calculate_grid_1d(numel as u32);
     
     func.launch(
         grid,
@@ -1940,32 +1955,36 @@ pub fn scatter_add_f32_i64(
         0,
         stream,
         &[
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &indices.as_ptr() as *const _ as *mut c_void,
-            &values.as_ptr() as *const _ as *mut c_void,
-            &num_elements as *const _ as *mut c_void,
-            &dim_size as *const _ as *mut c_void,
-            &inner_size as *const _ as *mut c_void,
+            &ids.as_ptr() as *const _ as *mut c_void,
+            &inp.as_ptr() as *const _ as *mut c_void,
+            &out.as_mut_ptr() as *const _ as *mut c_void,
+            &(left_size as u64) as *const _ as *mut c_void,
+            &(src_dim_size as u64) as *const _ as *mut c_void,
+            &(dst_dim_size as u64) as *const _ as *mut c_void,
+            &(right_size as u64) as *const _ as *mut c_void,
         ],
     )
 }
 
-/// Index select (CUDA: candle-kernels/src/indexing.cu)
-pub fn index_select_f32_i64(
-    input: &DeviceMemory<f32>,
-    indices: &DeviceMemory<i64>,
-    output: &mut DeviceMemory<f32>,
-    num_indices: u32,
-    dim_size: u32,
-    stride_before: u32,
-    stride_after: u32,
+/// Index select (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
+/// Kernel: is_i64_f32 (IS_OP macro)
+pub fn is_i64_f32(
+    numel: usize,
+    num_dims: usize,
+    info: &DeviceMemory<usize>,
+    ids: &DeviceMemory<i64>,
+    inp: &DeviceMemory<f32>,
+    out: &mut DeviceMemory<f32>,
+    left_size: usize,
+    src_dim_size: usize,
+    ids_dim_size: usize,
+    right_size: usize,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
-    let func = module.get_function("index_select_f32_i64")?;
+    let func = module.get_function("is_i64_f32")?;
     
-    let total_elements = stride_before * num_indices * stride_after;
-    let (grid, block) = calculate_grid_1d(total_elements);
+    let (grid, block) = calculate_grid_1d(numel as u32);
     
     func.launch(
         grid,
@@ -1973,33 +1992,38 @@ pub fn index_select_f32_i64(
         0,
         stream,
         &[
-            &input.as_ptr() as *const _ as *mut c_void,
-            &indices.as_ptr() as *const _ as *mut c_void,
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &num_indices as *const _ as *mut c_void,
-            &dim_size as *const _ as *mut c_void,
-            &stride_before as *const _ as *mut c_void,
-            &stride_after as *const _ as *mut c_void,
+            &(numel as u64) as *const _ as *mut c_void,
+            &(num_dims as u64) as *const _ as *mut c_void,
+            &info.as_ptr() as *const _ as *mut c_void,
+            &ids.as_ptr() as *const _ as *mut c_void,
+            &inp.as_ptr() as *const _ as *mut c_void,
+            &out.as_mut_ptr() as *const _ as *mut c_void,
+            &(left_size as u64) as *const _ as *mut c_void,
+            &(src_dim_size as u64) as *const _ as *mut c_void,
+            &(ids_dim_size as u64) as *const _ as *mut c_void,
+            &(right_size as u64) as *const _ as *mut c_void,
         ],
     )
 }
 
-/// Index add (CUDA: candle-kernels/src/indexing.cu)
-pub fn index_add_f32_i64(
-    output: &mut DeviceMemory<f32>,
-    indices: &DeviceMemory<i64>,
-    values: &DeviceMemory<f32>,
-    num_indices: u32,
-    dim_size: u32,
-    stride_before: u32,
-    stride_after: u32,
+/// Index add (CUDA: candle-kernels/src/indexing.cu) - Candle-compatible signature
+/// Kernel: ia_i64_f32 (IA_OP macro)
+pub fn ia_i64_f32(
+    ids: &DeviceMemory<i64>,
+    ids_dim_size: usize,
+    inp: &DeviceMemory<f32>,
+    out: &mut DeviceMemory<f32>,
+    left_size: usize,
+    src_dim_size: usize,
+    dst_dim_size: usize,
+    right_size: usize,
     stream: &Stream,
 ) -> Result<()> {
     let module = get_kernels_module()?;
-    let func = module.get_function("index_add_f32_i64")?;
+    let func = module.get_function("ia_i64_f32")?;
     
-    let total_elements = stride_before * num_indices * stride_after;
-    let (grid, block) = calculate_grid_1d(total_elements);
+    let numel = left_size * right_size;
+    let (grid, block) = calculate_grid_1d(numel as u32);
     
     func.launch(
         grid,
@@ -2007,13 +2031,14 @@ pub fn index_add_f32_i64(
         0,
         stream,
         &[
-            &output.as_mut_ptr() as *const _ as *mut c_void,
-            &indices.as_ptr() as *const _ as *mut c_void,
-            &values.as_ptr() as *const _ as *mut c_void,
-            &num_indices as *const _ as *mut c_void,
-            &dim_size as *const _ as *mut c_void,
-            &stride_before as *const _ as *mut c_void,
-            &stride_after as *const _ as *mut c_void,
+            &ids.as_ptr() as *const _ as *mut c_void,
+            &(ids_dim_size as u64) as *const _ as *mut c_void,
+            &inp.as_ptr() as *const _ as *mut c_void,
+            &out.as_mut_ptr() as *const _ as *mut c_void,
+            &(left_size as u64) as *const _ as *mut c_void,
+            &(src_dim_size as u64) as *const _ as *mut c_void,
+            &(dst_dim_size as u64) as *const _ as *mut c_void,
+            &(right_size as u64) as *const _ as *mut c_void,
         ],
     )
 }
