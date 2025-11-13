@@ -17,3 +17,6 @@ pub mod rocsparse;
 
 #[cfg(feature = "macros")]
 pub use rocm_kernel_macros;
+
+// TEAM-507: bindgen_rocm for kernel compilation (mirrors bindgen_cuda)
+pub mod bindgen_rocm;
