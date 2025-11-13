@@ -1477,3 +1477,337 @@ where
     temp_result.copy_to_host(&mut result)?;
     Ok(result[0])
 }
+
+// =============================================================================
+// TEAM-490: Cast Operations (Phase 2 Step 2)
+// =============================================================================
+
+/// Generic cast operation wrapper
+fn cast_generic<S, D>(
+    input: &DeviceMemory<S>,
+    output: &DeviceMemory<D>,
+    kernel_name: &str,
+    len: usize,
+) -> Result<()>
+where
+    S: Copy + Default + 'static,
+    D: Copy + Default + 'static,
+{
+    let function = get_kernel_function(kernel_name)?;
+
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(len as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let len_u32 = len as u32;
+    let mut kernel_args = [
+        input.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &len_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    Ok(())
+}
+
+// Macro to define cast wrapper functions
+macro_rules! define_cast_wrapper {
+    ($src_type:ty, $dst_type:ty, $fn_name:ident, $src_name:literal, $dst_name:literal) => {
+        pub fn $fn_name(
+            input: &DeviceMemory<$src_type>,
+            output: &DeviceMemory<$dst_type>,
+            len: usize,
+        ) -> Result<()> {
+            let kernel_name = concat!("cast_", $src_name, "_", $dst_name);
+            cast_generic(input, output, kernel_name, len)
+        }
+    };
+}
+
+// F32 casts
+define_cast_wrapper!(f32, f64, cast_f32_f64, "f32", "f64");
+define_cast_wrapper!(f32, i32, cast_f32_i32, "f32", "i32");
+define_cast_wrapper!(f32, i64, cast_f32_i64, "f32", "i64");
+define_cast_wrapper!(f32, u8, cast_f32_u8, "f32", "u8");
+define_cast_wrapper!(f32, u32, cast_f32_u32, "f32", "u32");
+
+// F64 casts
+define_cast_wrapper!(f64, f32, cast_f64_f32, "f64", "f32");
+define_cast_wrapper!(f64, i32, cast_f64_i32, "f64", "i32");
+define_cast_wrapper!(f64, i64, cast_f64_i64, "f64", "i64");
+define_cast_wrapper!(f64, u8, cast_f64_u8, "f64", "u8");
+define_cast_wrapper!(f64, u32, cast_f64_u32, "f64", "u32");
+
+// I32 casts
+define_cast_wrapper!(i32, f32, cast_i32_f32, "i32", "f32");
+define_cast_wrapper!(i32, f64, cast_i32_f64, "i32", "f64");
+define_cast_wrapper!(i32, i64, cast_i32_i64, "i32", "i64");
+define_cast_wrapper!(i32, u8, cast_i32_u8, "i32", "u8");
+define_cast_wrapper!(i32, u32, cast_i32_u32, "i32", "u32");
+
+// I64 casts
+define_cast_wrapper!(i64, f32, cast_i64_f32, "i64", "f32");
+define_cast_wrapper!(i64, f64, cast_i64_f64, "i64", "f64");
+define_cast_wrapper!(i64, i32, cast_i64_i32, "i64", "i32");
+define_cast_wrapper!(i64, u8, cast_i64_u8, "i64", "u8");
+define_cast_wrapper!(i64, u32, cast_i64_u32, "i64", "u32");
+
+// U8 casts
+define_cast_wrapper!(u8, f32, cast_u8_f32, "u8", "f32");
+define_cast_wrapper!(u8, f64, cast_u8_f64, "u8", "f64");
+define_cast_wrapper!(u8, i32, cast_u8_i32, "u8", "i32");
+define_cast_wrapper!(u8, i64, cast_u8_i64, "u8", "i64");
+define_cast_wrapper!(u8, u32, cast_u8_u32, "u8", "u32");
+
+// U32 casts
+define_cast_wrapper!(u32, f32, cast_u32_f32, "u32", "f32");
+define_cast_wrapper!(u32, f64, cast_u32_f64, "u32", "f64");
+define_cast_wrapper!(u32, i32, cast_u32_i32, "u32", "i32");
+define_cast_wrapper!(u32, i64, cast_u32_i64, "u32", "i64");
+define_cast_wrapper!(u32, u8, cast_u32_u8, "u32", "u8");
+
+// =============================================================================
+// TEAM-490: Ternary Operations (Phase 2 Step 2)
+// =============================================================================
+
+/// Generic ternary where/select operation
+fn where_generic<C, T>(
+    condition: &DeviceMemory<C>,
+    true_vals: &DeviceMemory<T>,
+    false_vals: &DeviceMemory<T>,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+) -> Result<()>
+where
+    C: Copy + Default + 'static,
+    T: Copy + Default + 'static,
+{
+    let function = get_kernel_function(kernel_name)?;
+
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(len as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let len_u32 = len as u32;
+    let mut kernel_args = [
+        condition.as_ptr(),
+        true_vals.as_ptr(),
+        false_vals.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &len_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    Ok(())
+}
+
+// Macro to define where wrapper functions
+macro_rules! define_where_wrapper {
+    ($cond_type:ty, $val_type:ty, $fn_name:ident, $cond_name:literal, $val_name:literal) => {
+        pub fn $fn_name(
+            condition: &DeviceMemory<$cond_type>,
+            true_vals: &DeviceMemory<$val_type>,
+            false_vals: &DeviceMemory<$val_type>,
+            output: &DeviceMemory<$val_type>,
+            len: usize,
+        ) -> Result<()> {
+            let kernel_name = concat!("where_", $cond_name, "_", $val_name);
+            where_generic(condition, true_vals, false_vals, output, kernel_name, len)
+        }
+    };
+}
+
+// U8 condition with various value types
+define_where_wrapper!(u8, f32, where_u8_f32, "u8", "f32");
+define_where_wrapper!(u8, f64, where_u8_f64, "u8", "f64");
+define_where_wrapper!(u8, i32, where_u8_i32, "u8", "i32");
+define_where_wrapper!(u8, i64, where_u8_i64, "u8", "i64");
+define_where_wrapper!(u8, u8, where_u8_u8, "u8", "u8");
+define_where_wrapper!(u8, u32, where_u8_u32, "u8", "u32");
+
+// I32 condition with various value types
+define_where_wrapper!(i32, f32, where_i32_f32, "i32", "f32");
+define_where_wrapper!(i32, f64, where_i32_f64, "i32", "f64");
+define_where_wrapper!(i32, i32, where_i32_i32, "i32", "i32");
+define_where_wrapper!(i32, i64, where_i32_i64, "i32", "i64");
+define_where_wrapper!(i32, u8, where_i32_u8, "i32", "u8");
+define_where_wrapper!(i32, u32, where_i32_u32, "i32", "u32");
+
+// I64 condition with various value types
+define_where_wrapper!(i64, f32, where_i64_f32, "i64", "f32");
+define_where_wrapper!(i64, f64, where_i64_f64, "i64", "f64");
+define_where_wrapper!(i64, i32, where_i64_i32, "i64", "i32");
+define_where_wrapper!(i64, i64, where_i64_i64, "i64", "i64");
+define_where_wrapper!(i64, u8, where_i64_u8, "i64", "u8");
+define_where_wrapper!(i64, u32, where_i64_u32, "i64", "u32");
+
+// =============================================================================
+// TEAM-490: Unary Operations (Phase 2 Step 2)
+// =============================================================================
+
+/// Generic unary operation wrapper
+fn unary_generic<T>(
+    input: &DeviceMemory<T>,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+) -> Result<()>
+where
+    T: Copy + Default + 'static,
+{
+    let function = get_kernel_function(kernel_name)?;
+
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(len as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let len_u32 = len as u32;
+    let mut kernel_args = [
+        input.as_ptr(),
+        output.as_ptr() as *mut c_void,
+        &len_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    Ok(())
+}
+
+/// Generic unary operation with parameter
+fn unary_param_generic<T>(
+    input: &DeviceMemory<T>,
+    param: T,
+    output: &DeviceMemory<T>,
+    kernel_name: &str,
+    len: usize,
+) -> Result<()>
+where
+    T: Copy + Default + 'static,
+{
+    let function = get_kernel_function(kernel_name)?;
+
+    let block_size = 256;
+    let grid_dim = calculate_grid_1d(len as u32, block_size);
+    let block_dim = Dim3::new_1d(block_size);
+
+    let len_u32 = len as u32;
+    let mut kernel_args = [
+        input.as_ptr(),
+        &param as *const T as *mut c_void,
+        output.as_ptr() as *mut c_void,
+        &len_u32 as *const u32 as *mut c_void,
+    ];
+
+    function.launch(grid_dim, block_dim, 0, None, &mut kernel_args)?;
+    Ok(())
+}
+
+// Macro to define unary operation wrappers
+macro_rules! define_unary_wrapper {
+    ($op:ident, $type:ty, $fn_name:ident, $type_name:literal) => {
+        pub fn $fn_name(
+            input: &DeviceMemory<$type>,
+            output: &DeviceMemory<$type>,
+            len: usize,
+        ) -> Result<()> {
+            let kernel_name = concat!(stringify!($op), "_", $type_name);
+            unary_generic(input, output, kernel_name, len)
+        }
+    };
+}
+
+// Macro for parametric unary operations
+macro_rules! define_unary_param_wrapper {
+    ($op:ident, $type:ty, $fn_name:ident, $type_name:literal) => {
+        pub fn $fn_name(
+            input: &DeviceMemory<$type>,
+            param: $type,
+            output: &DeviceMemory<$type>,
+            len: usize,
+        ) -> Result<()> {
+            let kernel_name = concat!(stringify!($op), "_", $type_name);
+            unary_param_generic(input, param, output, kernel_name, len)
+        }
+    };
+}
+
+// Exponential/Logarithmic operations
+define_unary_wrapper!(exp, f32, unary_exp_f32, "f32");
+define_unary_wrapper!(exp, f64, unary_exp_f64, "f64");
+define_unary_wrapper!(log, f32, unary_log_f32, "f32");
+define_unary_wrapper!(log, f64, unary_log_f64, "f64");
+
+// Trigonometric operations
+define_unary_wrapper!(sin, f32, unary_sin_f32, "f32");
+define_unary_wrapper!(sin, f64, unary_sin_f64, "f64");
+define_unary_wrapper!(cos, f32, unary_cos_f32, "f32");
+define_unary_wrapper!(cos, f64, unary_cos_f64, "f64");
+define_unary_wrapper!(tanh, f32, unary_tanh_f32, "f32");
+define_unary_wrapper!(tanh, f64, unary_tanh_f64, "f64");
+
+// Rounding operations
+define_unary_wrapper!(ceil, f32, unary_ceil_f32, "f32");
+define_unary_wrapper!(ceil, f64, unary_ceil_f64, "f64");
+define_unary_wrapper!(floor, f32, unary_floor_f32, "f32");
+define_unary_wrapper!(floor, f64, unary_floor_f64, "f64");
+define_unary_wrapper!(round, f32, unary_round_f32, "f32");
+define_unary_wrapper!(round, f64, unary_round_f64, "f64");
+
+// Error functions
+define_unary_wrapper!(erf, f32, unary_erf_f32, "f32");
+define_unary_wrapper!(erf, f64, unary_erf_f64, "f64");
+define_unary_wrapper!(normcdf, f32, unary_normcdf_f32, "f32");
+define_unary_wrapper!(normcdf, f64, unary_normcdf_f64, "f64");
+
+// Basic operations
+define_unary_wrapper!(abs, f32, unary_abs_f32, "f32");
+define_unary_wrapper!(abs, f64, unary_abs_f64, "f64");
+define_unary_wrapper!(abs, i32, unary_abs_i32, "i32");
+define_unary_wrapper!(abs, i64, unary_abs_i64, "i64");
+
+define_unary_wrapper!(recip, f32, unary_recip_f32, "f32");
+define_unary_wrapper!(recip, f64, unary_recip_f64, "f64");
+
+define_unary_wrapper!(neg, f32, unary_neg_f32, "f32");
+define_unary_wrapper!(neg, f64, unary_neg_f64, "f64");
+define_unary_wrapper!(neg, i32, unary_neg_i32, "i32");
+define_unary_wrapper!(neg, i64, unary_neg_i64, "i64");
+
+define_unary_wrapper!(sqr, f32, unary_sqr_f32, "f32");
+define_unary_wrapper!(sqr, f64, unary_sqr_f64, "f64");
+define_unary_wrapper!(sqr, i32, unary_sqr_i32, "i32");
+define_unary_wrapper!(sqr, i64, unary_sqr_i64, "i64");
+
+define_unary_wrapper!(sqrt, f32, unary_sqrt_f32, "f32");
+define_unary_wrapper!(sqrt, f64, unary_sqrt_f64, "f64");
+
+define_unary_wrapper!(sign, f32, unary_sign_f32, "f32");
+define_unary_wrapper!(sign, f64, unary_sign_f64, "f64");
+define_unary_wrapper!(sign, i32, unary_sign_i32, "i32");
+define_unary_wrapper!(sign, i64, unary_sign_i64, "i64");
+
+// Activation functions
+define_unary_wrapper!(gelu, f32, unary_gelu_f32, "f32");
+define_unary_wrapper!(gelu, f64, unary_gelu_f64, "f64");
+define_unary_wrapper!(gelu_erf, f32, unary_gelu_erf_f32, "f32");
+define_unary_wrapper!(gelu_erf, f64, unary_gelu_erf_f64, "f64");
+define_unary_wrapper!(silu, f32, unary_silu_f32, "f32");
+define_unary_wrapper!(silu, f64, unary_silu_f64, "f64");
+define_unary_wrapper!(relu, f32, unary_relu_f32, "f32");
+define_unary_wrapper!(relu, f64, unary_relu_f64, "f64");
+define_unary_wrapper!(sigmoid, f32, unary_sigmoid_f32, "f32");
+define_unary_wrapper!(sigmoid, f64, unary_sigmoid_f64, "f64");
+
+// Parametric operations
+define_unary_param_wrapper!(elu, f32, unary_elu_f32, "f32");
+define_unary_param_wrapper!(elu, f64, unary_elu_f64, "f64");
+define_unary_param_wrapper!(powf, f32, unary_powf_f32, "f32");
+define_unary_param_wrapper!(powf, f64, unary_powf_f64, "f64");
+
+// Copy operations
+define_unary_wrapper!(copy, f32, unary_copy_f32, "f32");
+define_unary_wrapper!(copy, f64, unary_copy_f64, "f64");
+define_unary_wrapper!(copy, i32, unary_copy_i32, "i32");
+define_unary_wrapper!(copy, i64, unary_copy_i64, "i64");
+define_unary_wrapper!(copy, u8, unary_copy_u8, "u8");
+define_unary_wrapper!(copy, u32, unary_copy_u32, "u32");
