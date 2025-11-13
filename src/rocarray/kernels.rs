@@ -2075,3 +2075,116 @@ pub fn ia_i64_f32(
         ],
     )
 }
+
+// ============================================================================
+// NORMALIZATION OPERATIONS - TODO: Implement HIP kernels
+// ============================================================================
+
+/// Layer Normalization - TODO: Implement HIP kernel
+/// Reference: candle-kernels/src/reduce.cu (layernorm kernel)
+/// 
+/// LayerNorm computes: y = (x - mean) / sqrt(variance + eps) * gamma + beta
+/// where mean and variance are computed over the last dimension.
+pub fn layer_norm_f32(
+    _input: &DeviceMemory<f32>,
+    _output: &mut DeviceMemory<f32>,
+    _gamma: &DeviceMemory<f32>,
+    _beta: &DeviceMemory<f32>,
+    _n_rows: usize,
+    _n_cols: usize,
+    _eps: f32,
+    _stream: &Stream,
+) -> Result<()> {
+    Err(crate::error::Error::NotImplemented(
+        "LayerNorm HIP kernel not yet implemented. \
+         Reference: candle-kernels/src/reduce.cu (layernorm). \
+         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
+    ))
+}
+
+/// RMS Normalization - TODO: Implement HIP kernel
+/// Reference: candle-kernels/src/reduce.cu (rmsnorm kernel)
+/// 
+/// RmsNorm computes: y = x / sqrt(mean(x^2) + eps) * alpha
+pub fn rms_norm_f32(
+    _input: &DeviceMemory<f32>,
+    _output: &mut DeviceMemory<f32>,
+    _alpha: &DeviceMemory<f32>,
+    _n_rows: usize,
+    _n_cols: usize,
+    _eps: f32,
+    _stream: &Stream,
+) -> Result<()> {
+    Err(crate::error::Error::NotImplemented(
+        "RmsNorm HIP kernel not yet implemented. \
+         Reference: candle-kernels/src/reduce.cu (rmsnorm). \
+         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
+    ))
+}
+
+// ============================================================================
+// ROTARY POSITION EMBEDDINGS (RoPE) - TODO: Implement HIP kernels
+// ============================================================================
+
+/// Rotary Position Embeddings - Interleaved - TODO: Implement HIP kernel
+/// Reference: candle-kernels/src/ternary.cu (rope_i kernel)
+pub fn rope_i_f32(
+    _input: &DeviceMemory<f32>,
+    _cos: &DeviceMemory<f32>,
+    _sin: &DeviceMemory<f32>,
+    _output: &mut DeviceMemory<f32>,
+    _b: usize,
+    _h: usize,
+    _t: usize,
+    _d: usize,
+    _stride_b: usize,
+    _stream: &Stream,
+) -> Result<()> {
+    Err(crate::error::Error::NotImplemented(
+        "RopeI HIP kernel not yet implemented. \
+         Reference: candle-kernels/src/ternary.cu (rope_i). \
+         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
+    ))
+}
+
+/// Rotary Position Embeddings - Standard - TODO: Implement HIP kernel
+/// Reference: candle-kernels/src/ternary.cu (rope kernel)
+pub fn rope_f32(
+    _input: &DeviceMemory<f32>,
+    _cos: &DeviceMemory<f32>,
+    _sin: &DeviceMemory<f32>,
+    _output: &mut DeviceMemory<f32>,
+    _b: usize,
+    _h: usize,
+    _t: usize,
+    _d: usize,
+    _stride_b: usize,
+    _stream: &Stream,
+) -> Result<()> {
+    Err(crate::error::Error::NotImplemented(
+        "Rope HIP kernel not yet implemented. \
+         Reference: candle-kernels/src/ternary.cu (rope). \
+         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
+    ))
+}
+
+/// Rotary Position Embeddings - Threaded - TODO: Implement HIP kernel
+/// Reference: candle-kernels/src/ternary.cu (rope_thd kernel)
+pub fn rope_thd_f32(
+    _input: &DeviceMemory<f32>,
+    _cos: &DeviceMemory<f32>,
+    _sin: &DeviceMemory<f32>,
+    _output: &mut DeviceMemory<f32>,
+    _b: usize,
+    _t: usize,
+    _h: usize,
+    _d: usize,
+    _stride_b: usize,
+    _stream: &Stream,
+) -> Result<()> {
+    Err(crate::error::Error::NotImplemented(
+        "RopeThd HIP kernel not yet implemented. \
+         Reference: candle-kernels/src/ternary.cu (rope_thd). \
+         Add kernel to: deps/rocm-rs/src/rocarray/kernels.hip".into()
+    ))
+}
