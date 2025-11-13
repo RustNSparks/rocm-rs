@@ -229,7 +229,14 @@ impl Builder {
                         .stdout(std::fs::File::create(&hip_file).ok().unwrap_or_else(|| {
                             std::fs::File::create("/dev/null").unwrap()
                         }))
-                        .status();
+                    let status = std::process::Command::new("hipify-perl")
+                        .arg(p)
+                        .stdout(std::fs::File::create(&hip_file).ok().unwrap_or_else(|| {
+                            std::fs::File::create("/dev/null").unwrap()
+                        }))
+                        .status()
+                        .expect("Failed to execute hipify-perl");
+                    assert!(status.success(), "hipify-perl failed for {:?}", p);
 
                     let source = if hip_file.exists() { &hip_file } else { p };
                     
