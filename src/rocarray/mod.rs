@@ -8,6 +8,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 pub mod kernels;
+pub mod quantized;
 pub mod random;
 pub mod sorting;
 
