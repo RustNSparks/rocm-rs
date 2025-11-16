@@ -3,169 +3,84 @@
 // Utility functions for easier use of the rocrand library
 
 use crate::error::Result;
-use crate::hip::{DeviceMemory, Stream};
+use crate::hip::DeviceMemory;
 use crate::rocrand::{
     Generator, LogNormal, Normal, Poisson, PseudoRng, QuasiRng, Uniform, rng_type,
 }; // Using our unified error type
 
-/// Generate uniformly distributed random f32 values on device and return them on host
-pub fn generate_uniform_f32(count: usize, seed: Option<u64>) -> Result<Vec<f32>> {
-    // Create a generator
-    let mut generator = PseudoRng::new(rng_type::XORWOW)?;
+macro_rules! generate_uniform_rand_func {
+    ($fn_name: ident, $data_type:ty, $generato_fn:ident, $rng_type:ident) => {
+        paste::paste! {
+            #[doc = "Generate random " $data_type " values on device"]
+            pub fn $fn_name(
+                count: usize,
+                seed: Option<u64>,
+            ) -> Result<DeviceMemory<$data_type>> {
+                // Create a generator
+                let mut generator = PseudoRng::new(rng_type::$rng_type)?;
+                // Set seed if provided
+                if let Some(seed_value) = seed {
+                    generator.set_seed(seed_value)?;
+                }
+                // Initialize the generator
+                generator.initialize()?;
+                // Allocate device memory
+                let mut device_output = DeviceMemory::<$data_type>::new(count)?;
 
-    // Set seed if provided
-    if let Some(seed_value) = seed {
-        generator.set_seed(seed_value)?;
-    }
+                // Generate the random numbers
+                generator.$generato_fn(&mut device_output)?;
 
-    // Initialize the generator
-    generator.initialize()?;
-
-    // Allocate device memory
-    let mut device_output = DeviceMemory::<f32>::new(count)?;
-
-    // Create host output buffer
-    let mut host_output = vec![0.0f32; count];
-
-    // Generate the random numbers
-    generator.generate_uniform(&mut device_output)?;
-
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
+                Ok(device_output)
+            }
+        }
+    };
 }
 
-/// Generate uniformly distributed random f64 values on device and return them on host
-pub fn generate_uniform_f64(count: usize, seed: Option<u64>) -> Result<Vec<f64>> {
-    // Create a generator
-    let mut generator = PseudoRng::new(rng_type::XORWOW)?;
+generate_uniform_rand_func!(generate_uniform_f32, f32, generate_uniform, XORWOW);
+generate_uniform_rand_func!(generate_uniform_f64, f64, generate_uniform_double, XORWOW);
+generate_uniform_rand_func!(generate_u32, u32, generate_u32, XORWOW);
 
-    // Set seed if provided
-    if let Some(seed_value) = seed {
-        generator.set_seed(seed_value)?;
-    }
+macro_rules! generate_normal_rand_func {
+    ($fn_name: ident, $data_type:ty, $rng_type:ident, $dist:expr) => {
+        paste::paste! {
+            #[doc = "Generate normally distributed random " $data_type " values with specified mean and standard deviation"]
+            pub fn $fn_name(
+                count: usize,
+                mean: f32,
+                stddev: f32,
+                seed: Option<u64>,
+            ) -> Result<DeviceMemory<$data_type>> {
+                // Create a generator
+                let mut generator = PseudoRng::new(rng_type::$rng_type)?;
 
-    // Initialize the generator
-    generator.initialize()?;
+                // Set seed if provided
+                if let Some(seed_value) = seed {
+                    generator.set_seed(seed_value)?;
+                }
 
-    // Allocate device memory
-    let mut device_output = DeviceMemory::<f64>::new(count)?;
+                // Initialize the generator
+                generator.initialize()?;
 
-    // Create host output buffer
-    let mut host_output = vec![0.0f64; count];
+                // Create a normal distribution
+                let dist = $dist(mean, stddev);
 
-    // Generate the random numbers
-    generator.generate_uniform_double(&mut device_output)?;
+                // Allocate device memory
+                let mut device_output = DeviceMemory::<f32>::new(count)?;
 
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
+                // Generate the random numbers
+                dist.generate(&mut generator, &mut device_output)?;
 
-    Ok(host_output)
+                Ok(device_output)
+            }
+        }
+    };
 }
 
-/// Generate random u32 integers on device and return them on host
-pub fn generate_u32(count: usize, seed: Option<u64>) -> Result<Vec<u32>> {
-    // Create a generator
-    let mut generator = PseudoRng::new(rng_type::XORWOW)?;
-
-    // Set seed if provided
-    if let Some(seed_value) = seed {
-        generator.set_seed(seed_value)?;
-    }
-
-    // Initialize the generator
-    generator.initialize()?;
-
-    // Allocate device memory
-    let mut device_output = DeviceMemory::<u32>::new(count)?;
-
-    // Create host output buffer
-    let mut host_output = vec![0u32; count];
-
-    // Generate the random numbers
-    generator.generate_u32(&mut device_output)?;
-
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
-}
-
-/// Generate normally distributed random f32 values with specified mean and standard deviation
-pub fn generate_normal_f32(
-    count: usize,
-    mean: f32,
-    stddev: f32,
-    seed: Option<u64>,
-) -> Result<Vec<f32>> {
-    // Create a generator
-    let mut generator = PseudoRng::new(rng_type::PHILOX4_32_10)?;
-
-    // Set seed if provided
-    if let Some(seed_value) = seed {
-        generator.set_seed(seed_value)?;
-    }
-
-    // Initialize the generator
-    generator.initialize()?;
-
-    // Create a normal distribution
-    let normal_dist = Normal::new(mean, stddev);
-
-    // Allocate device memory
-    let mut device_output = DeviceMemory::<f32>::new(count)?;
-
-    // Create host output buffer
-    let mut host_output = vec![0.0f32; count];
-
-    // Generate the random numbers
-    normal_dist.generate(&mut generator, &mut device_output)?;
-
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
-}
-
-/// Generate log-normally distributed random f32 values with specified mean and standard deviation
-pub fn generate_log_normal_f32(
-    count: usize,
-    mean: f32,
-    stddev: f32,
-    seed: Option<u64>,
-) -> Result<Vec<f32>> {
-    // Create a generator
-    let mut generator = PseudoRng::new(rng_type::PHILOX4_32_10)?;
-
-    // Set seed if provided
-    if let Some(seed_value) = seed {
-        generator.set_seed(seed_value)?;
-    }
-
-    // Initialize the generator
-    generator.initialize()?;
-
-    // Create a log-normal distribution
-    let log_normal_dist = LogNormal::new(mean, stddev);
-
-    // Allocate device memory
-    let mut device_output = DeviceMemory::<f32>::new(count)?;
-
-    // Create host output buffer
-    let mut host_output = vec![0.0f32; count];
-
-    // Generate the random numbers
-    log_normal_dist.generate(&mut generator, &mut device_output)?;
-
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
-}
+generate_normal_rand_func!(generate_normal_f32, f32, PHILOX4_32_10, Normal::new);
+generate_normal_rand_func!(generate_log_normal_f32, f32, PHILOX4_32_10, LogNormal::new);
 
 /// Generate Poisson-distributed random u32 values with specified lambda
-pub fn generate_poisson(count: usize, lambda: f64, seed: Option<u64>) -> Result<Vec<u32>> {
+pub fn generate_poisson(count: usize, lambda: f64, seed: Option<u64>) -> Result<DeviceMemory<u32>> {
     // Create a generator
     let mut generator = PseudoRng::new(rng_type::MTGP32)?;
 
@@ -183,20 +98,14 @@ pub fn generate_poisson(count: usize, lambda: f64, seed: Option<u64>) -> Result<
     // Allocate device memory
     let mut device_output = DeviceMemory::<u32>::new(count)?;
 
-    // Create host output buffer
-    let mut host_output = vec![0u32; count];
-
     // Generate the random numbers
     poisson_dist.generate(&mut generator, &mut device_output)?;
 
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
+    Ok(device_output)
 }
 
 /// Generate quasirandom sequence of f32 values with specified dimensions
-pub fn generate_quasi_f32(count: usize, dimensions: u32) -> Result<Vec<f32>> {
+pub fn generate_quasi_f32(count: usize, dimensions: u32) -> Result<DeviceMemory<f32>> {
     // Create a quasi-random generator
     let mut generator = QuasiRng::new(rng_type::SOBOL32)?;
 
@@ -209,128 +118,8 @@ pub fn generate_quasi_f32(count: usize, dimensions: u32) -> Result<Vec<f32>> {
     // Allocate device memory
     let mut device_output = DeviceMemory::<f32>::new(count)?;
 
-    // Create host output buffer
-    let mut host_output = vec![0.0f32; count];
-
     // Generate the random numbers
     Uniform::generate_quasi(&mut generator, &mut device_output)?;
 
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
-}
-
-/// Generate random values using a stream for asynchronous operation
-pub fn generate_async<F>(count: usize, generator_fn: F) -> Result<Vec<f32>>
-where
-    F: FnOnce(&mut PseudoRng, &mut [f32]) -> std::result::Result<(), crate::rocrand::Error>,
-{
-    // Create a stream
-    let stream = Stream::new()?;
-
-    // Create generator
-    let mut generator = PseudoRng::new(rng_type::XORWOW)?;
-
-    // Set the stream
-    unsafe {
-        generator.set_stream(crate::hip::kernel::stream_to_rocrand(&stream))?;
-    }
-
-    // Initialize the generator
-    generator.initialize()?;
-
-    // Allocate device memory
-    let device_output = DeviceMemory::<f32>::new(count)?;
-
-    // Create host output buffer
-    let mut host_output = vec![0.0f32; count];
-
-    // Generate the random numbers
-    unsafe {
-        let device_ptr = device_output.as_ptr() as *mut f32;
-        let slice = std::slice::from_raw_parts_mut(device_ptr, count);
-
-        // Use the provided generator function
-        generator_fn(&mut generator, slice)?;
-    }
-
-    // Synchronize the stream
-    stream.synchronize()?;
-
-    // Copy results back to host
-    device_output.copy_to_host(&mut host_output)?;
-
-    Ok(host_output)
-}
-
-/// Fill a device memory buffer with random values directly
-/// Note: This doesn't copy back to host, so the caller is responsible for that
-pub fn fill_device_memory<T, F>(device_memory: &mut DeviceMemory<T>, generator_fn: F) -> Result<()>
-where
-    F: FnOnce(*mut T, usize) -> std::result::Result<(), crate::rocrand::Error>,
-{
-    // Skip if empty
-    if device_memory.count() == 0 {
-        return Ok(());
-    }
-
-    // Generate the random numbers
-    let device_ptr = device_memory.as_ptr() as *mut T;
-    generator_fn(device_ptr, device_memory.count())?;
-
-    Ok(())
-}
-
-/// Convenience function for creating a simple random buffer by type
-pub enum RandomType {
-    Uniform,
-    Normal { mean: f32, stddev: f32 },
-    LogNormal { mean: f32, stddev: f32 },
-    Poisson { lambda: f64 },
-    Integer,
-}
-
-pub fn create_random_buffer<T>(
-    count: usize,
-    random_type: RandomType,
-    seed: Option<u64>,
-) -> Result<Vec<T>>
-where
-    T: Copy + Default,
-{
-    match (random_type, std::mem::size_of::<T>()) {
-        // Handle f32 types
-        (RandomType::Uniform, 4) => {
-            let data = generate_uniform_f32(count, seed)?;
-            let ptr = data.as_ptr() as *const T;
-            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
-        }
-        (RandomType::Normal { mean, stddev }, 4) => {
-            let data = generate_normal_f32(count, mean, stddev, seed)?;
-            let ptr = data.as_ptr() as *const T;
-            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
-        }
-        (RandomType::LogNormal { mean, stddev }, 4) => {
-            let data = generate_log_normal_f32(count, mean, stddev, seed)?;
-            let ptr = data.as_ptr() as *const T;
-            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
-        }
-        // Handle u32 types
-        (RandomType::Integer, 4) => {
-            let data = generate_u32(count, seed)?;
-            let ptr = data.as_ptr() as *const T;
-            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
-        }
-        (RandomType::Poisson { lambda }, 4) => {
-            let data = generate_poisson(count, lambda, seed)?;
-            let ptr = data.as_ptr() as *const T;
-            unsafe { Ok(std::slice::from_raw_parts(ptr, count).to_vec()) }
-        }
-        // Handle other cases
-        _ => {
-            // Return a default buffer for unsupported types
-            Ok(vec![T::default(); count])
-        }
-    }
+    Ok(device_output)
 }
