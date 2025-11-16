@@ -1,3 +1,4 @@
+use crate::hip::kernel::AsKernelArg;
 use rocm_kernel_macros::{
     amdgpu_device, amdgpu_global, amdgpu_kernel_finalize, amdgpu_kernel_init,
 };
@@ -6,6 +7,11 @@ amdgpu_kernel_init!(path: __build_in_kernels_sorting);
 
 #[amdgpu_device(__build_in_kernels_sorting)]
 use core::{cmp::PartialOrd, ptr::swap};
+
+use crate::{
+    hip::{DeviceMemory, Dim3, Module, Stream, error::Result},
+    kernel_args,
+};
 
 #[amdgpu_device(__build_in_kernels_sorting)]
 fn sort_odd_inner<T: Clone + Copy + PartialOrd>(arr: *mut T, ascending: bool) {
@@ -72,3 +78,26 @@ impl_gpu_sort_allowed!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 pub(crate) const SORTING_KERNEL: &[u8] =
     include_bytes!(amdgpu_kernel_finalize!(__build_in_kernels_sorting));
+
+pub(crate) fn sort<T>(mem: &mut DeviceMemory<T>, stream: &Stream, ascending: bool) -> Result<()> {
+    let module = Module::load_data(SORTING_KERNEL)?;
+
+    let sort_odd =
+        module.get_function(&(String::from("sort_odd_") + std::any::type_name::<T>()))?;
+    let sort_even =
+        module.get_function(&(String::from("sort_even_") + std::any::type_name::<T>()))?;
+
+    let count = mem.count() as u32;
+
+    let args = kernel_args!(mem, ascending);
+
+    let dim_even = Dim3::new_1d(count / 2);
+    let dim_odd = Dim3::new_1d((count - 1) / 2);
+
+    for _ in 0..count / 2 {
+        sort_even.launch(dim_even, Dim3::new_1d(1), 0, Some(stream), args)?;
+        sort_odd.launch(dim_odd, Dim3::new_1d(1), 0, Some(stream), args)?;
+    }
+
+    Ok(())
+}

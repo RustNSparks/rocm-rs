@@ -2,6 +2,7 @@
 
 use crate::error::Result;
 use crate::hip::memory::PendingCopy;
+use crate::hip::memory_ext::sorting::GPUSortAllowed;
 use crate::hip::{DeviceMemory, Stream};
 use std::fmt;
 use std::marker::PhantomData;
@@ -745,12 +746,11 @@ where
 // Sorting operations
 impl<T> ROCArray<T>
 where
-    T: Copy + Default + 'static + sorting::Sortable,
+    T: Copy + Default + 'static + sorting::Sortable + GPUSortAllowed,
 {
     /// Sort array in ascending order
     pub fn sort(&mut self) -> Result<()> {
-        let len = self.len();
-        sorting::sort_ascending(&mut self.data, len)
+        sorting::sort_ascending(&mut self.data)
     }
 
     /// Check if array is sorted

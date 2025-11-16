@@ -1,7 +1,8 @@
 // src/rocarray/sorting.rs - Complete implementation
 use crate::error::Result;
 use crate::hip::kernel::AsKernelArg;
-use crate::hip::{DeviceMemory, Dim3, Function, Module, Stream, calculate_grid_1d};
+use crate::hip::memory_ext::sorting::GPUSortAllowed;
+use crate::hip::{DeviceMemory, Dim3, Function, Module, Stream, calculate_grid_1d, memory_ext::MemoryExt};
 use std::sync::Once;
 
 static INIT_SORT: Once = Once::new();
@@ -56,14 +57,11 @@ fn get_sort_kernel_function(name: &str) -> Result<Function> {
 }
 
 // Ascending sort
-pub fn sort_ascending<T>(data: &mut DeviceMemory<T>, len: usize) -> Result<()>
+pub fn sort_ascending<T>(data: &mut DeviceMemory<T>) -> Result<()>
 where
-    T: Sortable,
+    T: Sortable, T: GPUSortAllowed
 {
-    let stream = Stream::new()?;
-    sort_ascending_async(data, len, &stream)?;
-    stream.synchronize()?;
-    Ok(())
+    data.sort().map_err(|err|err.into())
 }
 
 pub fn sort_ascending_async<T>(
@@ -302,10 +300,10 @@ where
 // Partial sort (sort only the first k elements)
 pub fn partial_sort<T>(data: &mut DeviceMemory<T>, len: usize, k: usize) -> Result<()>
 where
-    T: Sortable,
+    T: Sortable + GPUSortAllowed,
 {
     if k >= len {
-        return sort_ascending(data, len);
+        return sort_ascending(data);
     }
 
     let stream = Stream::new()?;
