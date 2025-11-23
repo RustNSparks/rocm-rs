@@ -8,6 +8,8 @@ pub trait MemoryExt<T> {
     fn sort_desc(&mut self) -> Result<()>;
     fn sort_async(&mut self, stream: &Stream) -> Result<()>;
     fn sort_desc_async(&mut self, stream: &Stream) -> Result<()>;
+    fn check_sorted(&mut self) -> Result<bool>;
+    fn check_sorted_async(&mut self, stream: &Stream) -> Result<bool>;
 }
 
 impl<T> MemoryExt<T> for DeviceMemory<T>
@@ -34,5 +36,13 @@ where
 
     fn sort_desc_async(&mut self, stream: &Stream) -> Result<()> {
         sorting::sort(self, stream, false)
+    }
+
+    fn check_sorted(&mut self) -> Result<bool> {
+        sorting::check_sorted(self, None)    
+    }
+
+    fn check_sorted_async(&mut self, stream: &Stream) -> Result<bool> {
+        sorting::check_sorted(self, Some(stream))
     }
 }
