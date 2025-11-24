@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["gpu", "rocm", "amd", "hpc", "bindings"]
 categories = ["api-bindings", "external-ffi-bindings"]
 
+[lib]
+doctest = false
+
+
 [dependencies]
 log = "0.4.27"
 rocm_smi_lib = { version = "0.3.1", optional = true }

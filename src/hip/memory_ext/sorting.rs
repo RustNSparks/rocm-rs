@@ -126,7 +126,7 @@ pub(crate) fn sort<T>(mem: &mut DeviceMemory<T>, stream: &Stream, ascending: boo
 }
 
 /// Tis function synchronizes stream
-/// 
+///
 /// This function will return an error if memory size is zero.
 pub(crate) fn check_sorted<T>(mem: &DeviceMemory<T>, stream: Option<&Stream>) -> Result<bool> {
     let module = Module::load_data(SORTING_KERNEL)?;
@@ -136,19 +136,19 @@ pub(crate) fn check_sorted<T>(mem: &DeviceMemory<T>, stream: Option<&Stream>) ->
 
     let count = mem.count();
 
-    let target = DeviceMemory::<bool>::new(count-1)?;
+    let target = DeviceMemory::<bool>::new(count - 1)?;
 
     let args = kernel_args!(mem, target, count);
 
     check_sorted.launch(
-        Dim3::new_1d(count as u32-1),
+        Dim3::new_1d(count as u32 - 1),
         Dim3::new_1d(1),
         0,
         stream,
         args,
     )?;
-    let mut host = vec![false; count-1];
-    if let Some(stream)  = stream {
+    let mut host = vec![false; count - 1];
+    if let Some(stream) = stream {
         let pending = target.copy_to_host_async(host, stream)?;
         host = stream.synchronize_memory(pending)?;
     } else {
@@ -161,9 +161,12 @@ pub(crate) fn check_sorted<T>(mem: &DeviceMemory<T>, stream: Option<&Stream>) ->
 mod test {
     use crate::{
         error::Result,
-        hip::{Device, DeviceMemory, memory_ext::sorting::check_sorted},
+        hip::{
+            Device, DeviceMemory,
+            memory_ext::sorting::check_sorted,
+        },
     };
-    
+
     #[test]
     fn is_sorted() -> Result<()> {
         let device = Device::current()?;
@@ -180,7 +183,7 @@ mod test {
         Ok(())
     }
 
-     #[test]
+    #[test]
     fn is_not_sorted() -> Result<()> {
         let device = Device::current()?;
 

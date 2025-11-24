@@ -755,13 +755,12 @@ where
 
     /// Check if array is sorted
     pub fn is_sorted(&self) -> Result<bool> {
-        sorting::is_sorted(&self.data, self.len())
+        sorting::is_sorted(&self.data)
     }
 
     /// Sort array in descending order
     pub fn sort_descending(&mut self) -> Result<()> {
-        let len = self.len();
-        sorting::sort_descending(&mut self.data, len)
+        sorting::sort_descending(&mut self.data)
     }
 
     /// Get indices that would sort the array (argsort)
