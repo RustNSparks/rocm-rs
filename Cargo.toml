@@ -25,7 +25,7 @@ paste = "1.0.15"
 bindgen = "0.71.1"
 
 [features]
-default = ["macros"]
+default = ["macros", "miopen"]
 rocm_smi = ["dep:rocm_smi_lib"]
 miopen = []
 rocprofiler = []

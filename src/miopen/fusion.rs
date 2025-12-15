@@ -121,7 +121,7 @@ impl FusionPlanDescriptor {
     pub fn create_op_activation_forward(&self, mode: ActivationMode) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe { ffi::miopenCreateOpActivationForward(self.desc, &mut op, mode) };
+        let status = unsafe { ffi::miopenCreateOpActivationForward(self.desc, &mut op, mode as u32) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
@@ -137,7 +137,7 @@ impl FusionPlanDescriptor {
     ) -> Result<FusionOpDescriptor> {
         let mut op = ptr::null_mut();
 
-        let status = unsafe { ffi::miopenCreateOpActivationBackward(self.desc, &mut op, mode) };
+        let status = unsafe { ffi::miopenCreateOpActivationBackward(self.desc, &mut op, mode as u32) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));

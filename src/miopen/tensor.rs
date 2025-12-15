@@ -5,8 +5,36 @@ use crate::miopen::ffi;
 use crate::miopen::handle::Handle;
 use std::ptr;
 
+// pub type DataType = ffi::miopenDataType_t;
+
 /// MIOpen data types
-pub type DataType = ffi::miopenDataType_t;
+#[repr(u32)]
+pub enum DataType {
+    MiopenHalf = ffi::miopenDataType_t_miopenHalf,
+    MiopenFloat = ffi::miopenDataType_t_miopenFloat,
+    MiopenInt32 = ffi::miopenDataType_t_miopenInt32,
+    MiopenInt8 = ffi::miopenDataType_t_miopenInt8,
+    MiopenBFloat16 = ffi::miopenDataType_t_miopenBFloat16,
+    MiopenDouble = ffi::miopenDataType_t_miopenDouble,
+    MiopenInt64 = ffi::miopenDataType_t_miopenInt64,
+}
+
+impl TryFrom<u32> for DataType {
+    type Error = Error;
+
+    fn try_from(value: u32) -> std::result::Result<Self, Self::Error> {
+        match value {
+            ffi::miopenDataType_t_miopenHalf => Ok(DataType::MiopenHalf),
+            ffi::miopenDataType_t_miopenFloat => Ok(DataType::MiopenFloat),
+            ffi::miopenDataType_t_miopenInt32 => Ok(DataType::MiopenInt32),
+            ffi::miopenDataType_t_miopenInt8 => Ok(DataType::MiopenInt8),
+            ffi::miopenDataType_t_miopenBFloat16 => Ok(DataType::MiopenBFloat16),
+            ffi::miopenDataType_t_miopenDouble => Ok(DataType::MiopenDouble),
+            ffi::miopenDataType_t_miopenInt64 => Ok(DataType::MiopenInt64),
+            _ => Err(Error::new(ffi::miopenStatus_t_miopenStatusUnknownError)),
+        }
+    }
+}
 
 /// MIOpen tensor layout
 pub type TensorLayout = ffi::miopenTensorLayout_t;
@@ -35,13 +63,21 @@ impl TensorDescriptor {
 
     /// Set the descriptor for a 4D tensor (NCHW format)
     pub fn set_4d(&mut self, data_type: DataType, n: i32, c: i32, h: i32, w: i32) -> Result<()> {
-        let status = unsafe { ffi::miopenSet4dTensorDescriptor(self.desc, data_type, n, c, h, w) };
+        let status =
+            unsafe { ffi::miopenSet4dTensorDescriptor(self.desc, data_type as u32, n, c, h, w) };
 
         if status != ffi::miopenStatus_t_miopenStatusSuccess {
             return Err(Error::new(status));
         }
 
         Ok(())
+    }
+
+    /// Create a 4D tensor (NCHW format)
+    pub fn new_4d(data_type: DataType, n: i32, c: i32, h: i32, w: i32) -> Result<Self> {
+        let mut desc = Self::new()?;
+        desc.set_4d(data_type, n, c, h, w)?;
+        Ok(desc)
     }
 
     /// Set the descriptor for a 4D tensor with strides
@@ -59,7 +95,16 @@ impl TensorDescriptor {
     ) -> Result<()> {
         let status = unsafe {
             ffi::miopenSet4dTensorDescriptorEx(
-                self.desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride,
+                self.desc,
+                data_type as u32,
+                n,
+                c,
+                h,
+                w,
+                n_stride,
+                c_stride,
+                h_stride,
+                w_stride,
             )
         };
 
@@ -82,7 +127,7 @@ impl TensorDescriptor {
         let status = unsafe {
             ffi::miopenSetNdTensorDescriptorWithLayout(
                 self.desc,
-                data_type,
+                data_type as u32,
                 layout,
                 dims.as_ptr(),
                 num_dims,
@@ -128,7 +173,15 @@ impl TensorDescriptor {
         }
 
         Ok((
-            data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride,
+            DataType::try_from(data_type)?,
+            n,
+            c,
+            h,
+            w,
+            n_stride,
+            c_stride,
+            h_stride,
+            w_stride,
         ))
     }
 
@@ -143,7 +196,7 @@ impl TensorDescriptor {
         let status = unsafe {
             ffi::miopenSetTensorDescriptor(
                 self.desc,
-                data_type,
+                data_type as u32,
                 nb_dims,
                 dims.as_ptr(),
                 strides.as_ptr(),
@@ -193,7 +246,7 @@ impl TensorDescriptor {
             return Err(Error::new(status));
         }
 
-        Ok((data_type, dims, strides))
+        Ok((DataType::try_from(data_type)?, dims, strides))
     }
 
     /// Get the number of bytes for a tensor
@@ -374,7 +427,7 @@ impl SeqTensorDescriptor {
         let status = unsafe {
             ffi::miopenSetRNNDataSeqTensorDescriptor(
                 self.desc,
-                data_type,
+                data_type as u32,
                 layout,
                 max_sequence_len,
                 batch_size,
@@ -433,7 +486,7 @@ impl SeqTensorDescriptor {
         }
 
         Ok((
-            data_type,
+            DataType::try_from(data_type)?,
             layout,
             max_sequence_len,
             batch_size,
