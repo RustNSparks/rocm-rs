@@ -15,10 +15,6 @@ pub struct LRNDescriptor {
     desc: ffi::miopenLRNDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for LRNDescriptor {}
-unsafe impl Sync for LRNDescriptor {}
-
 impl LRNDescriptor {
     /// Create a new LRN descriptor
     pub fn new() -> Result<Self> {

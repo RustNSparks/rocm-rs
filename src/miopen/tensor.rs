@@ -44,10 +44,6 @@ pub struct TensorDescriptor {
     desc: ffi::miopenTensorDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for TensorDescriptor {}
-unsafe impl Sync for TensorDescriptor {}
-
 impl TensorDescriptor {
     /// Create a new tensor descriptor
     pub fn new() -> Result<Self> {
@@ -396,10 +392,6 @@ impl Drop for TensorDescriptor {
 pub struct SeqTensorDescriptor {
     desc: ffi::miopenSeqTensorDescriptor_t,
 }
-
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for SeqTensorDescriptor {}
-unsafe impl Sync for SeqTensorDescriptor {}
 
 impl SeqTensorDescriptor {
     /// Create a new sequence tensor descriptor

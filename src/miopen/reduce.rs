@@ -24,10 +24,6 @@ pub struct ReduceTensorDescriptor {
     desc: ffi::miopenReduceTensorDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for ReduceTensorDescriptor {}
-unsafe impl Sync for ReduceTensorDescriptor {}
-
 impl ReduceTensorDescriptor {
     /// Create a new reduce tensor descriptor
     pub fn new() -> Result<Self> {

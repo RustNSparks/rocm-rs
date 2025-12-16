@@ -23,10 +23,6 @@ pub struct MhaDescriptor {
     desc: ffi::miopenMhaDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for MhaDescriptor {}
-unsafe impl Sync for MhaDescriptor {}
-
 impl MhaDescriptor {
     /// Create a new MHA descriptor
     pub fn new() -> Result<Self> {

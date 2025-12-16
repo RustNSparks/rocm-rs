@@ -10,10 +10,6 @@ pub struct Handle {
     handle: ffi::rocblas_handle,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for Handle {}
-unsafe impl Sync for Handle {}
-
 impl Handle {
     /// Create a new RocBLAS handle
     pub fn new() -> Result<Self> {

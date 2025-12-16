@@ -15,10 +15,6 @@ pub struct CTCLossDescriptor {
     desc: ffi::miopenCTCLossDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for CTCLossDescriptor {}
-unsafe impl Sync for CTCLossDescriptor {}
-
 impl CTCLossDescriptor {
     /// Create a new CTC Loss descriptor
     pub fn new() -> Result<Self> {

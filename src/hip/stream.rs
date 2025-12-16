@@ -14,10 +14,6 @@ pub struct Stream {
     pub(crate) stream: hip::ffi::hipStream_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for Stream {}
-unsafe impl Sync for Stream {}
-
 impl Stream {
     /// Create a new stream
     pub(crate) fn new() -> Result<Self> {

@@ -36,10 +36,6 @@ pub struct ConvolutionDescriptor {
     desc: ffi::miopenConvolutionDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for ConvolutionDescriptor {}
-unsafe impl Sync for ConvolutionDescriptor {}
-
 impl ConvolutionDescriptor {
     /// Create a new convolution descriptor
     pub fn new() -> Result<Self> {

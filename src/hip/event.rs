@@ -10,10 +10,6 @@ pub struct Event {
     event: ffi::hipEvent_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for Event {}
-unsafe impl Sync for Event {}
-
 impl Event {
     /// Create a new event with default flags
     pub fn new() -> Result<Self> {

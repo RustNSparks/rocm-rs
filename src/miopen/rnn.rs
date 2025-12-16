@@ -27,10 +27,6 @@ pub struct RNNDescriptor {
     desc: ffi::miopenRNNDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for RNNDescriptor {}
-unsafe impl Sync for RNNDescriptor {}
-
 impl RNNDescriptor {
     /// Create a new RNN descriptor
     pub fn new() -> Result<Self> {

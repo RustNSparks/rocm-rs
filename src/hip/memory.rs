@@ -33,10 +33,6 @@ pub struct DeviceMemory<T> {
     phantom: PhantomData<T>,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl<T: Send> Send for DeviceMemory<T> {}
-unsafe impl<T: Sync> Sync for DeviceMemory<T> {}
-
 #[derive(Clone)]
 pub struct PendingCopy<T> {
     inner: Vec<T>,
@@ -343,10 +339,6 @@ pub struct PinnedMemory<T> {
     count: usize,
     phantom: PhantomData<T>,
 }
-
-// Can't be automatically derived since we have a raw pointer
-unsafe impl<T: Send> Send for PinnedMemory<T> {}
-unsafe impl<T: Sync> Sync for PinnedMemory<T> {}
 
 impl<T> PinnedMemory<T> {
     /// Allocate pinned host memory for a number of elements

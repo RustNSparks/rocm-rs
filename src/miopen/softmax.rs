@@ -44,10 +44,6 @@ pub struct SoftmaxDescriptor {
     desc: ffi::miopenSoftmaxDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for SoftmaxDescriptor {}
-unsafe impl Sync for SoftmaxDescriptor {}
-
 impl SoftmaxDescriptor {
     /// Create a new softmax descriptor
     pub fn new() -> Result<Self> {

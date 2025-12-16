@@ -21,10 +21,6 @@ pub struct PoolingDescriptor {
     desc: ffi::miopenPoolingDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for PoolingDescriptor {}
-unsafe impl Sync for PoolingDescriptor {}
-
 impl PoolingDescriptor {
     /// Create a new pooling descriptor
     pub fn new() -> Result<Self> {

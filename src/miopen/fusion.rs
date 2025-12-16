@@ -17,27 +17,15 @@ pub struct FusionPlanDescriptor {
     desc: ffi::miopenFusionPlanDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for FusionPlanDescriptor {}
-unsafe impl Sync for FusionPlanDescriptor {}
-
 /// Safe wrapper for MIOpen fusion operator descriptor
 pub struct FusionOpDescriptor {
     desc: ffi::miopenFusionOpDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for FusionOpDescriptor {}
-unsafe impl Sync for FusionOpDescriptor {}
-
 /// Safe wrapper for MIOpen operator arguments
 pub struct OperatorArgs {
     args: ffi::miopenOperatorArgs_t,
 }
-
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for OperatorArgs {}
-unsafe impl Sync for OperatorArgs {}
 
 impl FusionPlanDescriptor {
     /// Create a new fusion plan descriptor

@@ -1,7 +1,6 @@
 // src/miopen/handle.rs
 
-use crate::hip;
-use crate::hip::Stream;
+use crate::hip::{Stream, bindings::hipStream_t};
 use crate::miopen::error::{Error, Result};
 use crate::miopen::ffi;
 use std::ptr;
@@ -10,10 +9,6 @@ use std::ptr;
 pub struct Handle {
     handle: ffi::miopenHandle_t,
 }
-
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for Handle {}
-unsafe impl Sync for Handle {}
 
 impl Handle {
     /// Create a new MIOpen handle
@@ -29,7 +24,7 @@ impl Handle {
     }
 
     /// Create a new MIOpen handle with a stream
-    pub fn with_stream(stream: &hip::Stream) -> Result<Self> {
+    pub fn with_stream(stream: &Stream) -> Result<Self> {
         let mut handle = ptr::null_mut();
         let status = unsafe {
             ffi::miopenCreateWithStream(
@@ -46,7 +41,7 @@ impl Handle {
     }
 
     /// Set the stream for this handle
-    pub fn set_stream(&self, stream: &hip::Stream) -> Result<()> {
+    pub fn set_stream(&self, stream: &Stream) -> Result<()> {
         let status = unsafe {
             ffi::miopenSetStream(
                 self.handle,
@@ -62,7 +57,7 @@ impl Handle {
     }
 
     /// Get the current stream for this handle
-    pub fn get_stream(&self) -> Result<hip::Stream> {
+    pub fn get_stream(&self) -> Result<Stream> {
         let mut stream_id = ptr::null_mut();
         let status = unsafe { ffi::miopenGetStream(self.handle, &mut stream_id) };
 
@@ -71,9 +66,7 @@ impl Handle {
         }
 
         // Create a stream from the raw pointer
-        // Note: This assumes hip::Stream has a from_raw constructor
-        // If not, we'd need to adapt this approach
-        Ok(Stream::from_raw(stream_id as hip::bindings::hipStream_t))
+        Ok(Stream::from_raw(stream_id as hipStream_t))
     }
 
     /// Enable or disable profiling
@@ -127,7 +120,6 @@ impl Drop for Handle {
         if !self.handle.is_null() {
             unsafe {
                 let _ = ffi::miopenDestroy(self.handle);
-                // We cannot handle errors in drop, so just ignore the result
             };
             self.handle = ptr::null_mut();
         }

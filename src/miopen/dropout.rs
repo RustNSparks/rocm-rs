@@ -15,10 +15,6 @@ pub struct DropoutDescriptor {
     pub(crate) desc: ffi::miopenDropoutDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for DropoutDescriptor {}
-unsafe impl Sync for DropoutDescriptor {}
-
 impl DropoutDescriptor {
     /// Create a new dropout descriptor
     pub fn new() -> Result<Self> {

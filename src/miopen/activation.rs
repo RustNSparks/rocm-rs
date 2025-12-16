@@ -68,10 +68,6 @@ pub struct ActivationDescriptor {
     desc: ffi::miopenActivationDescriptor_t,
 }
 
-// Can't be automatically derived since we have a raw pointer
-unsafe impl Send for ActivationDescriptor {}
-unsafe impl Sync for ActivationDescriptor {}
-
 impl ActivationDescriptor {
     /// Create a new activation descriptor
     pub fn new() -> Result<Self> {
