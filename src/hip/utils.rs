@@ -3,35 +3,6 @@
 use crate::hip::error::Result;
 use crate::hip::{self, Device, ffi};
 
-/// A simple RAII (Resource Acquisition Is Initialization) guard
-/// to set a device as current and restore the previous device when dropped
-pub struct DeviceGuard {
-    previous_device: i32,
-}
-
-impl DeviceGuard {
-    /// Create a new device guard, setting the given device as current
-    pub fn new(device_id: i32) -> Result<Self> {
-        // Get the current device
-        let device = Device::current()?;
-        let previous_device = device.id();
-
-        // Set the new device as current
-        let new_device = Device::new(device_id)?;
-        new_device.set_current()?;
-
-        Ok(Self { previous_device })
-    }
-}
-
-impl Drop for DeviceGuard {
-    fn drop(&mut self) {
-        if let Ok(device) = Device::new(self.previous_device) {
-            let _ = device.set_current();
-        }
-    }
-}
-
 /// Get a description of all devices in the system
 pub fn print_devices_info() -> Result<String> {
     let count = hip::get_device_count()?;
@@ -102,52 +73,6 @@ pub fn print_devices_info() -> Result<String> {
     }
 
     Ok(output)
-}
-
-/// Convenient constants for memory copy types
-pub mod copy_kind {
-    use crate::hip::ffi;
-
-    /// Host to Host memory copy
-    pub const HOST_TO_HOST: u32 = ffi::hipMemcpyKind_hipMemcpyHostToHost;
-
-    /// Host to Device memory copy
-    pub const HOST_TO_DEVICE: u32 = ffi::hipMemcpyKind_hipMemcpyHostToDevice;
-
-    /// Device to Host memory copy
-    pub const DEVICE_TO_HOST: u32 = ffi::hipMemcpyKind_hipMemcpyDeviceToHost;
-
-    /// Device to Device memory copy
-    pub const DEVICE_TO_DEVICE: u32 = ffi::hipMemcpyKind_hipMemcpyDeviceToDevice;
-
-    /// Automatic detection of memory copy type
-    pub const DEFAULT: u32 = ffi::hipMemcpyKind_hipMemcpyDefault;
-}
-
-/// Convenient constants for host memory flags
-pub mod host_mem_flags {
-    use crate::hip::ffi;
-
-    /// Default host memory allocation flag
-    pub const DEFAULT: u32 = ffi::hipHostMallocDefault;
-
-    /// Memory is accessible from all GPUs
-    pub const PORTABLE: u32 = ffi::hipHostMallocPortable;
-
-    /// Map the allocation into the GPU address space
-    pub const MAPPED: u32 = ffi::hipHostMallocMapped;
-
-    /// Allocate the memory as write-combined
-    pub const WRITE_COMBINED: u32 = ffi::hipHostMallocWriteCombined;
-
-    /// Memory will be allocated in a NUMA-optimized way
-    pub const NUMA_USER: u32 = ffi::hipHostMallocNumaUser;
-
-    /// Memory coherent with the GPU
-    pub const COHERENT: u32 = ffi::hipHostMallocCoherent;
-
-    /// Memory not coherent with the GPU
-    pub const NON_COHERENT: u32 = ffi::hipHostMallocNonCoherent;
 }
 
 /// Wrapper for HIP version information
