@@ -1,7 +1,7 @@
 // src/hip/utils.rs
 
-use crate::hip::Device;
 use crate::hip::error::Result;
+use crate::hip::{self, Device, ffi};
 
 /// A simple RAII (Resource Acquisition Is Initialization) guard
 /// to set a device as current and restore the previous device when dropped
@@ -26,17 +26,15 @@ impl DeviceGuard {
 
 impl Drop for DeviceGuard {
     fn drop(&mut self) {
-        // Restore the previous device
         if let Ok(device) = Device::new(self.previous_device) {
             let _ = device.set_current();
-            // We cannot handle errors in drop, so just ignore the result
         }
     }
 }
 
 /// Get a description of all devices in the system
 pub fn print_devices_info() -> Result<String> {
-    let count = crate::hip::get_device_count()?;
+    let count = hip::get_device_count()?;
     let mut output = String::new();
 
     output.push_str(&format!("Found {} HIP device(s)\n", count));
@@ -162,7 +160,7 @@ pub struct Version {
 impl Version {
     /// Get the HIP driver version
     pub fn driver() -> Result<Self> {
-        let version = crate::hip::driver_version()?;
+        let version = hip::driver_version()?;
 
         // HIP versions are encoded as (10000*major + 100*minor + patch)
         let major = version / 10000;
@@ -178,7 +176,7 @@ impl Version {
 
     /// Get the HIP runtime version
     pub fn runtime() -> Result<Self> {
-        let version = crate::hip::runtime_version()?;
+        let version = hip::runtime_version()?;
 
         // HIP versions are encoded as (10000*major + 100*minor + patch)
         let major = version / 10000;
@@ -191,26 +189,12 @@ impl Version {
             patch,
         })
     }
-
-    /// Convert to a string representation
-    pub unsafe fn to_string(&self) -> String {
-        format!("{}.{}.{}", self.major, self.minor, self.patch)
-    }
 }
 
 impl std::fmt::Display for Version {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
     }
-}
-
-/// Wrapper function to run a function on a specific device
-pub fn run_on_device<F, T>(device_id: i32, f: F) -> Result<T>
-where
-    F: FnOnce() -> Result<T>,
-{
-    let _guard = DeviceGuard::new(device_id)?;
-    f()
 }
 
 /// Convenient struct for 3D dimensions
@@ -238,8 +222,8 @@ impl Dim3 {
     }
 
     /// Convert to the native HIP dim3 structure
-    pub fn to_native(&self) -> crate::hip::ffi::dim3 {
-        crate::hip::ffi::dim3 {
+    pub fn to_native(&self) -> ffi::dim3 {
+        ffi::dim3 {
             x: self.x,
             y: self.y,
             z: self.z,
@@ -293,14 +277,9 @@ pub fn calculate_grid_3d(
     Dim3::new_3d(grid_x, grid_y, grid_z)
 }
 
-/// Helper function to get the next multiple of a value
-pub fn next_multiple(value: usize, multiple: usize) -> usize {
-    ((value + multiple - 1) / multiple) * multiple
-}
-
 /// Helper function to determine if HIP is available
 pub fn is_hip_available() -> bool {
-    match crate::hip::device_count() {
+    match hip::device_count() {
         Ok(count) => count > 0,
         Err(_) => false,
     }

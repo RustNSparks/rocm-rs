@@ -30,7 +30,7 @@ pub use module::{Module, compile_and_load, load_module, load_module_data};
 pub use stream::{Stream, stream_flags};
 pub use utils::{
     DeviceGuard, Dim3, Version, calculate_grid_1d, calculate_grid_2d, calculate_grid_3d, copy_kind,
-    host_mem_flags, is_hip_available, print_devices_info, run_on_device,
+    host_mem_flags, is_hip_available, print_devices_info,
 };
 
 /// Get the number of devices

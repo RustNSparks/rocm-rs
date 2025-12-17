@@ -4,7 +4,7 @@ use crate::hip;
 use crate::hip::error::{Error, Result};
 use crate::hip::event::Event;
 use crate::hip::ffi;
-use std::ptr;
+use std::{panic, ptr};
 
 use super::memory::SynchronizeCopies;
 
@@ -97,11 +97,11 @@ impl Stream {
     where
         F: FnOnce() + Send + 'static,
     {
-        // Create a Box for our closure
-        let callback_box = Box::new(callback);
+        type Callback = dyn FnOnce() + Send + 'static;
 
-        // Convert the Box to a raw pointer (to pass through the C API)
-        let callback_ptr = Box::into_raw(callback_box);
+        let boxed: Box<Option<Box<Callback>>> = Box::new(Some(Box::new(callback)));
+
+        let ptr = Box::into_raw(boxed) as *mut std::ffi::c_void;
 
         // The C callback function that will be called by HIP
         unsafe extern "C" fn helper_callback(
@@ -109,27 +109,18 @@ impl Stream {
             _status: ffi::hipError_t,
             user_data: *mut std::ffi::c_void,
         ) {
-            // Convert the pointer back to a Box and then to our closure
-            let callback_box = unsafe { Box::from_raw(user_data as *mut Box<dyn FnOnce()>) };
+            let callback_box = unsafe { Box::from_raw(user_data as *mut Option<Box<Callback>>) };
 
-            // Call the closure
-            (*callback_box)();
+            if let Some(callback) = *callback_box {
+                let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| callback()));
+            }
         }
 
-        let error = unsafe {
-            ffi::hipStreamAddCallback(
-                self.stream,
-                Some(helper_callback),
-                callback_ptr as *mut std::ffi::c_void,
-                0,
-            )
-        };
+        let error =
+            unsafe { ffi::hipStreamAddCallback(self.stream, Some(helper_callback), ptr, 0) };
 
         if error != ffi::hipError_t_hipSuccess {
-            // If there was an error, we need to clean up our Box to avoid memory leak
-            unsafe {
-                let _ = Box::from_raw(callback_ptr);
-            }
+            unsafe { drop(Box::from_raw(ptr)) }
             return Err(Error::new(error));
         }
 

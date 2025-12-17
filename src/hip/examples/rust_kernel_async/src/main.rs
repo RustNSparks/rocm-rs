@@ -27,6 +27,9 @@ fn main() -> Result<()> {
     // Create a stream for async operations
     let stream = device.get_stream()?;
 
+    // adding callback that will be triggered at the end of stream
+    stream.add_callback(|| println!("callback"))?;
+
     // loading gpu kerenel (runs in runtime!)
     let kernel_path = PathBuf::from(AMDGPU_KERNEL_BINARY_PATH);
     assert!(kernel_path.exists());
@@ -65,7 +68,6 @@ fn main() -> Result<()> {
     function.launch(grid_dim, block_dim, 0, Some(&stream), &mut kernel_args.clone())?;
 
     // retriving computed data
-
     let pending = output.copy_to_host_async(out_host, &stream)?;
 
     // synchronizing memory (awaiting for copy to finish)
