@@ -80,14 +80,12 @@ fn main() -> Result<()> {
         d_dy.copy_from_host(&dl_dy)?;
 
         // ---- MIOpen backward: dL/dx = ReLU'(x)*dL/dy ----
-        unsafe {
-            activation.backward(
-                &miopen, &alpha, &tensor, &d_y, // y from forward
-                &tensor, &d_dy, // dL/dy
-                &tensor, &d_linear, // x before activation
-                &beta, &tensor, &mut d_dx, // output: dL/dx
-            )?
-        }
+        activation.backward(
+            &miopen, &alpha, &tensor, &d_y, // y from forward
+            &tensor, &d_dy, // dL/dy
+            &tensor, &d_linear, // x before activation
+            &beta, &tensor, &mut d_dx, // output: dL/dx
+        )?;
 
         // get dL/dx back
         let mut dl_dx = vec![0f32; input_len];

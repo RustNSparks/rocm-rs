@@ -1,0 +1,8 @@
+[package]
+name = "multi_tensor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+csv = "1.4.0"
+rocm-rs = { path = "../../../.." , features = ["miopen"]}

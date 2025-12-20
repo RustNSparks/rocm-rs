@@ -152,7 +152,7 @@ impl ActivationDescriptor {
     }
 
     /// Execute a backward activation operation
-    pub unsafe fn backward<T>(
+    pub fn backward<T>(
         &self,
         handle: &Handle,
         alpha: &f32,

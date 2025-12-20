@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use rocm_kernel_macros::{amdgpu_kernel_attr, amdgpu_kernel_finalize, amdgpu_kernel_init};
-use rocm_rs::hip::*;
+use rocm_rs::{
+    hip::{kernel::AsKernelArg, *},
+    kernel_args,
+};
 
 const LEN: usize = 1024;
 
@@ -50,7 +53,7 @@ fn main() -> Result<()> {
     input.copy_from_host(&in_host)?;
 
     // providing arguments for kernel
-    let kernel_args = [input.as_kernel_arg(), output.as_kernel_arg()];
+    let kernel_args = kernel_args!(input, output);
 
     // setting up launch args
     let grid_dim = Dim3 { x: 2, y: 1, z: 1 };
