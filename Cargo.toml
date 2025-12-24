@@ -9,7 +9,7 @@ documentation = "https://docs.rs/rocm-rs"
 readme = "README.md"
 keywords = ["gpu", "rocm", "amd", "hpc", "bindings"]
 categories = ["api-bindings", "external-ffi-bindings"]
-
+exclude = ["**/kernel_sources"]
 [lib]
 doctest = false
 
