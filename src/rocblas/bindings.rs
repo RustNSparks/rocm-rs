@@ -7,16 +7,6 @@ pub struct rocblas_bfloat16 {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct rocblas_f8 {
-    pub data: u8,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct rocblas_bf8 {
-    pub data: u8,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
 pub struct _rocblas_handle {
     _unused: [u8; 0],
 }
@@ -94,19 +84,9 @@ pub const rocblas_datatype__rocblas_datatype_i32_c: rocblas_datatype_ = 166;
 pub const rocblas_datatype__rocblas_datatype_u32_c: rocblas_datatype_ = 167;
 pub const rocblas_datatype__rocblas_datatype_bf16_r: rocblas_datatype_ = 168;
 pub const rocblas_datatype__rocblas_datatype_bf16_c: rocblas_datatype_ = 169;
-pub const rocblas_datatype__rocblas_datatype_f8_r: rocblas_datatype_ = 170;
-pub const rocblas_datatype__rocblas_datatype_bf8_r: rocblas_datatype_ = 171;
 pub const rocblas_datatype__rocblas_datatype_invalid: rocblas_datatype_ = 255;
 pub type rocblas_datatype_ = ::std::os::raw::c_uint;
 pub use self::rocblas_datatype_ as rocblas_datatype;
-pub const rocblas_computetype__rocblas_compute_type_f32: rocblas_computetype_ = 300;
-pub const rocblas_computetype__rocblas_compute_type_f8_f8_f32: rocblas_computetype_ = 301;
-pub const rocblas_computetype__rocblas_compute_type_f8_bf8_f32: rocblas_computetype_ = 302;
-pub const rocblas_computetype__rocblas_compute_type_bf8_f8_f32: rocblas_computetype_ = 303;
-pub const rocblas_computetype__rocblas_compute_type_bf8_bf8_f32: rocblas_computetype_ = 304;
-pub const rocblas_computetype__rocblas_compute_type_invalid: rocblas_computetype_ = 455;
-pub type rocblas_computetype_ = ::std::os::raw::c_uint;
-pub use self::rocblas_computetype_ as rocblas_computetype;
 pub const rocblas_status__rocblas_status_success: rocblas_status_ = 0;
 pub const rocblas_status__rocblas_status_invalid_handle: rocblas_status_ = 1;
 pub const rocblas_status__rocblas_status_not_implemented: rocblas_status_ = 2;
@@ -145,6 +125,7 @@ pub const rocblas_layer_mode__rocblas_layer_mode_none: rocblas_layer_mode_ = 0;
 pub const rocblas_layer_mode__rocblas_layer_mode_log_trace: rocblas_layer_mode_ = 1;
 pub const rocblas_layer_mode__rocblas_layer_mode_log_bench: rocblas_layer_mode_ = 2;
 pub const rocblas_layer_mode__rocblas_layer_mode_log_profile: rocblas_layer_mode_ = 4;
+pub const rocblas_layer_mode__rocblas_layer_mode_log_internal: rocblas_layer_mode_ = 8;
 pub type rocblas_layer_mode_ = ::std::os::raw::c_uint;
 pub use self::rocblas_layer_mode_ as rocblas_layer_mode;
 pub const rocblas_gemm_algo__rocblas_gemm_algo_standard: rocblas_gemm_algo_ = 0;
@@ -15027,72 +15008,6 @@ unsafe extern "C" {
     ) -> rocblas_status;
 }
 unsafe extern "C" {
-    pub fn rocblas_hgemm_kernel_name(
-        handle: rocblas_handle,
-        transA: rocblas_operation,
-        transB: rocblas_operation,
-        m: rocblas_int,
-        n: rocblas_int,
-        k: rocblas_int,
-        alpha: *const rocblas_half,
-        A: *const rocblas_half,
-        lda: rocblas_int,
-        stride_a: rocblas_stride,
-        B: *const rocblas_half,
-        ldb: rocblas_int,
-        stride_b: rocblas_stride,
-        beta: *const rocblas_half,
-        C: *mut rocblas_half,
-        ldc: rocblas_int,
-        stride_c: rocblas_stride,
-        batch_count: rocblas_int,
-    ) -> rocblas_status;
-}
-unsafe extern "C" {
-    pub fn rocblas_sgemm_kernel_name(
-        handle: rocblas_handle,
-        transA: rocblas_operation,
-        transB: rocblas_operation,
-        m: rocblas_int,
-        n: rocblas_int,
-        k: rocblas_int,
-        alpha: *const f32,
-        A: *const f32,
-        lda: rocblas_int,
-        stride_a: rocblas_stride,
-        B: *const f32,
-        ldb: rocblas_int,
-        stride_b: rocblas_stride,
-        beta: *const f32,
-        C: *mut f32,
-        ldc: rocblas_int,
-        stride_c: rocblas_stride,
-        batch_count: rocblas_int,
-    ) -> rocblas_status;
-}
-unsafe extern "C" {
-    pub fn rocblas_dgemm_kernel_name(
-        handle: rocblas_handle,
-        transA: rocblas_operation,
-        transB: rocblas_operation,
-        m: rocblas_int,
-        n: rocblas_int,
-        k: rocblas_int,
-        alpha: *const f64,
-        A: *const f64,
-        lda: rocblas_int,
-        stride_a: rocblas_stride,
-        B: *const f64,
-        ldb: rocblas_int,
-        stride_b: rocblas_stride,
-        beta: *const f64,
-        C: *mut f64,
-        ldc: rocblas_int,
-        stride_c: rocblas_stride,
-        batch_count: rocblas_int,
-    ) -> rocblas_status;
-}
-unsafe extern "C" {
     pub fn rocblas_sgemm(
         handle: rocblas_handle,
         transA: rocblas_operation,
@@ -17814,6 +17729,15 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn rocblas_get_version_string_size(len: *mut usize) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocblas_get_commit_hash_string(
+        buf: *mut ::std::os::raw::c_char,
+        len: usize,
+    ) -> rocblas_status;
+}
+unsafe extern "C" {
+    pub fn rocblas_get_commit_hash_string_size(len: *mut usize) -> rocblas_status;
 }
 unsafe extern "C" {
     pub fn rocblas_start_device_memory_size_query(handle: rocblas_handle) -> rocblas_status;

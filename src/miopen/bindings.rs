@@ -39,10 +39,10 @@ pub const MIOPEN_CACHE_DIR: &[u8; 17] = b"~/.cache/miopen/\0";
 pub const MIOPEN_USE_SQLITE_PERFDB: u32 = 0;
 pub const MIOPEN_NDEBUG: u32 = 0;
 pub const MIOPEN_ALLOC_BUFFERS: u32 = 0;
-pub const MIOPEN_ROCBLAS_VERSION_MAJOR: u32 = 4;
-pub const MIOPEN_ROCBLAS_VERSION_MINOR: u32 = 4;
-pub const MIOPEN_ROCBLAS_VERSION_PATCH: u32 = 1;
-pub const MIOPEN_ROCBLAS_VERSION_FLAT: u32 = 4004001;
+pub const MIOPEN_ROCBLAS_VERSION_MAJOR: u32 = 5;
+pub const MIOPEN_ROCBLAS_VERSION_MINOR: u32 = 1;
+pub const MIOPEN_ROCBLAS_VERSION_PATCH: u32 = 0;
+pub const MIOPEN_ROCBLAS_VERSION_FLAT: u32 = 5001000;
 pub const MIOPEN_GOLDEN_DB_VERSION: u32 = 21;
 pub const MIOPEN_API_VERSION_REDUCE_TENSOR: u32 = 1;
 #[repr(C)]
@@ -211,6 +211,8 @@ pub const miopenDataType_t_miopenInt32: miopenDataType_t = 2;
 pub const miopenDataType_t_miopenInt8: miopenDataType_t = 3;
 pub const miopenDataType_t_miopenBFloat16: miopenDataType_t = 5;
 pub const miopenDataType_t_miopenDouble: miopenDataType_t = 6;
+pub const miopenDataType_t_miopenFloat8_fnuz: miopenDataType_t = 7;
+pub const miopenDataType_t_miopenBFloat8_fnuz: miopenDataType_t = 8;
 pub const miopenDataType_t_miopenInt64: miopenDataType_t = 9;
 pub type miopenDataType_t = ::std::os::raw::c_uint;
 pub const miopenTensorLayout_t_miopenTensorNCHW: miopenTensorLayout_t = 0;
@@ -267,6 +269,7 @@ pub const miopenActivationMode_t_miopenActivationPOWER: miopenActivationMode_t =
 pub const miopenActivationMode_t_miopenActivationCLIPPEDRELU: miopenActivationMode_t = 7;
 pub const miopenActivationMode_t_miopenActivationLEAKYRELU: miopenActivationMode_t = 8;
 pub const miopenActivationMode_t_miopenActivationELU: miopenActivationMode_t = 9;
+pub const miopenActivationMode_t_miopenActivationCLAMP: miopenActivationMode_t = 10;
 pub type miopenActivationMode_t = ::std::os::raw::c_uint;
 pub const miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_FAST: miopenSoftmaxAlgorithm_t = 0;
 pub const miopenSoftmaxAlgorithm_t_MIOPEN_SOFTMAX_ACCURATE: miopenSoftmaxAlgorithm_t = 1;
@@ -310,6 +313,10 @@ pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeHybrid: miopenCon
     3;
 pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeDynamicHybrid:
     miopenConvolutionFindMode_t = 5;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeTrustVerify:
+    miopenConvolutionFindMode_t = 6;
+pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeTrustVerifyFull:
+    miopenConvolutionFindMode_t = 7;
 pub const miopenConvolutionFindMode_t_miopenConvolutionFindModeDefault:
     miopenConvolutionFindMode_t = 5;
 pub type miopenConvolutionFindMode_t = ::std::os::raw::c_uint;
@@ -1226,6 +1233,31 @@ unsafe extern "C" {
     ) -> miopenStatus_t;
 }
 unsafe extern "C" {
+    pub fn miopenBatchNormForwardTrainingActivation(
+        handle: miopenHandle_t,
+        bn_mode: miopenBatchNormMode_t,
+        alpha: *mut ::std::os::raw::c_void,
+        beta: *mut ::std::os::raw::c_void,
+        xDesc: miopenTensorDescriptor_t,
+        x: *const ::std::os::raw::c_void,
+        yDesc: miopenTensorDescriptor_t,
+        y: *mut ::std::os::raw::c_void,
+        scaleDesc: miopenTensorDescriptor_t,
+        biasVarDesc: miopenTensorDescriptor_t,
+        savedMeanDesc: miopenTensorDescriptor_t,
+        savedVarDesc: miopenTensorDescriptor_t,
+        bnScale: *mut ::std::os::raw::c_void,
+        bnBias: *mut ::std::os::raw::c_void,
+        expAvgFactor: f64,
+        resultRunningMean: *mut ::std::os::raw::c_void,
+        resultRunningVariance: *mut ::std::os::raw::c_void,
+        epsilon: f64,
+        resultSaveMean: *mut ::std::os::raw::c_void,
+        resultSaveInvVariance: *mut ::std::os::raw::c_void,
+        activDesc: miopenActivationDescriptor_t,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
     pub fn miopenBatchNormalizationForwardInference(
         handle: miopenHandle_t,
         bn_mode: miopenBatchNormMode_t,
@@ -1262,6 +1294,28 @@ unsafe extern "C" {
         estimatedMean: *mut ::std::os::raw::c_void,
         estimatedVariance: *mut ::std::os::raw::c_void,
         epsilon: f64,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenBatchNormForwardInferenceActivation(
+        handle: miopenHandle_t,
+        bn_mode: miopenBatchNormMode_t,
+        alpha: *mut ::std::os::raw::c_void,
+        beta: *mut ::std::os::raw::c_void,
+        xDesc: miopenTensorDescriptor_t,
+        x: *const ::std::os::raw::c_void,
+        yDesc: miopenTensorDescriptor_t,
+        y: *mut ::std::os::raw::c_void,
+        scaleDesc: miopenTensorDescriptor_t,
+        biasDesc: miopenTensorDescriptor_t,
+        estMeanDesc: miopenTensorDescriptor_t,
+        estVarianceDesc: miopenTensorDescriptor_t,
+        bnScale: *mut ::std::os::raw::c_void,
+        bnBias: *mut ::std::os::raw::c_void,
+        estimatedMean: *mut ::std::os::raw::c_void,
+        estimatedVariance: *mut ::std::os::raw::c_void,
+        epsilon: f64,
+        activDesc: miopenActivationDescriptor_t,
     ) -> miopenStatus_t;
 }
 unsafe extern "C" {
@@ -1311,6 +1365,34 @@ unsafe extern "C" {
         epsilon: f64,
         savedMean: *const ::std::os::raw::c_void,
         savedInvVariance: *const ::std::os::raw::c_void,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenBatchNormBackwardActivation(
+        handle: miopenHandle_t,
+        bn_mode: miopenBatchNormMode_t,
+        alphaDataDiff: *const ::std::os::raw::c_void,
+        betaDataDiff: *const ::std::os::raw::c_void,
+        alphaParamDiff: *const ::std::os::raw::c_void,
+        betaParamDiff: *const ::std::os::raw::c_void,
+        xDesc: miopenTensorDescriptor_t,
+        x: *const ::std::os::raw::c_void,
+        dyDesc: miopenTensorDescriptor_t,
+        dy: *const ::std::os::raw::c_void,
+        dxDesc: miopenTensorDescriptor_t,
+        dx: *mut ::std::os::raw::c_void,
+        scaleDesc: miopenTensorDescriptor_t,
+        biasDesc: miopenTensorDescriptor_t,
+        savedMeanDesc: miopenTensorDescriptor_t,
+        savedVarianceDesc: miopenTensorDescriptor_t,
+        bnScale: *const ::std::os::raw::c_void,
+        bnBias: *const ::std::os::raw::c_void,
+        resultBnScaleDiff: *mut ::std::os::raw::c_void,
+        resultBnBiasDiff: *mut ::std::os::raw::c_void,
+        epsilon: f64,
+        savedMean: *const ::std::os::raw::c_void,
+        savedInvVariance: *const ::std::os::raw::c_void,
+        activDesc: miopenActivationDescriptor_t,
     ) -> miopenStatus_t;
 }
 unsafe extern "C" {
@@ -1640,6 +1722,19 @@ unsafe extern "C" {
         outputDesc: miopenTensorDescriptor_t,
         output: *mut ::std::os::raw::c_void,
         args: miopenOperatorArgs_t,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenExecuteFusionPlan_v2(
+        handle: miopenHandle_t,
+        fusePlanDesc: miopenFusionPlanDescriptor_t,
+        inputDesc: miopenTensorDescriptor_t,
+        input: *const ::std::os::raw::c_void,
+        outputDesc: miopenTensorDescriptor_t,
+        output: *mut ::std::os::raw::c_void,
+        args: miopenOperatorArgs_t,
+        workspace: *mut ::std::os::raw::c_void,
+        workspaceSize: usize,
     ) -> miopenStatus_t;
 }
 unsafe extern "C" {
@@ -2557,5 +2652,23 @@ unsafe extern "C" {
     pub fn miopenGetSolverIdConvAlgorithm(
         solverId: u64,
         result: *mut miopenConvAlgorithm_t,
+    ) -> miopenStatus_t;
+}
+pub const miopenTuningPolicy_t_miopenTuningPolicyNone: miopenTuningPolicy_t = 1;
+pub const miopenTuningPolicy_t_miopenTuningPolicyDbUpdate: miopenTuningPolicy_t = 2;
+pub const miopenTuningPolicy_t_miopenTuningPolicySearch: miopenTuningPolicy_t = 3;
+pub const miopenTuningPolicy_t_miopenTuningPolicySearchDbUpdate: miopenTuningPolicy_t = 4;
+pub const miopenTuningPolicy_t_miopenTuningPolicyDbClean: miopenTuningPolicy_t = 5;
+pub type miopenTuningPolicy_t = ::std::os::raw::c_uint;
+unsafe extern "C" {
+    pub fn miopenSetTuningPolicy(
+        handle: miopenHandle_t,
+        newValue: miopenTuningPolicy_t,
+    ) -> miopenStatus_t;
+}
+unsafe extern "C" {
+    pub fn miopenGetTuningPolicy(
+        handle: miopenHandle_t,
+        value: *mut miopenTuningPolicy_t,
     ) -> miopenStatus_t;
 }

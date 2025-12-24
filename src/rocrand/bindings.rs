@@ -10,13 +10,13 @@ pub struct rocrand_discrete_distribution_st {
     pub cdf: *mut f64,
 }
 pub type rocrand_discrete_distribution = *mut rocrand_discrete_distribution_st;
+pub type uint4 = u128;
 #[repr(C)]
 #[derive(Debug)]
 pub struct __half {
     pub __x: ::std::os::raw::c_ushort,
 }
 pub type half = __half;
-pub type uint4 = u128;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ihipStream_t {

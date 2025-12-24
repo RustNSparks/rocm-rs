@@ -64,10 +64,8 @@ pub use bindings::rocblas_side__rocblas_side_right;
 
 // Data type constants
 pub use bindings::rocblas_datatype;
-pub use bindings::rocblas_datatype__rocblas_datatype_bf8_r;
 pub use bindings::rocblas_datatype__rocblas_datatype_bf16_c;
 pub use bindings::rocblas_datatype__rocblas_datatype_bf16_r;
-pub use bindings::rocblas_datatype__rocblas_datatype_f8_r;
 pub use bindings::rocblas_datatype__rocblas_datatype_f16_c;
 pub use bindings::rocblas_datatype__rocblas_datatype_f16_r;
 pub use bindings::rocblas_datatype__rocblas_datatype_f32_c;
@@ -83,15 +81,6 @@ pub use bindings::rocblas_datatype__rocblas_datatype_u8_c;
 pub use bindings::rocblas_datatype__rocblas_datatype_u8_r;
 pub use bindings::rocblas_datatype__rocblas_datatype_u32_c;
 pub use bindings::rocblas_datatype__rocblas_datatype_u32_r;
-
-// Compute type constants
-pub use bindings::rocblas_computetype;
-pub use bindings::rocblas_computetype__rocblas_compute_type_bf8_bf8_f32;
-pub use bindings::rocblas_computetype__rocblas_compute_type_bf8_f8_f32;
-pub use bindings::rocblas_computetype__rocblas_compute_type_f8_bf8_f32;
-pub use bindings::rocblas_computetype__rocblas_compute_type_f8_f8_f32;
-pub use bindings::rocblas_computetype__rocblas_compute_type_f32;
-pub use bindings::rocblas_computetype__rocblas_compute_type_invalid;
 
 // Pointer mode type and constants
 pub use bindings::rocblas_pointer_mode;

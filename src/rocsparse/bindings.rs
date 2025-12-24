@@ -12,6 +12,11 @@ pub struct rocsparse_double_complex {
     pub x: f64,
     pub y: f64,
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct rocsparse_bfloat16 {
+    pub data: u16,
+}
 pub type rocsparse_int = i32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -25,6 +30,12 @@ pub struct _rocsparse_handle {
     _unused: [u8; 0],
 }
 pub type rocsparse_handle = *mut _rocsparse_handle;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _rocsparse_error {
+    _unused: [u8; 0],
+}
+pub type rocsparse_error = *mut _rocsparse_error;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct _rocsparse_mat_descr {
@@ -89,6 +100,18 @@ pub struct _rocsparse_extract_descr {
     _unused: [u8; 0],
 }
 pub type rocsparse_extract_descr = *mut _rocsparse_extract_descr;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _rocsparse_spgeam_descr {
+    _unused: [u8; 0],
+}
+pub type rocsparse_spgeam_descr = *mut _rocsparse_spgeam_descr;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _rocsparse_spmv_descr {
+    _unused: [u8; 0],
+}
+pub type rocsparse_spmv_descr = *mut _rocsparse_spmv_descr;
 pub const rocsparse_operation__rocsparse_operation_none: rocsparse_operation_ = 111;
 pub const rocsparse_operation__rocsparse_operation_transpose: rocsparse_operation_ = 112;
 pub const rocsparse_operation__rocsparse_operation_conjugate_transpose: rocsparse_operation_ = 113;
@@ -180,6 +203,7 @@ pub const rocsparse_indextype__rocsparse_indextype_i32: rocsparse_indextype_ = 2
 pub const rocsparse_indextype__rocsparse_indextype_i64: rocsparse_indextype_ = 3;
 pub type rocsparse_indextype_ = ::std::os::raw::c_uint;
 pub use self::rocsparse_indextype_ as rocsparse_indextype;
+pub const rocsparse_datatype__rocsparse_datatype_f16_r: rocsparse_datatype_ = 150;
 pub const rocsparse_datatype__rocsparse_datatype_f32_r: rocsparse_datatype_ = 151;
 pub const rocsparse_datatype__rocsparse_datatype_f64_r: rocsparse_datatype_ = 152;
 pub const rocsparse_datatype__rocsparse_datatype_f32_c: rocsparse_datatype_ = 154;
@@ -188,6 +212,7 @@ pub const rocsparse_datatype__rocsparse_datatype_i8_r: rocsparse_datatype_ = 160
 pub const rocsparse_datatype__rocsparse_datatype_u8_r: rocsparse_datatype_ = 161;
 pub const rocsparse_datatype__rocsparse_datatype_i32_r: rocsparse_datatype_ = 162;
 pub const rocsparse_datatype__rocsparse_datatype_u32_r: rocsparse_datatype_ = 163;
+pub const rocsparse_datatype__rocsparse_datatype_bf16_r: rocsparse_datatype_ = 168;
 pub type rocsparse_datatype_ = ::std::os::raw::c_uint;
 pub use self::rocsparse_datatype_ as rocsparse_datatype;
 pub const rocsparse_format__rocsparse_format_coo: rocsparse_format_ = 0;
@@ -262,6 +287,18 @@ pub const rocsparse_check_spmat_stage__rocsparse_check_spmat_stage_compute:
     rocsparse_check_spmat_stage_ = 1;
 pub type rocsparse_check_spmat_stage_ = ::std::os::raw::c_uint;
 pub use self::rocsparse_check_spmat_stage_ as rocsparse_check_spmat_stage;
+pub const rocsparse_spmv_input__rocsparse_spmv_input_alg: rocsparse_spmv_input_ = 0;
+pub const rocsparse_spmv_input__rocsparse_spmv_input_operation: rocsparse_spmv_input_ = 1;
+pub const rocsparse_spmv_input__rocsparse_spmv_input_scalar_datatype: rocsparse_spmv_input_ = 2;
+pub const rocsparse_spmv_input__rocsparse_spmv_input_compute_datatype: rocsparse_spmv_input_ = 3;
+pub const rocsparse_spmv_input__rocsparse_spmv_input_nnz_use_starting_block_ids:
+    rocsparse_spmv_input_ = 4;
+pub type rocsparse_spmv_input_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_spmv_input_ as rocsparse_spmv_input;
+pub const rocsparse_v2_spmv_stage__rocsparse_v2_spmv_stage_analysis: rocsparse_v2_spmv_stage_ = 0;
+pub const rocsparse_v2_spmv_stage__rocsparse_v2_spmv_stage_compute: rocsparse_v2_spmv_stage_ = 1;
+pub type rocsparse_v2_spmv_stage_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_v2_spmv_stage_ as rocsparse_v2_spmv_stage;
 pub const rocsparse_spmv_stage__rocsparse_spmv_stage_buffer_size: rocsparse_spmv_stage_ = 1;
 pub const rocsparse_spmv_stage__rocsparse_spmv_stage_preprocess: rocsparse_spmv_stage_ = 2;
 pub const rocsparse_spmv_stage__rocsparse_spmv_stage_compute: rocsparse_spmv_stage_ = 3;
@@ -270,11 +307,13 @@ pub use self::rocsparse_spmv_stage_ as rocsparse_spmv_stage;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_default: rocsparse_spmv_alg_ = 0;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_coo: rocsparse_spmv_alg_ = 1;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_adaptive: rocsparse_spmv_alg_ = 2;
-pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_stream: rocsparse_spmv_alg_ = 3;
+pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_rowsplit: rocsparse_spmv_alg_ = 3;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_ell: rocsparse_spmv_alg_ = 4;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_coo_atomic: rocsparse_spmv_alg_ = 5;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_bsr: rocsparse_spmv_alg_ = 6;
 pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_lrb: rocsparse_spmv_alg_ = 7;
+pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_nnzsplit: rocsparse_spmv_alg_ = 8;
+pub const rocsparse_spmv_alg__rocsparse_spmv_alg_csr_stream: rocsparse_spmv_alg_ = 3;
 pub type rocsparse_spmv_alg_ = ::std::os::raw::c_uint;
 pub use self::rocsparse_spmv_alg_ as rocsparse_spmv_alg;
 pub const rocsparse_spsv_alg__rocsparse_spsv_alg_default: rocsparse_spsv_alg_ = 0;
@@ -341,6 +380,35 @@ pub use self::rocsparse_spgemm_stage_ as rocsparse_spgemm_stage;
 pub const rocsparse_spgemm_alg__rocsparse_spgemm_alg_default: rocsparse_spgemm_alg_ = 0;
 pub type rocsparse_spgemm_alg_ = ::std::os::raw::c_uint;
 pub use self::rocsparse_spgemm_alg_ as rocsparse_spgemm_alg;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_analysis: rocsparse_spgeam_stage_ = 1;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_compute: rocsparse_spgeam_stage_ = 2;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_symbolic_analysis:
+    rocsparse_spgeam_stage_ = 3;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_symbolic_compute: rocsparse_spgeam_stage_ =
+    4;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_numeric_analysis: rocsparse_spgeam_stage_ =
+    5;
+pub const rocsparse_spgeam_stage__rocsparse_spgeam_stage_numeric_compute: rocsparse_spgeam_stage_ =
+    6;
+pub type rocsparse_spgeam_stage_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_spgeam_stage_ as rocsparse_spgeam_stage;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_alg: rocsparse_spgeam_input_ = 0;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_scalar_datatype: rocsparse_spgeam_input_ =
+    1;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_compute_datatype: rocsparse_spgeam_input_ =
+    2;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_operation_A: rocsparse_spgeam_input_ = 3;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_operation_B: rocsparse_spgeam_input_ = 4;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_scalar_alpha: rocsparse_spgeam_input_ = 5;
+pub const rocsparse_spgeam_input__rocsparse_spgeam_input_scalar_beta: rocsparse_spgeam_input_ = 6;
+pub type rocsparse_spgeam_input_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_spgeam_input_ as rocsparse_spgeam_input;
+pub const rocsparse_spgeam_output__rocsparse_spgeam_output_nnz: rocsparse_spgeam_output_ = 0;
+pub type rocsparse_spgeam_output_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_spgeam_output_ as rocsparse_spgeam_output;
+pub const rocsparse_spgeam_alg__rocsparse_spgeam_alg_default: rocsparse_spgeam_alg_ = 0;
+pub type rocsparse_spgeam_alg_ = ::std::os::raw::c_uint;
+pub use self::rocsparse_spgeam_alg_ as rocsparse_spgeam_alg;
 pub const rocsparse_gpsv_interleaved_alg__rocsparse_gpsv_interleaved_alg_default:
     rocsparse_gpsv_interleaved_alg_ = 0;
 pub const rocsparse_gpsv_interleaved_alg__rocsparse_gpsv_interleaved_alg_qr:
@@ -352,6 +420,12 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn rocsparse_destroy_handle(handle: rocsparse_handle) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_destroy_error(error: rocsparse_error) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_error_get_message(error: rocsparse_error) -> *const ::std::os::raw::c_char;
 }
 unsafe extern "C" {
     pub fn rocsparse_get_status_name(status: rocsparse_status) -> *const ::std::os::raw::c_char;
@@ -754,6 +828,48 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn rocsparse_destroy_extract_descr(descr: rocsparse_extract_descr) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_create_spgeam_descr(descr: *mut rocsparse_spgeam_descr) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_destroy_spgeam_descr(descr: rocsparse_spgeam_descr) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_spgeam_set_input(
+        handle: rocsparse_handle,
+        descr: rocsparse_spgeam_descr,
+        input: rocsparse_spgeam_input,
+        data: *const ::std::os::raw::c_void,
+        data_size_in_bytes: usize,
+        error: *mut rocsparse_error,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_spgeam_get_output(
+        handle: rocsparse_handle,
+        descr: rocsparse_spgeam_descr,
+        output: rocsparse_spgeam_output,
+        data: *mut ::std::os::raw::c_void,
+        data_size_in_bytes: usize,
+        error: *mut rocsparse_error,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_create_spmv_descr(descr: *mut rocsparse_spmv_descr) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_destroy_spmv_descr(descr: rocsparse_spmv_descr) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_spmv_set_input(
+        handle: rocsparse_handle,
+        descr: rocsparse_spmv_descr,
+        input: rocsparse_spmv_input,
+        in_: *const ::std::os::raw::c_void,
+        size_in_bytes: usize,
+        error: *mut rocsparse_error,
+    ) -> rocsparse_status;
 }
 unsafe extern "C" {
     pub fn rocsparse_coo_get(
@@ -1270,6 +1386,12 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn rocsparse_state_debug() -> ::std::os::raw::c_int;
+}
+unsafe extern "C" {
+    pub fn rocsparse_enable_debug_warnings();
+}
+unsafe extern "C" {
+    pub fn rocsparse_disable_debug_warnings();
 }
 unsafe extern "C" {
     pub fn rocsparse_enable_debug_verbose();
@@ -4408,10 +4530,10 @@ unsafe extern "C" {
         opA: rocsparse_operation,
         opB: rocsparse_operation,
         alpha: *const ::std::os::raw::c_void,
-        A: rocsparse_const_dnmat_descr,
-        B: rocsparse_const_dnmat_descr,
+        mat_A: rocsparse_const_dnmat_descr,
+        mat_B: rocsparse_const_dnmat_descr,
         beta: *const ::std::os::raw::c_void,
-        C: rocsparse_spmat_descr,
+        mat_C: rocsparse_spmat_descr,
         compute_type: rocsparse_datatype,
         alg: rocsparse_sddmm_alg,
         buffer_size: *mut usize,
@@ -4423,10 +4545,10 @@ unsafe extern "C" {
         opA: rocsparse_operation,
         opB: rocsparse_operation,
         alpha: *const ::std::os::raw::c_void,
-        A: rocsparse_const_dnmat_descr,
-        B: rocsparse_const_dnmat_descr,
+        mat_A: rocsparse_const_dnmat_descr,
+        mat_B: rocsparse_const_dnmat_descr,
         beta: *const ::std::os::raw::c_void,
-        C: rocsparse_spmat_descr,
+        mat_C: rocsparse_spmat_descr,
         compute_type: rocsparse_datatype,
         alg: rocsparse_sddmm_alg,
         temp_buffer: *mut ::std::os::raw::c_void,
@@ -4438,10 +4560,10 @@ unsafe extern "C" {
         opA: rocsparse_operation,
         opB: rocsparse_operation,
         alpha: *const ::std::os::raw::c_void,
-        A: rocsparse_const_dnmat_descr,
-        B: rocsparse_const_dnmat_descr,
+        mat_A: rocsparse_const_dnmat_descr,
+        mat_B: rocsparse_const_dnmat_descr,
         beta: *const ::std::os::raw::c_void,
-        C: rocsparse_spmat_descr,
+        mat_C: rocsparse_spmat_descr,
         compute_type: rocsparse_datatype,
         alg: rocsparse_sddmm_alg,
         temp_buffer: *mut ::std::os::raw::c_void,
@@ -4476,6 +4598,31 @@ unsafe extern "C" {
         stage: rocsparse_sparse_to_sparse_stage,
         buffer_size_in_bytes: usize,
         buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_spgeam_buffer_size(
+        handle: rocsparse_handle,
+        descr: rocsparse_spgeam_descr,
+        mat_A: rocsparse_const_spmat_descr,
+        mat_B: rocsparse_const_spmat_descr,
+        mat_C: rocsparse_const_spmat_descr,
+        stage: rocsparse_spgeam_stage,
+        buffer_size: *mut usize,
+        error: *mut rocsparse_error,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_spgeam(
+        handle: rocsparse_handle,
+        descr: rocsparse_spgeam_descr,
+        mat_A: rocsparse_const_spmat_descr,
+        mat_B: rocsparse_const_spmat_descr,
+        mat_C: rocsparse_spmat_descr,
+        stage: rocsparse_spgeam_stage,
+        buffer_size: usize,
+        temp_buffer: *mut ::std::os::raw::c_void,
+        error: *mut rocsparse_error,
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
@@ -4548,22 +4695,6 @@ unsafe extern "C" {
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
-    pub fn rocsparse_spmv_ex(
-        handle: rocsparse_handle,
-        trans: rocsparse_operation,
-        alpha: *const ::std::os::raw::c_void,
-        mat: rocsparse_spmat_descr,
-        x: rocsparse_dnvec_descr,
-        beta: *const ::std::os::raw::c_void,
-        y: rocsparse_dnvec_descr,
-        compute_type: rocsparse_datatype,
-        alg: rocsparse_spmv_alg,
-        stage: rocsparse_spmv_stage,
-        buffer_size: *mut usize,
-        temp_buffer: *mut ::std::os::raw::c_void,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
     pub fn rocsparse_spsm(
         handle: rocsparse_handle,
         trans_A: rocsparse_operation,
@@ -4604,6 +4735,33 @@ unsafe extern "C" {
         compute_type: rocsparse_datatype,
         buffer_size: *mut usize,
         temp_buffer: *mut ::std::os::raw::c_void,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_v2_spmv_buffer_size(
+        handle: rocsparse_handle,
+        descr: rocsparse_spmv_descr,
+        mat: rocsparse_const_spmat_descr,
+        x: rocsparse_const_dnvec_descr,
+        y: rocsparse_const_dnvec_descr,
+        stage: rocsparse_v2_spmv_stage,
+        buffer_size_in_bytes: *mut usize,
+        error: *mut rocsparse_error,
+    ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_v2_spmv(
+        handle: rocsparse_handle,
+        descr: rocsparse_spmv_descr,
+        alpha: *const ::std::os::raw::c_void,
+        mat: rocsparse_const_spmat_descr,
+        x: rocsparse_const_dnvec_descr,
+        beta: *const ::std::os::raw::c_void,
+        y: rocsparse_dnvec_descr,
+        stage: rocsparse_v2_spmv_stage,
+        buffer_size_in_bytes: usize,
+        buffer: *mut ::std::os::raw::c_void,
+        error: *mut rocsparse_error,
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
@@ -4868,156 +5026,6 @@ unsafe extern "C" {
         x_ind: *const rocsparse_int,
         y: *mut rocsparse_int,
         idx_base: rocsparse_index_base,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_sbsrmv_ex_analysis(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const f32,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_dbsrmv_ex_analysis(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const f64,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_cbsrmv_ex_analysis(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const rocsparse_float_complex,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_zbsrmv_ex_analysis(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const rocsparse_double_complex,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_sbsrmv_ex(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        alpha: *const f32,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const f32,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-        x: *const f32,
-        beta: *const f32,
-        y: *mut f32,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_dbsrmv_ex(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        alpha: *const f64,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const f64,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-        x: *const f64,
-        beta: *const f64,
-        y: *mut f64,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_cbsrmv_ex(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        alpha: *const rocsparse_float_complex,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const rocsparse_float_complex,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-        x: *const rocsparse_float_complex,
-        beta: *const rocsparse_float_complex,
-        y: *mut rocsparse_float_complex,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_zbsrmv_ex(
-        handle: rocsparse_handle,
-        dir: rocsparse_direction,
-        trans: rocsparse_operation,
-        mb: rocsparse_int,
-        nb: rocsparse_int,
-        nnzb: rocsparse_int,
-        alpha: *const rocsparse_double_complex,
-        descr: rocsparse_mat_descr,
-        bsr_val: *const rocsparse_double_complex,
-        bsr_row_ptr: *const rocsparse_int,
-        bsr_col_ind: *const rocsparse_int,
-        block_dim: rocsparse_int,
-        info: rocsparse_mat_info,
-        x: *const rocsparse_double_complex,
-        beta: *const rocsparse_double_complex,
-        y: *mut rocsparse_double_complex,
-    ) -> rocsparse_status;
-}
-unsafe extern "C" {
-    pub fn rocsparse_bsrmv_ex_clear(
-        handle: rocsparse_handle,
-        info: rocsparse_mat_info,
     ) -> rocsparse_status;
 }
 unsafe extern "C" {
@@ -9992,4 +10000,13 @@ unsafe extern "C" {
         data_status: *mut rocsparse_data_status,
         temp_buffer: *mut ::std::os::raw::c_void,
     ) -> rocsparse_status;
+}
+unsafe extern "C" {
+    pub fn rocsparse_enable_roctx();
+}
+unsafe extern "C" {
+    pub fn rocsparse_disable_roctx();
+}
+unsafe extern "C" {
+    pub fn rocsparse_state_roctx() -> ::std::os::raw::c_int;
 }

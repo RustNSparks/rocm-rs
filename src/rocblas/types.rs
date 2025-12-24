@@ -171,10 +171,6 @@ pub enum DataType {
     BF16Real,
     /// 16-bit bfloat, complex
     BF16Complex,
-    /// 8-bit floating point, real
-    F8Real,
-    /// 8-bit bfloat, real
-    BF8Real,
 }
 
 impl From<DataType> for ffi::rocblas_datatype {
@@ -196,8 +192,7 @@ impl From<DataType> for ffi::rocblas_datatype {
             DataType::U32Complex => ffi::rocblas_datatype__rocblas_datatype_u32_c,
             DataType::BF16Real => ffi::rocblas_datatype__rocblas_datatype_bf16_r,
             DataType::BF16Complex => ffi::rocblas_datatype__rocblas_datatype_bf16_c,
-            DataType::F8Real => ffi::rocblas_datatype__rocblas_datatype_f8_r,
-            DataType::BF8Real => ffi::rocblas_datatype__rocblas_datatype_bf8_r,
+
         }
     }
 }
@@ -221,8 +216,6 @@ impl From<ffi::rocblas_datatype> for DataType {
             ffi::rocblas_datatype__rocblas_datatype_u32_c => DataType::U32Complex,
             ffi::rocblas_datatype__rocblas_datatype_bf16_r => DataType::BF16Real,
             ffi::rocblas_datatype__rocblas_datatype_bf16_c => DataType::BF16Complex,
-            ffi::rocblas_datatype__rocblas_datatype_f8_r => DataType::F8Real,
-            ffi::rocblas_datatype__rocblas_datatype_bf8_r => DataType::BF8Real,
             _ => DataType::F32Real, // Default to F32Real for unknown values
         }
     }

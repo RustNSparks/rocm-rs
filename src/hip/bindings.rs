@@ -137,13 +137,13 @@ where
         }
     }
 }
-pub const HIP_VERSION_MAJOR: u32 = 6;
-pub const HIP_VERSION_MINOR: u32 = 4;
-pub const HIP_VERSION_PATCH: u32 = 43484;
+pub const HIP_VERSION_MAJOR: u32 = 7;
+pub const HIP_VERSION_MINOR: u32 = 1;
+pub const HIP_VERSION_PATCH: u32 = 52802;
 pub const HIP_VERSION_GITHASH: &[u8; 1] = b"\0";
 pub const HIP_VERSION_BUILD_ID: u32 = 0;
 pub const HIP_VERSION_BUILD_NAME: &[u8; 1] = b"\0";
-pub const HIP_VERSION: u32 = 60443484;
+pub const HIP_VERSION: u32 = 70152802;
 pub const HIP_TRSA_OVERRIDE_FORMAT: u32 = 1;
 pub const HIP_TRSF_READ_AS_INTEGER: u32 = 1;
 pub const HIP_TRSF_NORMALIZED_COORDINATES: u32 = 2;
@@ -175,6 +175,9 @@ pub const hipEventWaitExternal: u32 = 1;
 pub const hipEventDisableSystemFence: u32 = 536870912;
 pub const hipEventReleaseToDevice: u32 = 1073741824;
 pub const hipEventReleaseToSystem: u32 = 2147483648;
+pub const hipEnableDefault: u32 = 0;
+pub const hipEnableLegacyStream: u32 = 1;
+pub const hipEnablePerThreadDefaultStream: u32 = 2;
 pub const hipHostAllocDefault: u32 = 0;
 pub const hipHostMallocDefault: u32 = 0;
 pub const hipHostAllocPortable: u32 = 1;
@@ -183,6 +186,8 @@ pub const hipHostAllocMapped: u32 = 2;
 pub const hipHostMallocMapped: u32 = 2;
 pub const hipHostAllocWriteCombined: u32 = 4;
 pub const hipHostMallocWriteCombined: u32 = 4;
+pub const hipHostMallocUncached: u32 = 268435456;
+pub const hipHostAllocUncached: u32 = 268435456;
 pub const hipHostMallocNumaUser: u32 = 536870912;
 pub const hipHostMallocCoherent: u32 = 1073741824;
 pub const hipHostMallocNonCoherent: u32 = 2147483648;
@@ -200,6 +205,7 @@ pub const hipHostRegisterMapped: u32 = 2;
 pub const hipHostRegisterIoMemory: u32 = 4;
 pub const hipHostRegisterReadOnly: u32 = 8;
 pub const hipExtHostRegisterCoarseGrained: u32 = 8;
+pub const hipExtHostRegisterUncached: u32 = 2147483648;
 pub const hipDeviceScheduleAuto: u32 = 0;
 pub const hipDeviceScheduleSpin: u32 = 1;
 pub const hipDeviceScheduleYield: u32 = 2;
@@ -278,11 +284,15 @@ pub type hipJitCacheMode = ::std::os::raw::c_uint;
 pub const hipJitFallback_hipJitPreferPTX: hipJitFallback = 0;
 pub const hipJitFallback_hipJitPreferBinary: hipJitFallback = 1;
 pub type hipJitFallback = ::std::os::raw::c_uint;
-pub const HIP_SUCCESS: _bindgen_ty_1 = 0;
-pub const HIP_ERROR_INVALID_VALUE: _bindgen_ty_1 = 1;
-pub const HIP_ERROR_NOT_INITIALIZED: _bindgen_ty_1 = 2;
-pub const HIP_ERROR_LAUNCH_OUT_OF_RESOURCES: _bindgen_ty_1 = 3;
-pub type _bindgen_ty_1 = ::std::os::raw::c_uint;
+pub const hipLibraryOption_e_hipLibraryHostUniversalFunctionAndDataTable: hipLibraryOption_e = 0;
+pub const hipLibraryOption_e_hipLibraryBinaryIsPreserved: hipLibraryOption_e = 1;
+pub type hipLibraryOption_e = ::std::os::raw::c_uint;
+pub use self::hipLibraryOption_e as hipLibraryOption;
+pub const HIP_SUCCESS: _bindgen_ty_33 = 0;
+pub const HIP_ERROR_INVALID_VALUE: _bindgen_ty_33 = 1;
+pub const HIP_ERROR_NOT_INITIALIZED: _bindgen_ty_33 = 2;
+pub const HIP_ERROR_LAUNCH_OUT_OF_RESOURCES: _bindgen_ty_33 = 3;
+pub type _bindgen_ty_33 = ::std::os::raw::c_uint;
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Copy, Clone)]
@@ -1248,6 +1258,7 @@ pub const hipDeviceAttribute_t_hipDeviceAttributePageableMemoryAccessUsesHostPag
     hipDeviceAttribute_t = 66;
 pub const hipDeviceAttribute_t_hipDeviceAttributePciBusId: hipDeviceAttribute_t = 67;
 pub const hipDeviceAttribute_t_hipDeviceAttributePciDeviceId: hipDeviceAttribute_t = 68;
+pub const hipDeviceAttribute_t_hipDeviceAttributePciDomainId: hipDeviceAttribute_t = 69;
 pub const hipDeviceAttribute_t_hipDeviceAttributePciDomainID: hipDeviceAttribute_t = 69;
 pub const hipDeviceAttribute_t_hipDeviceAttributePersistingL2CacheMaxSize: hipDeviceAttribute_t =
     70;
@@ -1306,6 +1317,10 @@ pub const hipDeviceAttribute_t_hipDeviceAttributePhysicalMultiProcessorCount: hi
     10015;
 pub const hipDeviceAttribute_t_hipDeviceAttributeFineGrainSupport: hipDeviceAttribute_t = 10016;
 pub const hipDeviceAttribute_t_hipDeviceAttributeWallClockRate: hipDeviceAttribute_t = 10017;
+pub const hipDeviceAttribute_t_hipDeviceAttributeNumberOfXccs: hipDeviceAttribute_t = 10018;
+pub const hipDeviceAttribute_t_hipDeviceAttributeMaxAvailableVgprsPerThread: hipDeviceAttribute_t =
+    10019;
+pub const hipDeviceAttribute_t_hipDeviceAttributePciChipId: hipDeviceAttribute_t = 10020;
 pub const hipDeviceAttribute_t_hipDeviceAttributeAmdSpecificEnd: hipDeviceAttribute_t = 19999;
 pub const hipDeviceAttribute_t_hipDeviceAttributeVendorSpecificBegin: hipDeviceAttribute_t = 20000;
 pub type hipDeviceAttribute_t = ::std::os::raw::c_uint;
@@ -1737,6 +1752,95 @@ pub struct HIP_MEMCPY3D {
     pub Height: usize,
     pub Depth: usize,
 }
+pub const hipMemLocationType_hipMemLocationTypeInvalid: hipMemLocationType = 0;
+pub const hipMemLocationType_hipMemLocationTypeNone: hipMemLocationType = 0;
+pub const hipMemLocationType_hipMemLocationTypeDevice: hipMemLocationType = 1;
+pub const hipMemLocationType_hipMemLocationTypeHost: hipMemLocationType = 2;
+pub const hipMemLocationType_hipMemLocationTypeHostNuma: hipMemLocationType = 3;
+pub const hipMemLocationType_hipMemLocationTypeHostNumaCurrent: hipMemLocationType = 4;
+pub type hipMemLocationType = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipMemLocation {
+    pub type_: hipMemLocationType,
+    pub id: ::std::os::raw::c_int,
+}
+pub const hipMemcpyFlags_hipMemcpyFlagDefault: hipMemcpyFlags = 0;
+pub const hipMemcpyFlags_hipMemcpyFlagPreferOverlapWithCompute: hipMemcpyFlags = 1;
+pub type hipMemcpyFlags = ::std::os::raw::c_uint;
+pub const hipMemcpySrcAccessOrder_hipMemcpySrcAccessOrderInvalid: hipMemcpySrcAccessOrder = 0;
+pub const hipMemcpySrcAccessOrder_hipMemcpySrcAccessOrderStream: hipMemcpySrcAccessOrder = 1;
+pub const hipMemcpySrcAccessOrder_hipMemcpySrcAccessOrderDuringApiCall: hipMemcpySrcAccessOrder = 2;
+pub const hipMemcpySrcAccessOrder_hipMemcpySrcAccessOrderAny: hipMemcpySrcAccessOrder = 3;
+pub const hipMemcpySrcAccessOrder_hipMemcpySrcAccessOrderMax: hipMemcpySrcAccessOrder = 2147483647;
+pub type hipMemcpySrcAccessOrder = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipMemcpyAttributes {
+    pub srcAccessOrder: hipMemcpySrcAccessOrder,
+    pub srcLocHint: hipMemLocation,
+    pub dstLocHint: hipMemLocation,
+    pub flags: ::std::os::raw::c_uint,
+}
+pub const hipMemcpy3DOperandType_hipMemcpyOperandTypePointer: hipMemcpy3DOperandType = 1;
+pub const hipMemcpy3DOperandType_hipMemcpyOperandTypeArray: hipMemcpy3DOperandType = 2;
+pub const hipMemcpy3DOperandType_hipMemcpyOperandTypeMax: hipMemcpy3DOperandType = 2147483647;
+pub type hipMemcpy3DOperandType = ::std::os::raw::c_uint;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipOffset3D {
+    pub x: usize,
+    pub y: usize,
+    pub z: usize,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct hipMemcpy3DOperand {
+    pub type_: hipMemcpy3DOperandType,
+    pub op: hipMemcpy3DOperand__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipMemcpy3DOperand__bindgen_ty_1 {
+    pub ptr: hipMemcpy3DOperand__bindgen_ty_1__bindgen_ty_1,
+    pub array: hipMemcpy3DOperand__bindgen_ty_1__bindgen_ty_2,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipMemcpy3DOperand__bindgen_ty_1__bindgen_ty_1 {
+    pub ptr: *mut ::std::os::raw::c_void,
+    pub rowLength: usize,
+    pub layerHeight: usize,
+    pub locHint: hipMemLocation,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipMemcpy3DOperand__bindgen_ty_1__bindgen_ty_2 {
+    pub array: hipArray_t,
+    pub offset: hipOffset3D,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct hipMemcpy3DBatchOp {
+    pub src: hipMemcpy3DOperand,
+    pub dst: hipMemcpy3DOperand,
+    pub extent: hipExtent,
+    pub srcAccessOrder: hipMemcpySrcAccessOrder,
+    pub flags: ::std::os::raw::c_uint,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipMemcpy3DPeerParms {
+    pub srcArray: hipArray_t,
+    pub srcPos: hipPos,
+    pub srcPtr: hipPitchedPtr,
+    pub srcDevice: ::std::os::raw::c_int,
+    pub dstArray: hipArray_t,
+    pub dstPos: hipPos,
+    pub dstPtr: hipPitchedPtr,
+    pub dstDevice: ::std::os::raw::c_int,
+    pub extent: hipExtent,
+}
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK: hipFunction_attribute = 0;
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES: hipFunction_attribute = 1;
 pub const hipFunction_attribute_HIP_FUNC_ATTRIBUTE_CONST_SIZE_BYTES: hipFunction_attribute = 2;
@@ -1858,6 +1962,13 @@ pub const hipDeviceP2PAttr_hipDevP2PAttrAccessSupported: hipDeviceP2PAttr = 1;
 pub const hipDeviceP2PAttr_hipDevP2PAttrNativeAtomicSupported: hipDeviceP2PAttr = 2;
 pub const hipDeviceP2PAttr_hipDevP2PAttrHipArrayAccessSupported: hipDeviceP2PAttr = 3;
 pub type hipDeviceP2PAttr = ::std::os::raw::c_uint;
+pub const hipDriverEntryPointQueryResult_hipDriverEntryPointSuccess:
+    hipDriverEntryPointQueryResult = 0;
+pub const hipDriverEntryPointQueryResult_hipDriverEntryPointSymbolNotFound:
+    hipDriverEntryPointQueryResult = 1;
+pub const hipDriverEntryPointQueryResult_hipDriverEntryPointVersionNotSufficent:
+    hipDriverEntryPointQueryResult = 2;
+pub type hipDriverEntryPointQueryResult = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct ihipStream_t {
@@ -1896,6 +2007,18 @@ pub struct ihipLinkState_t {
 pub type hipLinkState_t = *mut ihipLinkState_t;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct ihipLibrary_t {
+    _unused: [u8; 0],
+}
+pub type hipLibrary_t = *mut ihipLibrary_t;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ihipKernel_t {
+    _unused: [u8; 0],
+}
+pub type hipKernel_t = *mut ihipKernel_t;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct ihipMemPoolHandle_t {
     _unused: [u8; 0],
 }
@@ -1923,7 +2046,10 @@ pub type hipEvent_t = *mut ihipEvent_t;
 pub const hipLimit_t_hipLimitStackSize: hipLimit_t = 0;
 pub const hipLimit_t_hipLimitPrintfFifoSize: hipLimit_t = 1;
 pub const hipLimit_t_hipLimitMallocHeapSize: hipLimit_t = 2;
-pub const hipLimit_t_hipLimitRange: hipLimit_t = 3;
+pub const hipLimit_t_hipExtLimitScratchMin: hipLimit_t = 4096;
+pub const hipLimit_t_hipExtLimitScratchMax: hipLimit_t = 4097;
+pub const hipLimit_t_hipExtLimitScratchCurrent: hipLimit_t = 4098;
+pub const hipLimit_t_hipLimitRange: hipLimit_t = 4099;
 pub type hipLimit_t = ::std::os::raw::c_uint;
 pub const hipStreamBatchMemOpType_hipStreamMemOpWaitValue32: hipStreamBatchMemOpType = 1;
 pub const hipStreamBatchMemOpType_hipStreamMemOpWriteValue32: hipStreamBatchMemOpType = 2;
@@ -2025,15 +2151,6 @@ pub const hipMemPoolAttr_hipMemPoolAttrReservedMemHigh: hipMemPoolAttr = 6;
 pub const hipMemPoolAttr_hipMemPoolAttrUsedMemCurrent: hipMemPoolAttr = 7;
 pub const hipMemPoolAttr_hipMemPoolAttrUsedMemHigh: hipMemPoolAttr = 8;
 pub type hipMemPoolAttr = ::std::os::raw::c_uint;
-pub const hipMemLocationType_hipMemLocationTypeInvalid: hipMemLocationType = 0;
-pub const hipMemLocationType_hipMemLocationTypeDevice: hipMemLocationType = 1;
-pub type hipMemLocationType = ::std::os::raw::c_uint;
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct hipMemLocation {
-    pub type_: hipMemLocationType,
-    pub id: ::std::os::raw::c_int,
-}
 pub const hipMemAccessFlags_hipMemAccessFlagsProtNone: hipMemAccessFlags = 0;
 pub const hipMemAccessFlags_hipMemAccessFlagsProtRead: hipMemAccessFlags = 1;
 pub const hipMemAccessFlags_hipMemAccessFlagsProtReadWrite: hipMemAccessFlags = 3;
@@ -2046,6 +2163,7 @@ pub struct hipMemAccessDesc {
 }
 pub const hipMemAllocationType_hipMemAllocationTypeInvalid: hipMemAllocationType = 0;
 pub const hipMemAllocationType_hipMemAllocationTypePinned: hipMemAllocationType = 1;
+pub const hipMemAllocationType_hipMemAllocationTypeUncached: hipMemAllocationType = 1073741824;
 pub const hipMemAllocationType_hipMemAllocationTypeMax: hipMemAllocationType = 2147483647;
 pub type hipMemAllocationType = ::std::os::raw::c_uint;
 pub const hipMemAllocationHandleType_hipMemHandleTypeNone: hipMemAllocationHandleType = 0;
@@ -2392,26 +2510,38 @@ pub struct hipAccessPolicyWindow {
     pub missProp: hipAccessProperty,
     pub num_bytes: usize,
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipLaunchMemSyncDomainMap {
+    pub default_: ::std::os::raw::c_uchar,
+    pub remote: ::std::os::raw::c_uchar,
+}
+pub const hipLaunchMemSyncDomain_hipLaunchMemSyncDomainDefault: hipLaunchMemSyncDomain = 0;
+pub const hipLaunchMemSyncDomain_hipLaunchMemSyncDomainRemote: hipLaunchMemSyncDomain = 1;
+pub type hipLaunchMemSyncDomain = ::std::os::raw::c_uint;
+pub const hipSynchronizationPolicy_hipSyncPolicyAuto: hipSynchronizationPolicy = 1;
+pub const hipSynchronizationPolicy_hipSyncPolicySpin: hipSynchronizationPolicy = 2;
+pub const hipSynchronizationPolicy_hipSyncPolicyYield: hipSynchronizationPolicy = 3;
+pub const hipSynchronizationPolicy_hipSyncPolicyBlockingSync: hipSynchronizationPolicy = 4;
+pub type hipSynchronizationPolicy = ::std::os::raw::c_uint;
 pub const hipLaunchAttributeID_hipLaunchAttributeAccessPolicyWindow: hipLaunchAttributeID = 1;
 pub const hipLaunchAttributeID_hipLaunchAttributeCooperative: hipLaunchAttributeID = 2;
+pub const hipLaunchAttributeID_hipLaunchAttributeSynchronizationPolicy: hipLaunchAttributeID = 3;
 pub const hipLaunchAttributeID_hipLaunchAttributePriority: hipLaunchAttributeID = 8;
+pub const hipLaunchAttributeID_hipLaunchAttributeMemSyncDomainMap: hipLaunchAttributeID = 9;
+pub const hipLaunchAttributeID_hipLaunchAttributeMemSyncDomain: hipLaunchAttributeID = 10;
+pub const hipLaunchAttributeID_hipLaunchAttributeMax: hipLaunchAttributeID = 11;
 pub type hipLaunchAttributeID = ::std::os::raw::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union hipLaunchAttributeValue {
+    pub pad: [::std::os::raw::c_char; 64usize],
     pub accessPolicyWindow: hipAccessPolicyWindow,
     pub cooperative: ::std::os::raw::c_int,
     pub priority: ::std::os::raw::c_int,
-}
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct HIP_MEMSET_NODE_PARAMS {
-    pub dst: hipDeviceptr_t,
-    pub pitch: usize,
-    pub value: ::std::os::raw::c_uint,
-    pub elementSize: ::std::os::raw::c_uint,
-    pub width: usize,
-    pub height: usize,
+    pub syncPolicy: hipSynchronizationPolicy,
+    pub memSyncDomainMap: hipLaunchMemSyncDomainMap,
+    pub memSyncDomain: hipLaunchMemSyncDomain,
 }
 pub const hipGraphExecUpdateResult_hipGraphExecUpdateSuccess: hipGraphExecUpdateResult = 0;
 pub const hipGraphExecUpdateResult_hipGraphExecUpdateError: hipGraphExecUpdateResult = 1;
@@ -2490,17 +2620,23 @@ pub struct hipGraphInstantiateParams {
     pub uploadStream: hipStream_t,
 }
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct hipMemAllocationProp {
     pub type_: hipMemAllocationType,
-    pub requestedHandleType: hipMemAllocationHandleType,
+    pub __bindgen_anon_1: hipMemAllocationProp__bindgen_ty_1,
     pub location: hipMemLocation,
     pub win32HandleMetaData: *mut ::std::os::raw::c_void,
-    pub allocFlags: hipMemAllocationProp__bindgen_ty_1,
+    pub allocFlags: hipMemAllocationProp__bindgen_ty_2,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipMemAllocationProp__bindgen_ty_1 {
+    pub requestedHandleType: hipMemAllocationHandleType,
+    pub requestedHandleTypes: hipMemAllocationHandleType,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct hipMemAllocationProp__bindgen_ty_1 {
+pub struct hipMemAllocationProp__bindgen_ty_2 {
     pub compressionType: ::std::os::raw::c_uchar,
     pub gpuDirectRDMACapable: ::std::os::raw::c_uchar,
     pub usage: ::std::os::raw::c_ushort,
@@ -2653,6 +2789,52 @@ pub struct hipGraphEdgeData {
     pub to_port: ::std::os::raw::c_uchar,
     pub type_: ::std::os::raw::c_uchar,
 }
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct hipLaunchAttribute_st {
+    pub id: hipLaunchAttributeID,
+    pub pad: [::std::os::raw::c_char; 4usize],
+    pub __bindgen_anon_1: hipLaunchAttribute_st__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union hipLaunchAttribute_st__bindgen_ty_1 {
+    pub val: hipLaunchAttributeValue,
+    pub value: hipLaunchAttributeValue,
+}
+pub type hipLaunchAttribute = hipLaunchAttribute_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct hipLaunchConfig_st {
+    pub gridDim: dim3,
+    pub blockDim: dim3,
+    pub dynamicSmemBytes: usize,
+    pub stream: hipStream_t,
+    pub attrs: *mut hipLaunchAttribute,
+    pub numAttrs: ::std::os::raw::c_uint,
+}
+pub type hipLaunchConfig_t = hipLaunchConfig_st;
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct HIP_LAUNCH_CONFIG_st {
+    pub gridDimX: ::std::os::raw::c_uint,
+    pub gridDimY: ::std::os::raw::c_uint,
+    pub gridDimZ: ::std::os::raw::c_uint,
+    pub blockDimX: ::std::os::raw::c_uint,
+    pub blockDimY: ::std::os::raw::c_uint,
+    pub blockDimZ: ::std::os::raw::c_uint,
+    pub sharedMemBytes: ::std::os::raw::c_uint,
+    pub hStream: hipStream_t,
+    pub attrs: *mut hipLaunchAttribute,
+    pub numAttrs: ::std::os::raw::c_uint,
+}
+pub type HIP_LAUNCH_CONFIG = HIP_LAUNCH_CONFIG_st;
+pub const hipMemRangeHandleType_hipMemRangeHandleTypeDmaBufFd: hipMemRangeHandleType = 1;
+pub const hipMemRangeHandleType_hipMemRangeHandleTypeMax: hipMemRangeHandleType = 2147483647;
+pub type hipMemRangeHandleType = ::std::os::raw::c_uint;
+pub const hipMemRangeFlags_hipMemRangeFlagDmaBufMappingTypePcie: hipMemRangeFlags = 1;
+pub const hipMemRangeFlags_hipMemRangeFlagsMax: hipMemRangeFlags = 2147483647;
+pub type hipMemRangeFlags = ::std::os::raw::c_uint;
 unsafe extern "C" {
     pub fn hipInit(flags: ::std::os::raw::c_uint) -> hipError_t;
 }
@@ -2758,7 +2940,8 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn hipDeviceGetTexture1DLinearMaxWidth(
-        mem_pool: *mut hipMemPool_t,
+        max_width: *mut usize,
+        desc: *const hipChannelFormatDesc,
         device: ::std::os::raw::c_int,
     ) -> hipError_t;
 }
@@ -2912,6 +3095,12 @@ unsafe extern "C" {
         -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipStreamGetId(
+        stream: hipStream_t,
+        streamId: *mut ::std::os::raw::c_ulonglong,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipStreamGetPriority(
         stream: hipStream_t,
         priority: *mut ::std::os::raw::c_int,
@@ -2947,6 +3136,20 @@ unsafe extern "C" {
         callback: hipStreamCallback_t,
         userData: *mut ::std::os::raw::c_void,
         flags: ::std::os::raw::c_uint,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipStreamSetAttribute(
+        stream: hipStream_t,
+        attr: hipLaunchAttributeID,
+        value: *const hipLaunchAttributeValue,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipStreamGetAttribute(
+        stream: hipStream_t,
+        attr: hipLaunchAttributeID,
+        value_out: *mut hipLaunchAttributeValue,
     ) -> hipError_t;
 }
 unsafe extern "C" {
@@ -3165,11 +3368,28 @@ unsafe extern "C" {
     ) -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipMemPrefetchAsync_v2(
+        dev_ptr: *const ::std::os::raw::c_void,
+        count: usize,
+        location: hipMemLocation,
+        flags: ::std::os::raw::c_uint,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipMemAdvise(
         dev_ptr: *const ::std::os::raw::c_void,
         count: usize,
         advice: hipMemoryAdvise,
         device: ::std::os::raw::c_int,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemAdvise_v2(
+        dev_ptr: *const ::std::os::raw::c_void,
+        count: usize,
+        advice: hipMemoryAdvise,
+        location: hipMemLocation,
     ) -> hipError_t;
 }
 unsafe extern "C" {
@@ -3362,7 +3582,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn hipMemcpyHtoD(
         dst: hipDeviceptr_t,
-        src: *mut ::std::os::raw::c_void,
+        src: *const ::std::os::raw::c_void,
         sizeBytes: usize,
     ) -> hipError_t;
 }
@@ -3404,7 +3624,7 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn hipMemcpyHtoDAsync(
         dst: hipDeviceptr_t,
-        src: *mut ::std::os::raw::c_void,
+        src: *const ::std::os::raw::c_void,
         sizeBytes: usize,
         stream: hipStream_t,
     ) -> hipError_t;
@@ -3607,6 +3827,63 @@ unsafe extern "C" {
         pitchedDevPtr: hipPitchedPtr,
         value: ::std::os::raw::c_int,
         extent: hipExtent,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D8(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_uchar,
+        width: usize,
+        height: usize,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D8Async(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_uchar,
+        width: usize,
+        height: usize,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D16(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_ushort,
+        width: usize,
+        height: usize,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D16Async(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_ushort,
+        width: usize,
+        height: usize,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D32(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_uint,
+        width: usize,
+        height: usize,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemsetD2D32Async(
+        dst: hipDeviceptr_t,
+        dstPitch: usize,
+        value: ::std::os::raw::c_uint,
+        width: usize,
+        height: usize,
         stream: hipStream_t,
     ) -> hipError_t;
 }
@@ -3815,6 +4092,41 @@ unsafe extern "C" {
     pub fn hipDrvMemcpy3DAsync(pCopy: *const HIP_MEMCPY3D, stream: hipStream_t) -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipMemGetAddressRange(
+        pbase: *mut hipDeviceptr_t,
+        psize: *mut usize,
+        dptr: hipDeviceptr_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemcpyBatchAsync(
+        dsts: *mut *mut ::std::os::raw::c_void,
+        srcs: *mut *mut ::std::os::raw::c_void,
+        sizes: *mut usize,
+        count: usize,
+        attrs: *mut hipMemcpyAttributes,
+        attrsIdxs: *mut usize,
+        numAttrs: usize,
+        failIdx: *mut usize,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemcpy3DBatchAsync(
+        numOps: usize,
+        opList: *mut hipMemcpy3DBatchOp,
+        failIdx: *mut usize,
+        flags: ::std::os::raw::c_ulonglong,
+        stream: hipStream_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemcpy3DPeer(p: *mut hipMemcpy3DPeerParms) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemcpy3DPeerAsync(p: *mut hipMemcpy3DPeerParms, stream: hipStream_t) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipDeviceCanAccessPeer(
         canAccessPeer: *mut ::std::os::raw::c_int,
         deviceId: ::std::os::raw::c_int,
@@ -3829,13 +4141,6 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn hipDeviceDisablePeerAccess(peerDeviceId: ::std::os::raw::c_int) -> hipError_t;
-}
-unsafe extern "C" {
-    pub fn hipMemGetAddressRange(
-        pbase: *mut hipDeviceptr_t,
-        psize: *mut usize,
-        dptr: hipDeviceptr_t,
-    ) -> hipError_t;
 }
 unsafe extern "C" {
     pub fn hipMemcpyPeer(
@@ -3882,8 +4187,10 @@ unsafe extern "C" {
     pub fn hipCtxGetDevice(device: *mut hipDevice_t) -> hipError_t;
 }
 unsafe extern "C" {
-    pub fn hipCtxGetApiVersion(ctx: hipCtx_t, apiVersion: *mut ::std::os::raw::c_int)
-        -> hipError_t;
+    pub fn hipCtxGetApiVersion(
+        ctx: hipCtx_t,
+        apiVersion: *mut ::std::os::raw::c_uint,
+    ) -> hipError_t;
 }
 unsafe extern "C" {
     pub fn hipCtxGetCacheConfig(cacheConfig: *mut hipFuncCache_t) -> hipError_t;
@@ -3932,6 +4239,12 @@ unsafe extern "C" {
     ) -> hipError_t;
 }
 unsafe extern "C" {
+    pub fn hipModuleLoadFatBinary(
+        module: *mut hipModule_t,
+        fatbin: *const ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
     pub fn hipModuleLoad(
         module: *mut hipModule_t,
         fname: *const ::std::os::raw::c_char,
@@ -3945,6 +4258,52 @@ unsafe extern "C" {
         function: *mut hipFunction_t,
         module: hipModule_t,
         kname: *const ::std::os::raw::c_char,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipModuleGetFunctionCount(
+        count: *mut ::std::os::raw::c_uint,
+        mod_: hipModule_t,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLibraryLoadData(
+        library: *mut hipLibrary_t,
+        code: *const ::std::os::raw::c_void,
+        jitOptions: *mut hipJitOption,
+        jitOptionsValues: *mut *mut ::std::os::raw::c_void,
+        numJitOptions: ::std::os::raw::c_uint,
+        libraryOptions: *mut hipLibraryOption,
+        libraryOptionValues: *mut *mut ::std::os::raw::c_void,
+        numLibraryOptions: ::std::os::raw::c_uint,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLibraryLoadFromFile(
+        library: *mut hipLibrary_t,
+        fileName: *const ::std::os::raw::c_char,
+        jitOptions: *mut hipJitOption,
+        jitOptionsValues: *mut *mut ::std::os::raw::c_void,
+        numJitOptions: ::std::os::raw::c_uint,
+        libraryOptions: *mut hipLibraryOption,
+        libraryOptionValues: *mut *mut ::std::os::raw::c_void,
+        numLibraryOptions: ::std::os::raw::c_uint,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLibraryUnload(library: hipLibrary_t) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLibraryGetKernel(
+        pKernel: *mut hipKernel_t,
+        library: hipLibrary_t,
+        name: *const ::std::os::raw::c_char,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLibraryGetKernelCount(
+        count: *mut ::std::os::raw::c_uint,
+        library: hipLibrary_t,
     ) -> hipError_t;
 }
 unsafe extern "C" {
@@ -3964,6 +4323,14 @@ unsafe extern "C" {
     pub fn hipGetFuncBySymbol(
         functionPtr: *mut hipFunction_t,
         symbolPtr: *const ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGetDriverEntryPoint(
+        symbol: *const ::std::os::raw::c_char,
+        funcPtr: *mut *mut ::std::os::raw::c_void,
+        flags: ::std::os::raw::c_ulonglong,
+        driverStatus: *mut hipDriverEntryPointQueryResult,
     ) -> hipError_t;
 }
 unsafe extern "C" {
@@ -4086,6 +4453,30 @@ unsafe extern "C" {
         launchParamsList: *mut hipLaunchParams,
         numDevices: ::std::os::raw::c_int,
         flags: ::std::os::raw::c_uint,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipLaunchKernelExC(
+        config: *const hipLaunchConfig_t,
+        fPtr: *const ::std::os::raw::c_void,
+        args: *mut *mut ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipDrvLaunchKernelEx(
+        config: *const HIP_LAUNCH_CONFIG,
+        f: hipFunction_t,
+        params: *mut *mut ::std::os::raw::c_void,
+        extra: *mut *mut ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipMemGetHandleForAddressRange(
+        handle: *mut ::std::os::raw::c_void,
+        dptr: hipDeviceptr_t,
+        size: usize,
+        handleType: hipMemRangeHandleType,
+        flags: ::std::os::raw::c_ulonglong,
     ) -> hipError_t;
 }
 unsafe extern "C" {
@@ -5221,7 +5612,7 @@ unsafe extern "C" {
         hGraph: hipGraph_t,
         dependencies: *const hipGraphNode_t,
         numDependencies: usize,
-        memsetParams: *const HIP_MEMSET_NODE_PARAMS,
+        memsetParams: *const hipMemsetParams,
         ctx: hipCtx_t,
     ) -> hipError_t;
 }
@@ -5246,7 +5637,7 @@ unsafe extern "C" {
     pub fn hipDrvGraphExecMemsetNodeSetParams(
         hGraphExec: hipGraphExec_t,
         hNode: hipGraphNode_t,
-        memsetParams: *const HIP_MEMSET_NODE_PARAMS,
+        memsetParams: *const hipMemsetParams,
         ctx: hipCtx_t,
     ) -> hipError_t;
 }
@@ -5669,5 +6060,13 @@ unsafe extern "C" {
         stream: hipStream_t,
         fn_: hipHostFn_t,
         userData: *mut ::std::os::raw::c_void,
+    ) -> hipError_t;
+}
+unsafe extern "C" {
+    pub fn hipGetDriverEntryPoint_spt(
+        symbol: *const ::std::os::raw::c_char,
+        funcPtr: *mut *mut ::std::os::raw::c_void,
+        flags: ::std::os::raw::c_ulonglong,
+        status: *mut hipDriverEntryPointQueryResult,
     ) -> hipError_t;
 }
