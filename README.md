@@ -12,7 +12,7 @@ Currently implemented:
 - ✅ rocBLAS - Basic Linear Algebra Subprograms (raw bindings + safe wrappers)
 - ✅ MIOpen - Deep learning primitives (raw bindings + safe wrappers)
 - ✅ rocRAND - Random number generation (raw bindings + safe wrappers)
-- ✅ rocSOLVER - Linear system solvers (raw bindings only)
+- ✅ rocSOLVER - Linear system solvers (raw bindings + safe wrappers)
 - ✅ rocSPARSE - Sparse linear algebra (raw bindings only)
 - ✅ ROCArray - GPU array struct with api similar to Vec (to be deprecated in favor of DeviceMemoryExt)
 - ✅ rocmsmi - system managment interface (refer to [rocm_smi_lib](https://github.com/PTFOPlayer/rocm_smi_lib_rs))
