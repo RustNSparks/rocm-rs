@@ -2,6 +2,11 @@
 
 This project provides Rust bindings for AMD's ROCm (Radeon Open Compute) libraries, allowing Rust developers to leverage AMD GPUs for high-performance computing.
 
+## Disclaimer
+
+This project is **not affiliated with, endorsed by, or sponsored by Advanced Micro Devices, Inc. (AMD)**.  
+ROCm and AMD are trademarks of Advanced Micro Devices, Inc.
+
 ## Current Status
 
 **Note: This project is in early development.**
