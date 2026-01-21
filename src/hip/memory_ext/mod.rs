@@ -64,26 +64,56 @@ where
     T: GPUSortAllowed,
 {
     fn sort(&mut self) -> Result<()> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: sort function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 
     fn sort_desc(&mut self) -> Result<()> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: sort_desc function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 
     fn sort_async(&mut self, stream: &Stream) -> Result<()> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: sort_async function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 
     fn sort_desc_async(&mut self, stream: &Stream) -> Result<()> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: sort_desc_async function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 
     fn check_sorted(&self) -> Result<bool> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: this function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 
     fn check_sorted_async(&self, stream: &Stream) -> Result<bool> {
-        panic!("cannot run code without macros features enabled");
+        println!(
+            "WARNING: check_sorted_async function is not implemented because the 'macros' feature is disabled."
+        );
+        return Err(crate::hip::Error::new(
+            crate::hip::ffi::hipError_t_hipErrorNotInitialized,
+        ));
     }
 }
