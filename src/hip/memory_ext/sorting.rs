@@ -86,18 +86,16 @@ macro_rules! sort_fns {
     };
 }
 
-pub trait GPUSortAllowed {}
 
-macro_rules! impl_gpu_sort_allowed {
+macro_rules! generate_gpu_sort {
     ($($t:ty),+) => {
         $(
-            impl GPUSortAllowed for $t {}
             sort_fns!($t);
         )*
     };
 }
 
-impl_gpu_sort_allowed!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+generate_gpu_sort!(i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
 
 pub(crate) const SORTING_KERNEL: &[u8] =
     include_bytes!(amdgpu_kernel_finalize!(__build_in_kernels_sorting));
