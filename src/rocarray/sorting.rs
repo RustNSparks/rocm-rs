@@ -1,7 +1,7 @@
 // src/rocarray/sorting.rs - Complete implementation
 use crate::error::Result;
 use crate::hip::kernel::AsKernelArg;
-use crate::hip::memory_ext::sorting::GPUSortAllowed;
+use crate::hip::memory_ext::GPUSortAllowed;
 use crate::hip::{
     DeviceMemory, Dim3, Function, Module, Stream, calculate_grid_1d, memory_ext::MemoryExt,
 };

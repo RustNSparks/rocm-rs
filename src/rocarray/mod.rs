@@ -2,7 +2,7 @@
 
 use crate::error::Result;
 use crate::hip::memory::PendingCopy;
-use crate::hip::memory_ext::sorting::GPUSortAllowed;
+use crate::hip::memory_ext::GPUSortAllowed;
 use crate::hip::{DeviceMemory, Stream};
 use std::fmt;
 use std::marker::PhantomData;
