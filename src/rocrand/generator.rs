@@ -96,7 +96,7 @@ impl PseudoRng {
         unsafe {
             Error::from_status(bindings::rocrand_set_seed_uint4(
                 self.generator.as_ptr(),
-                seed,
+                std::mem::transmute::<u128, bindings::uint4>(seed),
             ))
         }
     }
