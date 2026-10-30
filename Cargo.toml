@@ -20,7 +20,7 @@ rocm_kernel_macros = {version = "0.5.1", optional = true}
 paste = "1.0.15"
 
 [build-dependencies]
-bindgen = "0.71.1"
+bindgen = "0.73.2"
 
 [features]
 default = ["macros", "miopen", "gpu-sort"]
