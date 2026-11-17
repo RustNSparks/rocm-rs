@@ -1,0 +1,83 @@
+name: GPU Simulator
+
+# Runs the crate's unit tests (rocBLAS level 1/2/3, rocRAND, device memory) on
+# a simulated AMD Instinct MI300X (gfx942, ROCm 7.1) using PantheonSim
+# (https://github.com/pantheongpu/pantheonsim), since the hosted runners have
+# no GPU. A simulator cannot reproduce hardware-specific behavior or timing, so
+# it complements real-GPU testing and does not replace it.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "build.rs"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+  # The simulator runs kernel launches inline.
+  VGPU_ASYNC_LAUNCH: "0"
+
+jobs:
+  test:
+    name: Cargo tests (ROCm 7.1 and simulated MI300X)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and ROCm
+        uses: pantheongpu/setup-pantheonsim@a1b9d4237411f9b2b0e0bb895b4d83377f336a7b # v0.1.9
+        with:
+          gpu: amd/mi300x
+          cuda-toolkit: none
+          rocm: "7.1"
+
+      # The action installs only the compiler side of ROCm. build.rs runs
+      # bindgen over the headers of every wrapped library, and the crate links
+      # them, so the -dev packages are needed even for the ones not tested.
+      - name: Install ROCm libraries and libclang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev rocblas-dev rocrand-dev \
+            rocfft-dev rocsparse-dev rocsolver-dev miopen-hip-dev
+
+      # gpu-sort needs a nested nightly build-std build of an amdgcn kernel, so
+      # it is left off (the rocarray sort tests then run the no-op path). The
+      # macros feature is still needed for the crate to compile its tests.
+      - name: Build tests
+        run: |
+          cargo test --release --no-default-features --features macros,rocsolver \
+            --no-run
+
+      # The sort tests are skipped because gpu-sort is off. The job fails on
+      # any test failure, on a VirtualGPU error, and if fewer tests passed than
+      # expected (so a silent skip or a missing device cannot go green).
+      - name: Test
+        env:
+          LD_LIBRARY_PATH: /opt/rocm/lib
+        run: |
+          set -o pipefail
+          vgpu run cargo test --release --no-default-features \
+            --features macros,rocsolver -- --test-threads=1 --skip sorting \
+            2>&1 | tee test.log
+          if grep -q "VirtualGPU error" test.log; then exit 1; fi
+          passed=$(grep -oP 'test result: ok\. \K[0-9]+(?= passed)' test.log \
+            | paste -sd+ | bc)
+          echo "passed: $passed"
+          test "${passed:-0}" -ge 31
